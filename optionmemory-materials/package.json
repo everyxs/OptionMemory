@@ -1,0 +1,23 @@
+{
+  "name": "optionmemory",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DSH memory plugin — five-layer memory over mnestic (CozoScript HTTP)",
+  "type": "commonjs",
+  "main": "dist/plugins/dsh/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dsh": {
+    "bundle": {
+      "manifest": "dsh.plugin.json",
+      "patch": "cordis.patch.yml"
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

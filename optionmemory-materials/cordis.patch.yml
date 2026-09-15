@@ -1,0 +1,7 @@
+# cordis profile 级 patch 配置（占位）。
+# 服务地址默认指向本工作区已部署的 mnestic Mem 实例（scripts/mnestic_start.sh，端口 9070）。
+plugins:
+  optionmemory:
+    endpoint: http://127.0.0.1:9070/text-query
+    token: ""          # TODO: 服务 token（当前本地实例未启用鉴权）
+    timeoutMs: 5000
