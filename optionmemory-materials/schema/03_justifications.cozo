@@ -1,0 +1,12 @@
+# 03_justifications.cozo — 表 3：justifications（J 活性边）
+# 来源：Week1开发手册-五层底座搭建.md §2.1（字段/语义原样，未删改）
+# 类型映射：datetime → Float（Unix 秒）；[string] → [String]；bool → Bool。
+
+:create justifications {id: String =>
+    derived_id: String,
+    premise_ids: [String],
+    rule_id: String,
+    active: Bool,
+    derivation_ts: Float}
+
+::index create justifications:derived_id_idx {derived_id}

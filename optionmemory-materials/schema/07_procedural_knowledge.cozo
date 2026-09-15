@@ -1,0 +1,21 @@
+# 07_procedural_knowledge.cozo — 表 7：procedural_knowledge
+# 来源：Week1开发手册-五层底座搭建.md §2.1（字段/语义原样，未删改）
+# 类型映射：lin_* 同 facts（含 lin_theta? / lin_actor）。
+# fidelity 按设计说明「MVP 预留，可空」实现为 String?。
+# 2026-09-15 手册修订：补 layer（固定 "procedural"）。
+
+:create procedural_knowledge {id: String =>
+    claim: String,
+    layer: String,
+    s_id: String,
+    o_id: String,
+    m_id: String,
+    fidelity: String?,
+    eps_value: Float,
+    eps_ceiling: Float,
+    lin_source: String,
+    lin_version: String,
+    lin_theta: String?,
+    lin_actor: String,
+    verify: String,
+    status: String}

@@ -1,0 +1,35 @@
+# 01_facts.cozo — 表 1：facts（declarative knowledge）
+# 来源：Week1开发手册-五层底座搭建.md §2.1（字段/语义原样，未删改）
+#
+# 类型映射（mnestic 无原样类型时的真实替代，速查 §2.2 核实；pest:250-268）：
+#   datetime       → Float        # Unix 秒（fork dt_* 函数库以 float Unix 秒为桥，README）
+#   vector(1024)?  → <F32; 1024>? # 可空向量；HNSW 索引在文件末（m/ef/distance 为工程取值，可调）
+#   [string]       → [String]     # 变长 List
+#   string?        → String?      # 可空
+#   json           → Json
+
+:create facts {id: String =>
+    predicate: String,
+    args: [String],
+    claim: String,
+    layer: String,
+    j_premise_ids: [String],
+    j_rule_id: String?,
+    eps_type: String,
+    eps_value: Float,
+    eps_source: String,
+    lin_source: String,
+    lin_version: String,
+    lin_theta: String?,
+    lin_actor: String,
+    verify: String,
+    status: String,
+    embedding: <F32; 1024>?,
+    created_at: Float,
+    updated_at: Float}
+
+::index create facts:predicate_idx {predicate}
+
+::index create facts:status_idx {status}
+
+::hnsw create facts:embedding_hnsw {dim: 1024, m: 32, dtype: F32, fields: [embedding], distance: Cosine, ef_construction: 128}

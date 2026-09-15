@@ -1,0 +1,16 @@
+# 02_rules.cozo — 表 2：rules（双层资产）
+# 来源：Week1开发手册-五层底座搭建.md §2.1（字段/语义原样，未删改）
+# 类型映射：json → Json；lin_* 同 facts（含 lin_theta? / lin_actor）；无索引标注字段。
+
+:create rules {rule_id: String =>
+    horn_body: String,
+    horn_head: String,
+    opt_i: Json,
+    opt_pi: Json,
+    opt_beta: Json,
+    layer: String,
+    lin_source: String,
+    lin_version: String,
+    lin_theta: String?,
+    lin_actor: String,
+    status: String}

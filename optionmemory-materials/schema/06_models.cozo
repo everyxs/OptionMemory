@@ -1,0 +1,29 @@
+# 06_models.cozo — 表 6：models
+# 来源：Week1开发手册-五层底座搭建.md §2.1（字段/语义原样，未删改）
+# 类型映射：json → Json；float → Float；lin_* 同 facts（含 lin_theta? / lin_actor）。
+# 2026-09-15 手册修订：补 claim（可达性主张文本）、layer（固定 "model"）与 ε 系三字段。
+# ⚠ 待确认（未静默跳过）：j_records 设计只写「同前」未给类型，按 [String]（辩护记录 id 列表）
+#    实现；若实为 Json 结构或其它，请指出后改此一处。
+
+:create models {model_id: String =>
+    option_id: String,
+    claim: String,
+    layer: String,
+    achievable_probability: Float,
+    calibration_history: Json,
+    prediction_error: Float,
+    cost_model: Json,
+    theta_version: String,
+    estimated_initiation_region: String,
+    eps_type: String,
+    eps_value: Float,
+    eps_source: String,
+    status: String,
+    j_records: [String],
+    lin_source: String,
+    lin_version: String,
+    lin_theta: String?,
+    lin_actor: String,
+    verify: String}
+
+::index create models:option_id_idx {option_id}

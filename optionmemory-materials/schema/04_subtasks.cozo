@@ -1,0 +1,13 @@
+# 04_subtasks.cozo — 表 4：subtasks
+# 来源：Week1开发手册-五层底座搭建.md §2.1（字段/语义原样，未删改）
+# 类型映射：json → Json；int → Int；lin_* 同 facts（含 lin_theta? / lin_actor）。
+
+:create subtasks {subtask_id: String =>
+    goal: String,
+    context: Json,
+    status: String,
+    utility_queries: Int,
+    lin_source: String,
+    lin_version: String,
+    lin_theta: String?,
+    lin_actor: String}
