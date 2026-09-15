@@ -1,0 +1,13 @@
+[package]
+name = "mnestic-mem-adapter"
+version = "0.1.0"
+edition = "2021"
+description = "Adaptation layer: Mem-mode interactive mnestic instance + CozoScript HTTP endpoint (no mnestic source changes)"
+publish = false
+
+[dependencies]
+# Mem-mode adapter: default features only (sqlite + requests + graph-algo).
+# Deliberately NOT storage-rocksdb — mnestic-rocks pulls zstd-sys whose
+# bindgen build requires libclang, which this machine no longer has.
+mnestic = { version = "0.17.0" }
+serde_json = "1"
