@@ -4,9 +4,8 @@
 # Usage: scripts/mnestic_start.sh [--port <n>]
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # optionmemory-materials/
-WORKSPACE="$(cd "$ROOT/.." && pwd)"                      # workspace root (e:/DSHprojects)
-TARGET_DIR="${CARGO_TARGET_DIR:-$WORKSPACE/target}"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # repo root (option-memory-core)
+TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
 EXE="$TARGET_DIR/debug/mnestic-mem-adapter"
 case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) EXE="$EXE.exe";; esac
 

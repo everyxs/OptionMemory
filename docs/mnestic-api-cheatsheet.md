@@ -44,7 +44,7 @@ let res2: NamedRows = db.run_script(
 
 ### 1.2 HTTP 端点（本工作区适配层，端口 9070）
 
-适配层源码：`optionmemory-materials/server/src/main.rs`（std-only 实现，无 WebSocket）。
+适配层源码：`server/src/main.rs`（std-only 实现，无 WebSocket）。
 
 | 端点 | 请求 | 响应 | 来源 |
 |---|---|---|---|
@@ -414,9 +414,9 @@ where F: Fn() -> Box<dyn crate::data::aggr::MeetAggrObj> + Send + Sync + 'static
 ### 7.6 本工作区部署限定（非上游声明）
 
 - 当前实例为 **Mem 引擎，进程退出即丢数据**（`persistent: false`）。
-- HTTP 面**无 WebSocket、无鉴权**（适配层 `optionmemory-materials/server/src/main.rs` 实现；token 字段仅为预留，见 `cordis.patch.yml`）。
+- HTTP 面**无 WebSocket、无鉴权**（适配层 `server/src/main.rs` 实现；token 字段仅为预留，见 `cordis.patch.yml`）。
 - 默认绑定 `127.0.0.1`（来源：`main.rs:29`），端口默认 9070，`--port` 可改。
 
 ---
 
-*取证说明：未标注 URL 的行号均相对于本地 crate 根 `mnestic-0.17.0/`（cargo registry 缓存）；`main.rs` 行号相对于 `optionmemory-materials/server/`；GitHub README 行号以 raw 文本计。生成日期：2026-09-13。*
+*取证说明：未标注 URL 的行号均相对于本地 crate 根 `mnestic-0.17.0/`（cargo registry 缓存）；`main.rs` 行号相对于 `server/`；GitHub README 行号以 raw 文本计。生成日期：2026-09-13。*

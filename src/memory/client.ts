@@ -2,7 +2,7 @@
  * mnestic HTTP 客户端（通用版）。
  *
  * 对接本工作区部署的 CozoScript HTTP 端点（POST /text-query，
- * 自然 JSON 线缆格式，见 optionmemory-materials/server/）。
+ * 自然 JSON 线缆格式，见 server/）。
  * 零框架依赖：仅用全局 fetch（Node >= 18）。
  */
 export interface MnesticClientOptions {

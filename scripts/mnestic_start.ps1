@@ -4,9 +4,8 @@
 param([int]$Port = 9070)
 $ErrorActionPreference = "Stop"
 
-$Root      = Split-Path -Parent $PSScriptRoot          # optionmemory-materials/
-$Workspace = Split-Path -Parent $Root                  # workspace root
-$TargetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $Workspace "target" }
+$Root      = Split-Path -Parent $PSScriptRoot          # repo root (option-memory-core)
+$TargetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $Root "target" }
 $Exe       = Join-Path $TargetDir "debug\mnestic-mem-adapter.exe"
 
 if (-not (Test-Path $Exe)) {
