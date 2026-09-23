@@ -4,6 +4,7 @@
   "private": true,
   "description": "DSH memory plugin — five-layer memory over mnestic (CozoScript HTTP)",
   "type": "commonjs",
+  "packageManager": "pnpm@11.7.0",
   "main": "dist/plugins/dsh/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",

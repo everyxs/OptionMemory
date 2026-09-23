@@ -1,2 +1,2 @@
-export * from "./nu-gate";
+export * from "./nuGate";
 export * from "./option-executor";
