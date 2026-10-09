@@ -6,8 +6,7 @@ description = "Adaptation layer: Mem-mode interactive mnestic instance + CozoScr
 publish = false
 
 [dependencies]
-# Mem-mode adapter: default features only (sqlite + requests + graph-algo).
-# Deliberately NOT storage-rocksdb — mnestic-rocks pulls zstd-sys whose
-# bindgen build requires libclang, which this machine no longer has.
-mnestic = { version = "0.17.0" }
+# storage-rocksdb 已启用（2026-09-24）：本机已装 LLVM/libclang（zstd-sys bindgen 硬依赖）。
+# mnestic-rocks → librocksdb-sys 为 C++ 源码编译，耗时较长；构建需 LIBCLANG_PATH（见 README）。
+mnestic = { version = "0.17.0", features = ["storage-rocksdb"] }
 serde_json = "1"

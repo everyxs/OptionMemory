@@ -1,4 +1,5 @@
-//! Mem-mode mnestic adapter: interactive REPL + CozoScript HTTP endpoint.
+//! mnestic adapter: interactive REPL + CozoScript HTTP endpoint.
+//! Engines: mem (default) | rocksdb (--engine rocksdb --data <dir>).
 //! Adaptation layer only — the mnestic crate is used as-is.
 
 use cozo::{DataValue, DbInstance, ScriptMutability};
@@ -12,15 +13,35 @@ use std::time::Instant;
 const DEFAULT_PORT: u16 = 9070;
 const MNESTIC_VERSION: &str = "0.17.0";
 
+struct Args {
+    port: u16,
+    engine: String,
+    data_dir: String,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let port = parse_port();
-    let db = DbInstance::new("mem", "", "")?;
+    let args = parse_args();
+    if args.engine == "rocksdb" {
+        std::fs::create_dir_all(&args.data_dir)?;
+    }
+    let persistent = args.engine != "mem";
+    let path = if persistent { args.data_dir.as_str() } else { "" };
+    let db = DbInstance::new(&args.engine, path, "")?;
     let db = Arc::new(db);
+    let port = args.port;
+    let engine = Arc::new(args.engine);
 
     println!("==============================================================");
-    println!(" mnestic memory engine — Mem-mode adapter (optionmemory)");
+    println!(" mnestic memory engine — adapter (optionmemory)");
     println!(" mnestic crate : {MNESTIC_VERSION} (crates.io, in-place; lib name `cozo`)");
-    println!(" storage       : mem (in-memory, non-persistent)");
+    println!(
+        " storage       : {} ({})",
+        engine.as_str(),
+        if persistent { "persistent" } else { "in-memory, non-persistent" }
+    );
+    if persistent {
+        println!(" data dir      : {}", args.data_dir);
+    }
     println!(" HTTP endpoint : http://127.0.0.1:{port}/text-query  (POST CozoScript)");
     println!(" info          : http://127.0.0.1:{port}/            (GET/HEAD)");
     println!(" REPL          : type CozoScript, blank line to run, :quit to exit");
@@ -29,17 +50,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind(("127.0.0.1", port)).map_err(|e| {
         format!("cannot bind 127.0.0.1:{port}: {e} (port already in use? try --port <n>)")
     })?;
-    println!("[ready] listening on 127.0.0.1:{port} — engine=mem");
+    println!("[ready] listening on 127.0.0.1:{port} — engine={}", engine.as_str());
 
     {
         let db = Arc::clone(&db);
+        let engine = Arc::clone(&engine);
         thread::spawn(move || {
             for conn in listener.incoming() {
                 match conn {
                     Ok(stream) => {
                         let db = Arc::clone(&db);
+                        let engine = Arc::clone(&engine);
                         thread::spawn(move || {
-                            if let Err(e) = handle_conn(stream, &db) {
+                            if let Err(e) = handle_conn(stream, &db, &engine) {
                                 eprintln!("[http] connection error: {e}");
                             }
                         });
@@ -54,25 +77,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn parse_port() -> u16 {
+fn parse_args() -> Args {
+    let mut port: Option<u16> = None;
+    let mut engine: Option<String> = None;
+    let mut data_dir: Option<String> = None;
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
-        if a == "--port" {
-            if let Some(v) = args.next() {
-                if let Ok(p) = v.parse() {
-                    return p;
+        match a.as_str() {
+            "--port" => port = args.next().and_then(|v| v.parse().ok()),
+            "--engine" => engine = args.next(),
+            "--data" => data_dir = args.next(),
+            _ => {
+                if let Some(v) = a.strip_prefix("--port=") {
+                    port = v.parse().ok();
+                } else if let Some(v) = a.strip_prefix("--engine=") {
+                    engine = Some(v.to_string());
+                } else if let Some(v) = a.strip_prefix("--data=") {
+                    data_dir = Some(v.to_string());
                 }
-            }
-        } else if let Some(v) = a.strip_prefix("--port=") {
-            if let Ok(p) = v.parse() {
-                return p;
             }
         }
     }
-    std::env::var("MNESTIC_PORT")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(DEFAULT_PORT)
+    let engine = engine
+        .or_else(|| std::env::var("MNESTIC_ENGINE").ok())
+        .unwrap_or_else(|| "mem".to_string());
+    if engine != "mem" && engine != "rocksdb" {
+        eprintln!("unsupported engine: {engine} (expected mem | rocksdb)");
+        std::process::exit(2);
+    }
+    Args {
+        port: port
+            .or_else(|| std::env::var("MNESTIC_PORT").ok().and_then(|v| v.parse().ok()))
+            .unwrap_or(DEFAULT_PORT),
+        engine,
+        data_dir: data_dir
+            .or_else(|| std::env::var("MNESTIC_DATA_DIR").ok())
+            .unwrap_or_else(|| ".data/mnestic".to_string()),
+    }
 }
 
 fn run_query(db: &DbInstance, script: &str, params: BTreeMap<String, DataValue>) -> String {
@@ -106,7 +147,11 @@ fn run_query(db: &DbInstance, script: &str, params: BTreeMap<String, DataValue>)
 
 // ---------- HTTP (std-only, one thread per connection, Connection: close) ----------
 
-fn handle_conn(stream: TcpStream, db: &DbInstance) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_conn(
+    stream: TcpStream,
+    db: &DbInstance,
+    engine: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let peer = stream.peer_addr().ok();
     let mut reader = BufReader::new(stream.try_clone()?);
     let mut request_line = String::new();
@@ -143,8 +188,8 @@ fn handle_conn(stream: TcpStream, db: &DbInstance) -> Result<(), Box<dyn std::er
             serde_json::json!({
                 "name": "mnestic",
                 "version": MNESTIC_VERSION,
-                "engine": "mem",
-                "persistent": false,
+                "engine": engine,
+                "persistent": engine != "mem",
                 "endpoints": {"POST /text-query": {"script": "...", "params": {}}}
             })
             .to_string(),

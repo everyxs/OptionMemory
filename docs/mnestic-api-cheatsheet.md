@@ -2,7 +2,7 @@
 
 > **版本基准**：mnestic **0.17.0**（crates.io 发布包，CozoDB 维护 fork；发布名 `mnestic`，Rust lib 名 `cozo`）。
 > **取证范围**：本文每条结论均来自本地源码 `mnestic-0.17.0/`（crate 根，下同）或本工作区适配层源码，逐条附「来源：文件:行号」；涉及 0.18.0 的升级警告单独标注，来源为 GitHub main 分支 README。
-> **部署形态**：本工作区以 Mem（内存、非持久化）模式运行，HTTP 端点 `http://127.0.0.1:9070`（见 §1.2）。
+> **部署形态**：本工作区以 Mem（内存、非持久化）模式运行，HTTP 端点 `http://127.0.0.1:9070`（见 §1.2）；2026-09-24 起亦支持 `--rocks`（RocksDB 持久化，数据目录 `.data/mnestic`）。
 
 ---
 
@@ -385,7 +385,7 @@ where F: Fn() -> Box<dyn crate::data::aggr::MeetAggrObj> + Send + Sync + 'static
 
 7. **SQLite 后端并发能力弱**；"does not support much concurrency"。来源：`Cargo.toml.orig:35-38`
 8. **RocksDB 难编译、资源消耗大、编译耗时长**。来源：`Cargo.toml.orig:41-44,125-126`
-   （本工作区实证：开 `storage-rocksdb` 会拉起 `mnestic-rocks → zstd-sys(bindgen)`，**需要本机有 libclang**；当前机器没有，故适配层只开了默认特性。）
+   （本工作区实证：开 `storage-rocksdb` 会拉起 `mnestic-rocks → zstd-sys(bindgen)`，**需要本机有 libclang**；当时机器没有，故适配层只开了默认特性。**2026-09-24 更新**：已装用户级 LLVM 22.1.8（`%LOCALAPPDATA%\LLVM\bin\libclang.dll`），设 `LIBCLANG_PATH` 后该 feature 编译通过（2m50s）；适配层已启用 `storage-rocksdb`，`--engine mem|rocksdb` 双模式。）
 9. **sled / TiKV 为"高度实验性"，均不支持 time travel**；官方不建议使用。来源：`Cargo.toml.orig:87-99,128`
 10. **jemalloc 容易炸构建**。来源：`Cargo.toml.orig:121-123`
 11. **构建期版本钉死**：`rayon >=1.10,<1.11`（1.11 破坏 `graph_builder` 0.4.x）、`pest >= 2.8`（`set_error_detail` 是硬依赖）。来源：`Cargo.toml.orig:188-192,155-158`
@@ -413,9 +413,25 @@ where F: Fn() -> Box<dyn crate::data::aggr::MeetAggrObj> + Send + Sync + 'static
 
 ### 7.6 本工作区部署限定（非上游声明）
 
-- 当前实例为 **Mem 引擎，进程退出即丢数据**（`persistent: false`）。
+- 当前实例默认 **Mem 引擎，进程退出即丢数据**（`persistent: false`）；2026-09-24 起 `scripts/mnestic_start.sh --rocks` 可切 RocksDB 持久化（`persistent: true`，数据目录 `.data/mnestic`）。
 - HTTP 面**无 WebSocket、无鉴权**（适配层 `server/src/main.rs` 实现；token 字段仅为预留，见 `cordis.patch.yml`）。
 - 默认绑定 `127.0.0.1`（来源：`main.rs:29`），端口默认 9070，`--port` 可改。
+
+---
+
+## 8. 补遗（2026-09-24，Day 4 HNSW 实证）
+
+> 本节为速查后的运行实证补遗，每条均在本工作区实例（0.17.0，rocksdb 模式）实测。
+
+1. **索引声明与回读**：`schema/01_facts.cozo` 末行声明 `::hnsw create facts:embedding_hnsw {dim: 1024, m: 32, dtype: F32, fields: [embedding], distance: Cosine, ef_construction: 128}`；`::indices facts` 回读配置一致（`m_max=32, m_max0=64, vec_dim=1024, distance=Cosine, dtype=F32`）。**维度 1024（F32），距离度量 Cosine**（mnestic 支持集 L2/IP/Cosine，见 §5.2）。
+2. **写入形态**：`embedding: <F32; 1024>?` 列在 `:put` 时**直接接受自然 JSON 数字数组参数**（长度须=1024），列类型自动收编为 Vec<F32>（实测 `:put` 返回 OK，回读为 1024 长度数组）；HNSW 索引随 `:put` 正常维护（非批量导入路径，不适用 §7.1-1 的 `::reindex` 约束）。
+3. **查询形态（坑）**：HNSW search atom 的 `query:` 字段**必须给 Vec 类型**——裸 JSON 数组参数被转为 List，报 `Expected vector, got [...]`；正确形态为 `query: vec($v)`（`vec()` 由 List 构造 Vec）。实测可用形态：
+   ```cozoscript
+   ?[id, predicate, args, dist] := ~facts:embedding_hnsw{id, predicate, args |
+       query: vec($v), k: 5, ef: 20, bind_distance: dist}
+   ```
+4. **性能注记**：HNSW 索引逐向量维护成本高，`:put` 多行回填实测约 **4 向量/s**（3506 行全量回填约 12–15 分钟）；大批量回填需调大客户端 timeout（本仓脚本用 120s）并分批（25 行/批）。
+5. **冒烟记录**：3506 行 facts 全量回填伪随机向量（种子 42，`scripts/backfill_embedding.ts`）后，取 `composition(S01,…)` 的向量做 k=5 查询：返回 5 行含自身（dist=0）+ 4 个最近邻，格式正确（伪随机向量无语义，仅验证索引机制）。回填行 `eps_source="placeholder-random-seed42"`（验收 C6 口径，Phase 4 按此标记批量重算）。
 
 ---
 

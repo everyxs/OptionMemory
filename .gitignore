@@ -1,4 +1,6 @@
 /target
+/server/target/
 /data
+/.data/
 node_modules/
 dist/

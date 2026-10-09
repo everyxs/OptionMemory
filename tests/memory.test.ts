@@ -9,6 +9,7 @@ import {
   memory_get,
   memory_query,
   memory_set,
+  memory_set_batch,
   setMemoryClient,
 } from "../src/api/memory";
 import { MnesticClient } from "../src/memory/mnesticClient";
@@ -74,5 +75,54 @@ describe("memory service layer", () => {
     expect(res.gate).toBe("blocked");
     expect(res.reason).toMatch(/status/);
     expect(await memory_get(res.id)).toBeNull();
+  });
+});
+
+describe("memory_set_batch", () => {
+  it("⑥ id 带 fact_ 前缀（手册 §2.1 表 1）", async () => {
+    const res = await memory_set(baseFact);
+    expect(res.id).toMatch(/^fact_[0-9a-f-]{36}$/);
+  });
+
+  it("⑦ 批量插入并逐条返回 id", async () => {
+    const facts = [0, 1, 2].map((i) => ({
+      ...baseFact,
+      predicate: "batch",
+      args: ["B", `v${i}`],
+      claim: `batch(B, v${i})`,
+    }));
+    const res = await memory_set_batch(facts);
+    expect(res.inserted).toBe(3);
+    expect(res.skipped).toBe(0);
+    expect(res.blocked).toHaveLength(0);
+    expect(res.ids.every((id) => id?.startsWith("fact_"))).toBe(true);
+  });
+
+  it("⑧ blocked 收集原因且不影响其余（不回滚整批）", async () => {
+    const bad: any = { ...baseFact, predicate: "batchBad", args: ["B", "bad"] };
+    delete bad.linSource;
+    const res = await memory_set_batch([
+      bad,
+      { ...baseFact, predicate: "batchOk", args: ["B", "ok"], claim: "batchOk(B, ok)" },
+    ]);
+    expect(res.blocked).toHaveLength(1);
+    expect(res.blocked[0].index).toBe(0);
+    expect(res.blocked[0].reason).toMatch(/linSource/);
+    expect(res.inserted).toBe(1);
+    expect(res.ids[0]).toBeNull();
+    expect(res.ids[1]).toMatch(/^fact_/);
+    expect(await memory_get(res.ids[1]!)).not.toBeNull();
+  });
+
+  it("⑨ 幂等：重复批 inserted=0、skipped=全量、返回既有 id", async () => {
+    const facts = [
+      { ...baseFact, predicate: "dup", args: ["D", "1"], claim: "dup(D, 1)" },
+    ];
+    const first = await memory_set_batch(facts);
+    expect(first.inserted).toBe(1);
+    const second = await memory_set_batch(facts);
+    expect(second.inserted).toBe(0);
+    expect(second.skipped).toBe(1);
+    expect(second.ids[0]).toBe(first.ids[0]);
   });
 });

@@ -48,8 +48,14 @@ const VALUE_COLS = FACT_COLUMNS.slice(1).join(", ");
 /** facts 全列 upsert（:put，key 存在即覆盖）。 */
 const PUT_FACT = `?[${COLS}] <- [[${PARAMS}]] :put facts {id => ${VALUE_COLS}}`;
 
+/** facts 批量 upsert：单脚本 = 单事务；行值以 $rows 参数传入（免字符串拼接）。 */
+const PUT_FACTS = `?[${COLS}] <- $rows :put facts {id => ${VALUE_COLS}}`;
+
 /** 按 id 取 facts 全列。 */
 const GET_FACT_BY_ID = `?[${COLS}] := *facts{${COLS}}, id == $id`;
+
+/** 存量幂等键集：(predicate, args) 全列对。 */
+const EXISTING_KEYS = `?[predicate, args, id] := *facts{predicate, args, id}`;
 
 /** putFact 的行形：键为 facts 列名（snake_case），全列必填。 */
 export type FactRow = Record<(typeof FACT_COLUMNS)[number], unknown>;
@@ -110,6 +116,22 @@ export class MnesticClient {
   /** upsert 一行 facts（脚本见本文件 PUT_FACT）。 */
   async putFact(row: FactRow): Promise<void> {
     await this.execute(PUT_FACT, row);
+  }
+
+  /** 单事务 upsert 多行 facts（脚本见本文件 PUT_FACTS；空数组直接返回）。 */
+  async putFacts(rows: FactRow[]): Promise<void> {
+    if (rows.length === 0) return;
+    await this.execute(PUT_FACTS, {
+      rows: rows.map((r) => FACT_COLUMNS.map((c) => r[c])),
+    });
+  }
+
+  /** 存量 (predicate, args) → id 键集（幂等查重用）。 */
+  async existingKeys(): Promise<Map<string, string>> {
+    const res = await this.execute(EXISTING_KEYS);
+    return new Map(
+      res.rows.map((r) => [JSON.stringify([r[0], r[1]]), String(r[2])]),
+    );
   }
 
   /** 按 id 查询 facts 全列，返回原始 NamedRows（0 或 1 行）。 */

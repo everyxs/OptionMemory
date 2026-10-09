@@ -6,7 +6,9 @@ DSH 记忆插件 —— mnestic（CozoScript HTTP）上的五层记忆。本目�
 ## 运行前提
 
 - Node >= 20，pnpm（本仓库锁定 `pnpm@11.7.0`）。
-- mnestic Mem 实例：`scripts/mnestic_start.sh` 启动（默认 `127.0.0.1:9070`，首次自动 `cargo build`）。
+- mnestic 实例：`scripts/mnestic_start.sh` 启动（默认 `127.0.0.1:9070`，首次自动 `cargo build`）。
+  双模式：`--mem`（默认，内存）/ `--rocks`（RocksDB 持久化，数据目录 `.data/mnestic`）；
+  重编译 rocks feature 需 libclang（bindgen 依赖），未设 `LIBCLANG_PATH` 时启动脚本自动探测用户级 LLVM（`%LOCALAPPDATA%\LLVM`）。
 - 建表：`schema/apply_all.sh`（mem 引擎重启即丢数据，需重新执行）。
 - 测试无需手工做以上两步：`pnpm test` 的 globalSetup 会拉起独立实例（端口 9071）并自动建表，
   仅要求 `target/debug/mnestic-mem-adapter(.exe)` 已编译（跑过一次 `mnestic_start.sh` 即可）。
@@ -21,7 +23,7 @@ memory_query(datalog: string): Promise<Fact[]>
 
 - **memory_set**：先过 ν 门（`checkCompleteness` 六元组必填校验 → `requentialCheck` 占位），
   再校验 `status` 取值；任一不通过返回 `gate: "blocked"` + `reason`，**不落库**。
-  通过后 `:put` upsert 进 `facts` 表，`id`（UUID）与 `created_at` / `updated_at`（Unix 秒）由本层生成。
+  通过后 `:put` upsert 进 `facts` 表，`id`（`fact_<UUID>`，手册 §2.1 表 1）与 `created_at` / `updated_at`（Unix 秒）由本层生成。
 - **memory_get**：按 id 取 `facts` 全列；未命中返回 `null`。
 - **memory_query**：透传原始 CozoScript（如 `?[...] := *facts{...}, predicate == "x"`），
   返回行按 `facts` 列名映射为 `Fact`；未 select 的列为 `undefined`。
@@ -40,7 +42,7 @@ memory_query(datalog: string): Promise<Fact[]>
 | `verify` | `verify` | ✓ | 核验标记 |
 | `args` | `args` | — | 谓词参数，缺省 `[]` |
 | `jRuleId` / `linTheta` | `j_rule_id` / `lin_theta` | — | 可空 |
-| `status` | `status` | — | 缺省 `"active"`；合法值见 `FACT_STATUSES`（暂定 `active` / `retracted`），非法值被拒 |
+| `status` | `status` | — | 缺省 `"in"`；合法值见 `FACT_STATUSES`（`in` / `out` / `archived` / `contested`，与手册 §2.1 对齐，决策见 `docs/decisions/0002`），非法值被拒 |
 | `embedding` | `embedding` | — | 1024 维 F32 向量，可空 |
 
 `Fact` = `FactInput` 全字段 + `id` / `createdAt` / `updatedAt`（camelCase ↔ snake_case 由服务层映射）。
@@ -57,7 +59,7 @@ tests/
   globalSetup.ts          # 拉起 9071 测试实例 + 建表
   memory.test.ts          # 5 用例：写成功 / 缺 lin_source 拒 / get 命中 / 谓词过滤 / 非法 status 拒
 schema/                   # 7 表建表脚本（facts 等）+ apply_all.sh
-server/                   # mnestic Mem 适配层（Rust）
+server/                   # mnestic 适配层（Rust；--engine mem|rocksdb --data <dir>）
 docs/mnestic-api-cheatsheet.md  # mnestic 0.17.0 API 取证速查
 ```
 

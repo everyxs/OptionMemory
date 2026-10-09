@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# mnq —— scripts/mnq.sh 的无扩展名别名（手输便利）。
+exec "$(dirname "${BASH_SOURCE[0]}")/mnq.sh" "$@"

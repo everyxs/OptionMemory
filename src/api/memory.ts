@@ -1,25 +1,32 @@
 /**
- * memory_set / memory_get / memory_query —— 接口契约 §3.1（确定值）。
+ * memory_set / memory_get / memory_query / memory_set_batch —— 接口契约 §3.1（确定值）。
  *
- *   memory_set(fact: FactInput): Promise<{ id, gate: "pass" | "blocked", reason? }>
- *   memory_get(id: string):      Promise<Fact | null>
- *   memory_query(datalog):       Promise<Fact[]>
+ *   memory_set(fact: FactInput):  Promise<{ id, gate: "pass" | "blocked", reason? }>
+ *   memory_get(id: string):       Promise<Fact | null>
+ *   memory_query(datalog):        Promise<Fact[]>
+ *   memory_set_batch(facts):      Promise<{ inserted, skipped, blocked, ids }>
  *
- * memory_set 必须先过 ν 门（checkCompleteness → requentialCheck），
- * 再校验 status 取值；任一不通过即 blocked，不落库。
- * CozoScript 全部由 MnesticClient 集中组装，本层不拼接字符串。
+ * 写入必先过统一判定 gateCheck（ν 门 checkCompleteness → requentialCheck → status
+ * 值域校验）；任一不通过即 blocked，不落库。batch 收集 blocked 明细并继续（不回滚
+ * 整批），合格行单脚本一次 :put（单事务）；幂等键为 (predicate, args) 全参
+ * （手册 2-B 于 2026-09-24 修订回写，理由见 ADR-0002 与手册修订注记）。
+ * id 一律 `fact_<UUID>`（手册 §2.1 表 1）。CozoScript 全部由 MnesticClient 集中组装。
  *
  * 默认客户端指向 cordis.patch.yml 的本地实例（127.0.0.1:9070）；
  * 插件入口或测试用 setMemoryClient() 注入配置过的客户端。
  */
 import { randomUUID } from "node:crypto";
-import { MnesticClient } from "../memory/mnesticClient";
+import { MnesticClient, type FactRow } from "../memory/mnesticClient";
 import {
   FACT_STATUSES,
   type Fact,
   type FactInput,
 } from "../memory/schema";
-import { checkCompleteness, requentialCheck } from "../runtime/nuGate";
+import {
+  checkCompleteness,
+  requentialCheck,
+  type GateResult,
+} from "../runtime/nuGate";
 
 let client: MnesticClient = new MnesticClient();
 
@@ -34,27 +41,39 @@ export interface MemorySetResult {
   reason?: string;
 }
 
-export async function memory_set(fact: FactInput): Promise<MemorySetResult> {
-  const id = randomUUID();
+export interface BatchBlockedItem {
+  index: number;
+  reason: string;
+}
 
-  // ν 门：六元组完整性 → requential 账（占位）；blocked 不落库。
+export interface MemorySetBatchResult {
+  inserted: number;
+  skipped: number;
+  blocked: BatchBlockedItem[];
+  /** 按输入序对齐：插入/跳过为对应 id（跳过为库中既有 id），blocked 为 null。 */
+  ids: (string | null)[];
+}
+
+/** ν 门 + status 值域的统一判定（memory_set 与 memory_set_batch 共用）。 */
+function gateCheck(fact: FactInput): GateResult {
   const completeness = checkCompleteness(fact);
-  if (completeness.gate === "blocked") return { id, ...completeness };
+  if (completeness.gate === "blocked") return completeness;
   const requential = requentialCheck(fact);
-  if (requential.gate === "blocked") return { id, ...requential };
-
-  // status 取值校验（非法值同样 blocked、不落库）。
-  const status = fact.status ?? "active";
+  if (requential.gate === "blocked") return requential;
+  const status = fact.status ?? "in";
   if (!(FACT_STATUSES as readonly string[]).includes(status)) {
     return {
-      id,
       gate: "blocked",
       reason: `invalid status: ${JSON.stringify(status)} (allowed: ${FACT_STATUSES.join(", ")})`,
     };
   }
+  return { gate: "pass" };
+}
 
+/** FactInput → facts 全列行（服务层生成 id 与时间戳）。 */
+function factToRow(id: string, fact: FactInput): FactRow {
   const now = Date.now() / 1000;
-  await client.putFact({
+  return {
     id,
     predicate: fact.predicate,
     args: fact.args ?? [],
@@ -70,12 +89,65 @@ export async function memory_set(fact: FactInput): Promise<MemorySetResult> {
     lin_theta: fact.linTheta ?? null,
     lin_actor: fact.linActor,
     verify: fact.verify,
-    status,
+    status: fact.status ?? "in",
     embedding: fact.embedding ?? null,
     created_at: now,
     updated_at: now,
-  });
+  };
+}
+
+export async function memory_set(fact: FactInput): Promise<MemorySetResult> {
+  const id = `fact_${randomUUID()}`;
+  const gate = gateCheck(fact);
+  if (gate.gate === "blocked") return { id, ...gate };
+  await client.putFact(factToRow(id, fact));
   return { id, gate: "pass" };
+}
+
+export async function memory_set_batch(
+  facts: FactInput[],
+): Promise<MemorySetBatchResult> {
+  const ids: (string | null)[] = new Array(facts.length).fill(null);
+  const blocked: BatchBlockedItem[] = [];
+  const candidates: Array<{ index: number; id: string; key: string; fact: FactInput }> =
+    [];
+
+  // ① 逐条过统一判定；blocked 收集原因并继续。
+  for (const [index, fact] of facts.entries()) {
+    const gate = gateCheck(fact);
+    if (gate.gate === "blocked") {
+      blocked.push({ index, reason: gate.reason ?? "blocked" });
+      continue;
+    }
+    candidates.push({
+      index,
+      id: `fact_${randomUUID()}`,
+      key: JSON.stringify([fact.predicate, fact.args ?? []]),
+      fact,
+    });
+  }
+
+  // ② 幂等查重：(predicate, args) 全参；存量键集一次查出，批内自重复同判。
+  const existing = candidates.length > 0 ? await client.existingKeys() : new Map<string, string>();
+  const rows: FactRow[] = [];
+  const seen = new Map<string, string>();
+  let skipped = 0;
+  for (const c of candidates) {
+    const dupId = existing.get(c.key) ?? seen.get(c.key);
+    if (dupId !== undefined) {
+      skipped++;
+      ids[c.index] = dupId;
+      continue;
+    }
+    seen.set(c.key, c.id);
+    ids[c.index] = c.id;
+    rows.push(factToRow(c.id, c.fact));
+  }
+
+  // ③ 合格行单事务 upsert。
+  await client.putFacts(rows);
+
+  return { inserted: rows.length, skipped, blocked, ids };
 }
 
 export async function memory_get(id: string): Promise<Fact | null> {
