@@ -435,4 +435,21 @@ where F: Fn() -> Box<dyn crate::data::aggr::MeetAggrObj> + Send + Sync + 'static
 
 ---
 
+## 9. 补遗（2026-10-31，Phase 1 查询探针）
+
+> 以下均在 RocksDB 实例 `127.0.0.1:9070` 实测，原始响应已核对。
+
+1. **`to_float` 可用**：`?[x] := x = to_float("0.06")` 返回数值 `0.06`，可用于后续描述符数值比较；R4 的 `delta>0.06` 查询仍待规则解除阻塞。
+2. **多 `*facts` atom 自连接可用**，`first()` / `get()` 可解构 args：
+   ```cozoscript
+   ?[alloy, v2, original] := *facts{predicate: p1, args: a1},
+     p1 == "ref_smix_v2", alloy = first(a1), v2 = get(a1, 1),
+     *facts{predicate: p2, args: a2}, p2 == "ref_smix",
+     first(a2) == alloy, original = get(a2, 1), alloy == "HEAL0001"
+   ```
+   返回 `HEAL0001 / 12.319371485662288 / 12.31969725176659`。
+3. **派生与 J 边集成实证**：`tests/closure.test.ts` 在真实 Mem 实例覆盖 R1/R2/R3、重复闭包 fact/J 边不重复、R4 激活拦截及 v3 option/subtask/model 入库；2026-10-31 全套 16 用例通过。
+
+---
+
 *取证说明：未标注 URL 的行号均相对于本地 crate 根 `mnestic-0.17.0/`（cargo registry 缓存）；`main.rs` 行号相对于 `server/`；GitHub README 行号以 raw 文本计。生成日期：2026-09-13。*

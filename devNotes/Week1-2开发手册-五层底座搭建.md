@@ -31,30 +31,33 @@ tags:
 | 4   | mnestic 可独立启动（Mem 模式先行，RocksDB 后置）     | 按仓库 README 跑通 hello world                                                                               |
 | 5   | 项目骨架目录创建                               | `26-04 AI4Science/optionmemory-materials/`（结构按 dsh-plugin-memory-core 先例）                               |
 | 6   | HEA-Lens-1540 数据集就位                    | `04-创造层/项目/26-04 AI4Science/datasets/`（Week 2 使用，本周确认即可）                                                |
-| 7   | DSH 开发环境（可选本周，Phase 6 前必须）             | DSH v0.1.0-rc.8 pin 安装、`@deepseek-ai/cordis` vendored 版可用；R4 纪律：pin rc、升 rc 前全量集成测试                     |
+| 7   | DSH / OpenCode 开发环境（可选本周，Phase 3 首版封装前必须）             | DSH v0.1.0-rc.8 pin、`@deepseek-ai/cordis` vendored 版、`@opencode-ai/plugin` 可用；各 host 升级前全量集成测试                     |
 
-**建议目录骨架**（与通用版 §10.1 对齐；**最终交付为 DSH（DeepSeek Harness）host 插件**，结构按 `dsh-plugin-memory-core` 先例，DSH 专用文件自 Phase 0 起预留）：
+**建议目录骨架**（与通用版 §10.1 对齐；**Phase 3 首次交付 DSH + OpenCode host 模块，后续 Phase 逐版迭代**，DSH/OpenCode 专用文件自 Phase 0 起预留）：
 
 ```text
 dsh-plugin-optionmemory-materials/    # 仓库名即插件名（对照 dsh-plugin-memory-core）
 ├── package.json                      # 含 dsh.bundle manifest（patch → cordis.patch.yml）
 ├── tsconfig.json
-├── dsh.plugin.json                   # v0.15 manifest 占位（Phase 6 填实）
+├── dsh.plugin.json                   # v0.15 manifest 占位（Phase 3 填实）
 ├── cordis.patch.yml                  # profile 级配置占位（服务地址 + token）
 ├── src/
 │   ├── memory/        # 五层 schema + mnestic HTTP 客户端（通用版 memory/ 映射；核心逻辑零框架依赖）
 │   ├── runtime/       # ν 门 stub、option 执行器（后续周扩展）
 │   ├── api/           # memory_set/get/query 服务层（与 DSH 工具签名兼容）
 │   └── plugins/
-│       └── dsh/
-│           ├── index.ts        # 插件入口 apply()（Phase 6 实现；本周仅占位注释）
-│           └── tools/          # DSH 工具实现（Phase 6；本周仅占位目录）
+│       ├── dsh/
+│       │   ├── index.ts        # DSH 入口 apply()（Phase 3 实现；本周仅占位注释）
+│       │   └── tools/          # DSH 工具实现（Phase 3；本周仅占位目录）
+│       └── opencode/
+│           ├── index.ts        # OpenCode Plugin 初始化（平行 host，复用核心服务）
+│           └── tools.ts        # OpenCode 工具 schema 与只读防护
 ├── schema/            # CozoScript 建表脚本
 ├── scripts/           # S01 录入、批量导入（Week 2）
 └── tests/
 ```
 
-> **架构纪律（R4）**：所有 DSH/Cordis 框架交互只允许出现在 `src/plugins/dsh/` 适配层；`src/memory`、`src/runtime`、`src/api` 零框架依赖——DSH rc 升级时核心逻辑可整体不动。
+> **架构纪律（R4）**：DSH/Cordis 交互只允许出现在 `src/plugins/dsh/`，OpenCode 交互只允许出现在 `src/plugins/opencode/`；`src/memory`、`src/runtime`、`src/api` 零框架依赖——任一 host 升级时核心逻辑均可整体不动。
 
 ---
 
@@ -576,7 +579,7 @@ dsh-plugin-optionmemory-materials/
 ├── package.json / tsconfig.json / pnpm-lock.yaml
 ├── .gitignore                        # 含 node_modules/、.data/
 ├── README.md                         # 启动指南 + 接口说明
-├── dsh.plugin.json                   # v0.15 manifest 占位（Phase 6 填实）
+├── dsh.plugin.json                   # v0.15 manifest 占位（Phase 3 填实）
 ├── cordis.patch.yml                  # profile 配置占位
 ├── docs/
 │   ├── mnestic-api-cheatsheet.md     # W1：mnestic API 速查（每条附源码行号）
@@ -601,9 +604,13 @@ dsh-plugin-optionmemory-materials/
 │   ├── memory/mnesticClient.ts       # mnestic HTTP 客户端（零框架依赖）
 │   ├── runtime/nuGate.ts
 │   ├── api/memory.ts                 # memory_set/get/query + memory_set_batch（DSH 工具签名兼容）
-│   └── plugins/dsh/
-│       ├── index.ts                  # 占位：apply() 入口（Phase 6 实现）
-│       └── tools/                    # 占位目录（Phase 6 工具实现）
+│   └── plugins/
+│       ├── dsh/
+│       │   ├── index.ts              # 占位：DSH apply() 入口（Phase 3 实现）
+│       │   └── tools/                # 占位目录（Phase 3 工具实现）
+│       └── opencode/
+│           ├── index.ts              # OpenCode Plugin 初始化与配置注入
+│           └── tools.ts              # OpenCode 工具 schema 与只读防护
 ├── tests/
 │   └── memory.test.ts                # 5 用例
 └── .data/                            # RocksDB（gitignored；延后，见 Week 2 §3.1 修订注记）
@@ -652,7 +659,7 @@ dsh-plugin-optionmemory-materials/
 | D3 | 验收项被静默跳过（HNSW 不可用未上报、blocked 未清零） | 不关闭，补记录 + 上报 |
 | D4 | 《mnestic API 速查.md》出现无行号证据的 API 断言 | 不关闭，重核速查 |
 | D5 | AI 实现与手册确定值（schema 字段/接口签名/映射规则/成分字符串格式）不一致且未回写文档 | 不关闭，回退重投指令 |
-| D6 | 框架依赖泄漏：`src/memory`、`src/runtime`、`src/api` 中出现 `@deepseek-ai/cordis` 或 DSH 专有 API 引用（框架交互未收敛于 `src/plugins/dsh/`） | 不关闭，重构剥离框架依赖 |
+| D6 | 框架依赖泄漏：`src/memory`、`src/runtime`、`src/api` 中出现 Cordis、DSH 或 OpenCode 专有 API 引用（框架交互未分别收敛于 `src/plugins/dsh/`、`src/plugins/opencode/`） | 不关闭，重构剥离框架依赖 |
 
 ---
 

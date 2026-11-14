@@ -1,0 +1,17 @@
+# 08_plan_templates.cozo — v3 预留表：plan_templates
+# 来源：Week3-4开发手册-Horn闭包推导.md §0.1。
+# MVP 仅建表并保持为空，不启用 plan template 注册或执行。
+# 类型映射：*_schema / body_dag / applicable_conditions → Json；lin_* 同 facts。
+
+:create plan_templates {template_id: String =>
+    name: String,
+    input_schema: Json,
+    output_schema: Json,
+    body_dag: Json,
+    applicable_conditions: Json,
+    model_ref: String,
+    status: String,
+    lin_source: String,
+    lin_version: String,
+    lin_theta: String?,
+    lin_actor: String}

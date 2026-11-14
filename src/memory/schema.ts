@@ -1,7 +1,7 @@
 /**
  * 记忆 schema —— 与实际部署的 mnestic 关系对齐。
  *
- * 物理表（共 7 张）以 schema/01_facts.cozo … 07_procedural_knowledge.cozo 为准，
+ * 物理表（共 8 张）以 schema/01_facts.cozo … 08_plan_templates.cozo 为准，
  * 由 schema/apply_all.sh 应用到实例。
  * 「层」不是独立关系，而是行级标签：facts / rules 的 layer 列按行取值；
  * options / models / procedural_knowledge 的 layer 列固定为 "option" / "model" / "procedural"。
@@ -18,7 +18,7 @@ export const MEMORY_LAYERS = [
 /** 占位定义：层名取自经典认知划分，最终以设计文档为准（TODO）。 */
 export type MemoryLayer = (typeof MEMORY_LAYERS)[number];
 
-/** 实际部署的 7 张 mnestic 关系（建表脚本见 schema/01..07_*.cozo）。 */
+/** 实际部署的 8 张 mnestic 关系（建表脚本见 schema/01..08_*.cozo）。 */
 export const MEMORY_RELATIONS = [
   "facts",
   "rules",
@@ -27,6 +27,7 @@ export const MEMORY_RELATIONS = [
   "options",
   "models",
   "procedural_knowledge",
+  "plan_templates",
 ] as const;
 
 export type MemoryRelation = (typeof MEMORY_RELATIONS)[number];

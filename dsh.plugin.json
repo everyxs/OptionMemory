@@ -3,9 +3,9 @@
   "name": "optionmemory",
   "displayName": "OptionMemory — mnestic five-layer memory",
   "version": "0.1.0",
-  "description": "TODO(Phase 6): 填实 v0.15 manifest（工具签名、权限、事件）",
+  "description": "TODO(Phase 3): 填实 v0.15 manifest（首版 7 工具签名、权限、事件）",
   "entry": "dist/plugins/dsh/index.js",
   "patch": "cordis.patch.yml",
   "tools": [],
-  "_todo": "Phase 6: tools 填 memory_set / memory_get / memory_query（见 src/api/）"
+  "_todo": "Phase 3: memory_set/get/query/retract + propose_option/settle/revoke；后续 Phase 逐版扩展"
 }

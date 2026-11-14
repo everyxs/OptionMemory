@@ -2,11 +2,14 @@
 # 来源：Week1开发手册-五层底座搭建.md §2.1（字段/语义原样，未删改）
 # 类型映射：json → Json；string? → String?。
 # 2026-09-15 手册修订：补 layer（固定 "option"）与 j_premise_ids（J 系；rule_ref 即 J 的 j_rule_id）。
+# 2026-10-06 v3：补 option_type（服务层默认 "atomic"）与 template_id?（plan template 预留）。
 # 注意：本表 lin 系按定义仍仅 lin_source / lin_version / lin_theta? 三个（设计行明确枚举，无 lin_actor）。
 
 :create options {option_id: String =>
     claim: String,
     layer: String,
+    option_type: String,
+    template_id: String?,
     i_preconditions: Json,
     pi_type: String,
     pi_ref: String,

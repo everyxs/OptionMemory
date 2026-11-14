@@ -3,6 +3,8 @@
 # 类型映射：lin_* 同 facts（含 lin_theta? / lin_actor）。
 # fidelity 按设计说明「MVP 预留，可空」实现为 String?。
 # 2026-09-15 手册修订：补 layer（固定 "procedural"）。
+# 2026-10-06 v3：o_id 可指向 options.option_id 或 plan_templates.template_id；
+# template 级 achievable 仅为预留，MVP 不启用。
 
 :create procedural_knowledge {id: String =>
     claim: String,

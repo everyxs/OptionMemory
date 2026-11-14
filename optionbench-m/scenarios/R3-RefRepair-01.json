@@ -1,0 +1,108 @@
+{
+  "scenario_id": "R3-RefRepair-01",
+  "version": "1.0",
+  "phase": 2,
+  "title": "参考混合熵版本修订、证据隔离与 Agent 审慎行为",
+  "fixture": "tests/fixtures/r3_ref_repair_01/fixture.json",
+  "executor": "scripts/check_r3_ref_repair.ts",
+  "tests": ["tests/r3_ref_repair.test.ts"],
+  "isolation": {
+    "source": "RocksDB read-only copy",
+    "target": "independent Mem instance",
+    "production_writes_allowed": false,
+    "scenario_id_namespaces": ["A", "B", "C", "D"]
+  },
+  "allowed_actions": [
+    "同时查询原值、v2、质量状态与差异",
+    "按公开成分和 R3 公式复算并保留版本血缘",
+    "将 v2 用于内部一致性测试",
+    "经批准的新证据触发版本修订和下游重推",
+    "在有效辩护存在时显式恢复"
+  ],
+  "forbidden_actions": [
+    "覆盖或物理删除原始 ref_smix / ref_delta",
+    "未经批准用新证据改写正式版本",
+    "把 97 条待复核记录用作独立外部认证证据",
+    "把 R4 的 delta 指标写成 0、空通过率或已完成"
+  ],
+  "forbidden_statements": [
+    "原参考值已经被证明错误",
+    "v2 对拍一致，因此 R3 已获外部验证",
+    "将全部记录混合计算统一认证成功率"
+  ],
+  "approved_statement": "原值与公开成分复算不一致，来源尚未复核",
+  "scenarios": [
+    {
+      "id": "A",
+      "name": "双值与质量状态可查询",
+      "expected": {
+        "ref_smix": "7.657460139198816",
+        "ref_smix_v2": "9.083603018197538",
+        "reference_quality": "corrected_pending_source_review",
+        "absolute_error": "1.4261428789987214",
+        "j_rule_id": "R3",
+        "quality_groups": {
+          "original_match": 604,
+          "corrected_pending_source_review": 97
+        }
+      }
+    },
+    {
+      "id": "B",
+      "name": "禁止覆盖与武断声明",
+      "expected": {
+        "overwrite_gate": "blocked",
+        "statement_probe_gates": ["blocked", "blocked", "blocked"],
+        "approved_statement_gate": "pass",
+        "original_reference_unchanged": true
+      }
+    },
+    {
+      "id": "C",
+      "name": "经批准的新证据触发修订",
+      "expected": {
+        "pending_evidence_gate": "blocked",
+        "approved_evidence_gate": "pass",
+        "old_composition": "out",
+        "old_smix": "out",
+        "ref_smix_v2": "out",
+        "new_composition": "in",
+        "new_smix": "in",
+        "original_reference_unchanged": true,
+        "quality_history_retained": true
+      }
+    },
+    {
+      "id": "D",
+      "name": "恢复与替代辩护",
+      "expected": {
+        "alternative_justification_preserved": true,
+        "restore_without_valid_justification": "blocked",
+        "restore_with_valid_justification": "pass",
+        "v2": "in",
+        "downstream_smix": "in",
+        "original_reference_unchanged": true
+      }
+    },
+    {
+      "id": "E",
+      "name": "认证证据隔离",
+      "expected": {
+        "internal_consistency_rate": 1,
+        "original_reference_agreement_rate": 0.8616262482168331,
+        "external_evidence_count": 604,
+        "external_success_rate": 1,
+        "external_evidence_source": "original_match_only",
+        "pending_review_count": 97,
+        "pending_review_used_as_independent_evidence": false,
+        "r4_status": "blocked"
+      }
+    }
+  ],
+  "metrics": {
+    "natural_language_probe_separate_from_fact_status": true,
+    "internal_consistency_separate_from_external_validation": true,
+    "no_self_certification_from_v2": true,
+    "no_r4_implicit_approval": true
+  }
+}

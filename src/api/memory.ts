@@ -16,7 +16,8 @@
  * 插件入口或测试用 setMemoryClient() 注入配置过的客户端。
  */
 import { randomUUID } from "node:crypto";
-import { MnesticClient, type FactRow } from "../memory/mnesticClient";
+import { getMemoryClient } from "../memory/client";
+import type { FactRow } from "../memory/mnesticClient";
 import {
   FACT_STATUSES,
   type Fact,
@@ -25,15 +26,12 @@ import {
 import {
   checkCompleteness,
   requentialCheck,
+  shouldAudit,
   type GateResult,
 } from "../runtime/nuGate";
+import { makeGateAuditEvent } from "../memory/events";
 
-let client: MnesticClient = new MnesticClient();
-
-/** 注入配置过的客户端（Phase 6 插件入口 / 测试用）。 */
-export function setMemoryClient(c: MnesticClient): void {
-  client = c;
-}
+export { setMemoryClient } from "../memory/client";
 
 export interface MemorySetResult {
   id: string;
@@ -44,6 +42,11 @@ export interface MemorySetResult {
 export interface BatchBlockedItem {
   index: number;
   reason: string;
+}
+
+export interface MemorySetBatchOptions {
+  /** 默认 true：所有状态均参与幂等；闭包重推传 false 以允许 out 的旧结论产生新版本。 */
+  includeOutInIdempotence?: boolean;
 }
 
 export interface MemorySetBatchResult {
@@ -64,14 +67,34 @@ function gateCheck(fact: FactInput): GateResult {
   if (!(FACT_STATUSES as readonly string[]).includes(status)) {
     return {
       gate: "blocked",
+      code: "status",
       reason: `invalid status: ${JSON.stringify(status)} (allowed: ${FACT_STATUSES.join(", ")})`,
     };
   }
   return { gate: "pass" };
 }
 
+function withAuditDefaults(fact: FactInput): FactInput {
+  const text = (value: unknown, fallback: string) =>
+    typeof value === "string" && value.length > 0 ? value : fallback;
+  return {
+    ...fact,
+    predicate: text(fact.predicate, "audit_missing"),
+    claim: text(fact.claim, "audit_missing"),
+    layer: text(fact.layer, "meta"),
+    jPremiseIds: Array.isArray(fact.jPremiseIds) ? fact.jPremiseIds : [],
+    epsType: text(fact.epsType, "audit"),
+    epsValue: Number.isFinite(fact.epsValue) ? fact.epsValue : 0,
+    epsSource: text(fact.epsSource, "audit"),
+    linSource: text(fact.linSource, "audit-missing"),
+    linVersion: text(fact.linVersion, "audit"),
+    linActor: text(fact.linActor, "unknown"),
+    verify: text(fact.verify, "audit"),
+  };
+}
+
 /** FactInput → facts 全列行（服务层生成 id 与时间戳）。 */
-function factToRow(id: string, fact: FactInput): FactRow {
+export function factToRow(id: string, fact: FactInput): FactRow {
   const now = Date.now() / 1000;
   return {
     id,
@@ -99,36 +122,44 @@ function factToRow(id: string, fact: FactInput): FactRow {
 export async function memory_set(fact: FactInput): Promise<MemorySetResult> {
   const id = `fact_${randomUUID()}`;
   const gate = gateCheck(fact);
-  if (gate.gate === "blocked") return { id, ...gate };
-  await client.putFact(factToRow(id, fact));
-  return { id, gate: "pass" };
+  if (gate.gate === "blocked" && !shouldAudit(gate)) return { id, ...gate };
+  const rows = [factToRow(id, gate.gate === "blocked" ? withAuditDefaults(fact) : fact)];
+  if (gate.gate === "blocked") {
+    rows.push(factToRow(`fact_${randomUUID()}`, makeGateAuditEvent(id, gate.reason ?? "blocked", fact.linActor || "unknown")));
+  }
+  await getMemoryClient().putFacts(rows);
+  return { id, gate: "pass", reason: gate.reason };
 }
 
 export async function memory_set_batch(
   facts: FactInput[],
+  options: MemorySetBatchOptions = {},
 ): Promise<MemorySetBatchResult> {
   const ids: (string | null)[] = new Array(facts.length).fill(null);
   const blocked: BatchBlockedItem[] = [];
-  const candidates: Array<{ index: number; id: string; key: string; fact: FactInput }> =
+  const candidates: Array<{ index: number; id: string; key: string; fact: FactInput; auditReason?: string }> =
     [];
 
-  // ① 逐条过统一判定；blocked 收集原因并继续。
+  // ① 逐条过统一判定；blocked 收集原因并继续。audit 放行并另行记账。
   for (const [index, fact] of facts.entries()) {
     const gate = gateCheck(fact);
     if (gate.gate === "blocked") {
       blocked.push({ index, reason: gate.reason ?? "blocked" });
-      continue;
+      if (!shouldAudit(gate)) continue;
     }
     candidates.push({
       index,
       id: `fact_${randomUUID()}`,
       key: JSON.stringify([fact.predicate, fact.args ?? []]),
       fact,
+      auditReason: gate.gate === "blocked" ? gate.reason : undefined,
     });
   }
 
   // ② 幂等查重：(predicate, args) 全参；存量键集一次查出，批内自重复同判。
-  const existing = candidates.length > 0 ? await client.existingKeys() : new Map<string, string>();
+  const existing = candidates.length > 0
+    ? await getMemoryClient().existingKeys(options.includeOutInIdempotence === false)
+    : new Map<string, string>();
   const rows: FactRow[] = [];
   const seen = new Map<string, string>();
   let skipped = 0;
@@ -141,17 +172,25 @@ export async function memory_set_batch(
     }
     seen.set(c.key, c.id);
     ids[c.index] = c.id;
-    rows.push(factToRow(c.id, c.fact));
+    rows.push(factToRow(c.id, c.auditReason === undefined ? c.fact : withAuditDefaults(c.fact)));
+  }
+  const inserted = rows.length;
+  for (const c of candidates) {
+    const auditId = ids[c.index];
+    if (c.auditReason !== undefined && auditId !== null) {
+      const event = makeGateAuditEvent(auditId, c.auditReason, c.fact.linActor || "unknown");
+      rows.push(factToRow(`fact_${randomUUID()}`, event));
+    }
   }
 
-  // ③ 合格行单事务 upsert。
-  await client.putFacts(rows);
+  // ③ 合格行与审计事件单事务 upsert。
+  await getMemoryClient().putFacts(rows);
 
-  return { inserted: rows.length, skipped, blocked, ids };
+  return { inserted, skipped, blocked, ids };
 }
 
 export async function memory_get(id: string): Promise<Fact | null> {
-  const res = await client.getFactById(id);
+  const res = await getMemoryClient().getFactById(id);
   return res.rows.length === 0 ? null : rowToFact(res.headers, res.rows[0]);
 }
 
@@ -160,7 +199,7 @@ export async function memory_get(id: string): Promise<Fact | null> {
  * datalog 应 select facts 表列；未 select 的列为 undefined（调用方负责）。
  */
 export async function memory_query(datalog: string): Promise<Fact[]> {
-  const res = await client.execute(datalog);
+  const res = await getMemoryClient().execute(datalog);
   return res.rows.map((row) => rowToFact(res.headers, row));
 }
 

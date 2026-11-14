@@ -16,9 +16,13 @@ tags:
 
 > 对应[[04-创造层/项目/26-04 AI4Science/项目开发文档/S01最小产品路线图|S01 最小产品路线图]] Phase 1（Week 3–4）。
 >
-> **双周目标**：前向链闭包 `deriveClosure()` 跑通；R1/R2 双层资产入库；S01 派生事实（`candidate_solid_solution`、`phase_structure(S01, BCC+FCC)`）带血缘落库；首个 infer option 注册并完成 subtask:option:model 1:1:1 绑定；HEA-Lens-1540 全量推导 `smix`/`delta` 并与 `ref_smix`/`ref_delta` **对拍**验证闭包正确性。
+> **双周目标**：前向链闭包 `deriveClosure()` 跑通；R1/R2 双层资产入库；S01 派生事实（`candidate_solid_solution`、`phase_structure(S01, BCC+FCC)`）带血缘落库；首个 infer option 注册并完成 subtask:option:model 1:1:1 绑定；HEA-Lens-1540 全量推导 `smix` 并与 `ref_smix_v2` 做内部一致性检查。R4 暂缓，完整 R1–R4 闭包验收待其解除阻塞。
 >
-> **🆕 v3 对齐（2026-10-06）**：本双周 option 注册遵循「禁止层级 option」原则——`infer_phase_structure_from_xrd` 为 **atomic option**（π 直接封装 R2 推导逻辑，不调用全局 option 图谱）。后续 Phase 4–6 的 parse / measure / generate option 同理；plan template 与和弦升格属完整产品 scope（见 [[04-创造层/项目/26-04 AI4Science/项目开发文档/S01最小产品路线图|S01 路线图 §9]]）。
+> **🆕 R3/R4 数据质量修订（2026-10-31）**：原 `ref_smix` 全量对拍仅 604/701 行通过，R4 的 30 个候选组合全部未达标。已批准并执行 `scripts/repair_ref_smix_v2.ts`：新增 701 条 `ref_smix_v2` 与 701 条 `reference_quality`，其中 604 条 `original_match`、97 条 `corrected_pending_source_review`；原始 `ref_smix` / `ref_delta` 不变，重跑幂等。v2 与 R3 同源，只能证明内部一致性，不能作为外部正确性的唯一证据。R4 未选定半径表，禁止批量派生 `delta` 或输出其筛选计数作为验收结果。详见 `docs/phase1-reference-correction-plan.md`。
+>
+> **🆕 v3 对齐（2026-10-06）**：本双周 option 注册遵循「禁止层级 option」原则——`infer_phase_structure_from_xrd` 为 **atomic option**（π 直接封装 R2 推导逻辑，不调用全局 option 图谱）。后续 Phase 3–6 的 measure / parse / generate option 同理；plan template 与和弦升格属完整产品 scope（见 [[04-创造层/项目/26-04 AI4Science/项目开发文档/S01最小产品路线图|S01 路线图 §9]]）。
+>
+> **交付节奏修订（2026-10-31）**：DSH + OpenCode 首版封装提前至 Phase 3（模块 v0.1.0）。本阶段注册与闭包接口必须保持稳定、可由两种 host 的 `propose_option` 及内部 option 执行链复用；框架依赖只允许进入 `src/plugins/dsh/`、`src/plugins/opencode/`，不得进入核心层。
 >
 > **🆕 工程治理原则（2026-10-06）**：OptionMemory 理论与长期规划的修订必须先于工程落地至少 2 周。本手册已进入实施阶段（Week 3–4），因此 v3 schema 变更（`option_type`、`template_id`、`plan_templates` 表）为**冻结变更**——后续理论层修订不得影响本双周已确定的 schema 与接口，只能以新增字段/表的形式向后兼容扩展。
 >
@@ -65,11 +69,11 @@ tags:
 
 | Step | 天 | 任务 | 交付物 | 验收方式 |
 |---|---|---|---|---|
-| 1 | Day 1–2 | 公式对拍 + 规则资产定稿 | 《phase1-rules-spec.md》（R1–R4 + 半径表 + 容差定稿） | 对拍数值人工核对 |
+| 1 | Day 1–2 | 公式对拍 + 规则资产定稿 | 《phase1-rules-spec.md》+《phase1-reference-correction-plan.md》；R3 v2 已执行，R4 阻塞证据归档 | 对拍数值人工核对 |
 | 2 | Day 3–5 | 服务层扩展 + `deriveClosure()` | client/api 扩展 + 闭包实现 + 单测 | `pnpm test` |
 | 3 | Day 6–7 | S01 派生 + 1:1:1 绑定 | `scripts/seed_phase1_assets.ts` + 派生事实/J 边落库 | 三查询验收（§4.3） |
-| 4 | Day 8–9 | HEA 批量推导 + 对拍 | 701 条 `smix`/`delta` + 对拍报告 | 对拍通过率 |
-| 5 | Day 10 | 基线 + Phase 1 总验收 | 《phase1-baseline.md》+ 验收清单 | 人工核对 |
+| 4 | Day 8–9 | HEA 批量推导 + 对拍 | 701 条 `smix` + v2 内部一致性/原值分组报告；`delta` 暂缓 | R1–R3 部分验收 |
+| 5 | Day 10 | 基线 + Phase 1 验收 | 《phase1-baseline.md》+ 部分验收清单；完整验收待 R4 恢复 | 人工核对 |
 
 ---
 
@@ -113,11 +117,11 @@ tags:
 交付：docs/phase1-rules-spec.md（公式 + 半径表 + 误差表 + 容差建议）+ 对拍数值输出。
 ```
 
-### 2.3 验收（人工）
+### 2.3 验收（人工，2026-10-31 执行结果）
 
-- [ ] R3 对拍误差在预期量级，公式锁定；
-- [ ] R4 口径有全量数据支持（或已按规则停止上报）；
-- [ ] 《phase1-rules-spec.md》R1–R4、命名、容差逐条经子课题2 确认。
+- [x] R3 全量对拍完成，公式锁定；原始参考值通过率 86.16% 未达 99%，已按批准方案生成 v2，97 行保留来源复核标记；
+- [x] R4 未获全量数据支持，已按规则停止并上报，未凭经验选定半径表；
+- [x] 《phase1-rules-spec.md》与《phase1-reference-correction-plan.md》已归档，明确内部/外部一致性边界及 R4 暂缓范围。
 
 ---
 
@@ -154,7 +158,7 @@ tags:
 4. tests/：新增用例——① 寄存 R1 后对单条 composition 闭包推出 candidate_solid_solution 且 J 边落库；
    ② 重复闭包派生 fact/J 边均不重复；③ 计算型规则（smix 公式）对已知成分计算值与期望一致；
    ④ registerRule 缺必填字段被 blocked。
-5. 探针先行（对运行实例）：`to_float` 是否可用（delta>0.06 计数查询用）；多 *facts atom 自连接形态。
+5. 探针先行（对运行实例）：`to_float` 是否可用（当前用于 smix/v2 比较；delta>0.06 查询待 R4 恢复）；多 *facts atom 自连接形态。
    结果写入 docs/mnestic-api-cheatsheet.md 补遗（每条附证据）。
 
 约束：D2 红线（禁止任何绕过服务层的写库）；新查询如需解构 args 用 first()/get()（列表模式嵌变量已被 0.17.0 拒绝）。
@@ -216,67 +220,74 @@ tags:
 
 ## 五、Step 4：HEA 批量推导与对拍（Day 8–9）
 
-### 5.1 定稿
+### 5.1 定稿（2026-10-31 修订）
 
 - 范围：全部 701 个 `composition` fact（layer="knowledge"，status="in"）。
-- 产出：`smix(HEAL####, <值>)` / `delta(HEAL####, <值>)` 派生 facts + 各自 J 边（前提 = composition fact id，rule = R3/R4）。
-- 数值格式：与 ref 值对齐（smix 全精度；delta 按 Step 1 标定口径）。
-- **对拍**（闭包正确性证据）：逐 alloy 比较派生值与 `ref_smix`/`ref_delta`。
+- 产出：`smix(HEAL####, <值>)` 派生 facts + J 边（前提 = composition fact id，rule = R3）。R4 暂缓，不产出 `delta`。
+- 数值格式：smix 使用全精度字符串，与 `ref_smix_v2` 一致。
+- **内部一致性检查**：逐 alloy 比较派生值与 `ref_smix_v2`，目标 701/701 一致；该结果只验证同一公式的实现一致性。
+- **原始参考值交叉检查**：保留 604 条 `original_match` 与 97 条 `corrected_pending_source_review` 分组，97 行不得作为独立认证证据。
 
 ### 5.2 Vibe 指令 4-A（批量推导）
 
 ```text
-任务：scripts/derive_descriptors.ts —— 对全部 HEAL 行运行 R3/R4 并落库。
+任务：scripts/derive_descriptors.ts —— 对全部 HEAL 行运行 R3 并落库；R4 暂缓。
 
 要求：
 1. 只读查询取全部 composition facts（first()/get() 解构 args），逐行调用登记公式。
 2. 派生 facts 经 memory_set_batch（分批 100，ν 门），J 边随 deriveClosure 语义写入；打印进度与 blocked 明细（应为 0）。
 3. 幂等：重复执行 inserted=0。
+4. 不注册可用 R4，不写入 delta；恢复时必须已有全量标定证据和明确批准。
 交付：脚本 + 运行日志。
 ```
 
 ### 5.3 Vibe 指令 4-B（对拍报告）
 
 ```text
-任务：scripts/check_descriptors.ts —— 生成 smix/delta 对拍报告。
+任务：scripts/check_descriptors.ts —— 生成 smix 内部一致性与原始参考值分组报告。
 
 查询形态（自连接；列表模式嵌变量已被拒，用 get() 解构）：
-  ?[alloy, dv, rv] := *facts{predicate, args}, predicate == "delta", alloy = first(args), dv = get(args, 1),
-                      *facts{predicate: p2, args: a2}, p2 == "ref_delta", first(a2) == alloy, rv = get(a2, 1)
+  ?[alloy, sv, rv] := *facts{predicate, args}, predicate == "smix", alloy = first(args), sv = get(args, 1),
+                      *facts{predicate: p2, args: a2}, p2 == "ref_smix_v2", first(a2) == alloy, rv = get(a2, 1)
   （探针确认 to_float 可用性；数值比较不可用则取回应用层比较并注明）
-报告：smix/delta 各自的最大/平均误差、超容差行清单、通过率；另报 delta > 0.06 的合金数量（路线图验收 #4）。
+报告：smix vs ref_smix_v2 的最大/平均误差与一致率；另按 reference_quality 报 604/97 分组。
+R4 暂缓期间不生成 delta 对拍或 delta > 0.06 验收计数，只在风险节记录阻塞。
 交付：对拍输出 + docs/phase1-baseline.md 的对拍节。
 ```
 
-### 5.4 验收（人工）
+### 5.4 R1–R3 部分验收（人工）
 
-- [ ] 701 行 smix/delta 全部落库且无 blocked；
-- [ ] smix 对拍通过率 ≥ 99%（容差按定稿 D）；delta 对拍结论与 Step 1 标定一致；
-- [ ] `delta > 0.06` 合金计数输出具体数值。
+- [ ] 701 行 smix 全部落库且无 blocked，J 边完整；
+- [ ] smix 与 ref_smix_v2 内部一致率 100%，且未将其表述为独立外部验证；
+- [ ] 604 条原始吻合与 97 条待来源复核分组统计正确；
+- [ ] R4 阻塞有记录，无 delta 派生或筛选计数被冒充为已验收结果。
 
 ---
 
-## 六、Step 5：基线与 Phase 1 总验收（Day 10）
+## 六、Step 5：基线与 Phase 1 部分验收（Day 10）
 
 ### 6.1 Vibe 指令 5-A
 
 ```text
 任务：docs/phase1-baseline.md。
-测量（每项 3 次取中位数）：① 701 行全量闭包耗时（目标 < 5 分钟）；② 单次 deriveClosure(S01 范围) 耗时；
-③ 血缘查询（§4.3 第二条）延迟；④ 对拍自连接查询延迟。
-附：facts/justifications 行数、rules/options/subtasks/models 行数快照。
+测量（每项 3 次取中位数）：① 701 行 R1–R3 部分闭包耗时；② 单次 deriveClosure(S01 范围) 耗时；
+③ 血缘查询（§4.3 第二条）延迟；④ smix/v2 对拍自连接查询延迟。
+附：facts/justifications 行数、rules/options/subtasks/models 行数快照，以及 604/97 质量分组。
+完整 R1–R4 闭包 < 5 分钟的指标保留，待 R4 恢复后补测，不用部分闭包结果冒充。
 ```
 
-### 6.2 Phase 1 总验收清单（对应路线图验收标准）
+### 6.2 Phase 1 部分验收清单（R4 暂缓期间）
 
 | # | 项 | 标准 |
 |---|---|---|
-| 1 | R1–R4 入库 | `::columns rules` 结构一致 + 4 行在库 status="in" |
+| 1 | R1–R3 入库 | `::columns rules` 结构一致 + 3 行在库 status="in"；R4 保持未注册/阻塞 |
 | 2 | S01 派生 | §4.3 三查询全过 |
 | 3 | J 活性边 | 每条派生 fact 有 active=true 的 J 边且 premise_ids 对得上 |
-| 4 | HEA 对拍 | §5.4 全过 |
-| 5 | 幂等 | 派生脚本重复执行 inserted=0 |
-| 6 | 性能 | 701 行闭包 < 5 分钟 |
+| 4 | HEA 对拍 | §5.4 的 R1–R3 部分验收全过，604/97 分组正确 |
+| 5 | 幂等 | 派生、seed 与 R3 v2 修复脚本重跑 inserted=0 |
+| 6 | 性能 | 记录 R1–R3 部分闭包基线，不宣称完整 R1–R4 指标已通过 |
+
+**完整 Phase 1 关闭条件不变**：R4 经全量对拍确定并获批准，701 行 `delta` 落库、对拍及 `delta > 0.06` 计数完成，随后补齐完整性能基线与签署。
 
 ---
 
@@ -306,16 +317,16 @@ tags:
 
 ### A. 新增交付物存在性
 
-`src/runtime/deriveClosure.ts`、`src/api/`（register* 扩展）、`scripts/seed_phase1_assets.ts`、`scripts/derive_descriptors.ts`、`scripts/check_descriptors.ts`、`docs/phase1-rules-spec.md`、`docs/phase1-baseline.md`、cheatsheet 补遗段、`schema/05_options.cozo` v3（含 `option_type`/`template_id`）、`schema/08_plan_templates.cozo`（空表）。逐路径核对。
+`src/runtime/deriveClosure.ts`、`src/api/`（register* 扩展）、`scripts/seed_phase1_assets.ts`、`scripts/derive_descriptors.ts`、`scripts/check_descriptors.ts`、`scripts/calibrate_delta.ts`、`scripts/repair_ref_smix_v2.ts`、`docs/phase1-rules-spec.md`、`docs/phase1-reference-correction-plan.md`、`docs/phase1-baseline.md`、cheatsheet 补遗段、`schema/05_options.cozo` v3（含 `option_type`/`template_id`）、`schema/08_plan_templates.cozo`（空表）。逐路径核对。
 
-### B. 功能验收
+### B. 功能验收（R4 暂缓期间为部分验收）
 
 | # | 项 | 验证方法 |
 |---|---|---|
 | B1 | 闭包推导 | S01 三查询（§4.3） |
-| B2 | 批量推导 | 701 行 smix/delta 落库计数 |
-| B3 | 对拍 | smix ≥99% 通过；delta 按标定口径 |
-| B4 | 幂等 | 派生与 seed 脚本重跑 inserted=0 |
+| B2 | 批量推导 | 701 行 smix 落库计数；无 delta 派生 |
+| B3 | 对拍 | smix/v2 内部一致率 100%；604/97 分组正确，未宣称 v2 为独立外部验证 |
+| B4 | 幂等 | 派生、seed 与 R3 v2 修复脚本重跑 inserted=0 |
 | B5 | pnpm test | 全绿（≥13 用例） |
 | B6 | 1:1:1 绑定 | option 行 subtask_binding/model_binding 正确 |
 
@@ -323,12 +334,13 @@ tags:
 
 | # | 项 | 标准 |
 |---|---|---|
-| C1 | rules 4 行 | 字段与 §2.1 表一致，status="in" |
+| C1 | rules 3 行 | R1–R3 字段与 §2.1 表一致，status="in"；R4 未注册 |
 | C2 | S01 派生 facts | candidate_solid_solution(S01)、phase_structure(S01, BCC+FCC) |
 | C3 | J 边 | 每条派生 fact ≥1 条 active J 边，premise_ids 逐一对得上 |
-| C4 | delta>0.06 计数 | 输出具体数值并记录 |
+| C4 | R3 v2 与质量记录 | `ref_smix_v2` 701、reference_quality 701；604/97 分组正确，原值未改 |
 | C5 | options v3 字段 | `infer_phase_structure_from_xrd` 行含 `option_type="atomic"`、`template_id=null` |
 | C6 | plan_templates 表 | 表存在且为空（v3 预留，MVP 不启用） |
+| C7 | R4 暂缓 | 无 delta 派生、无伪造的 delta>0.06 验收计数；原始标定证据与阻塞记录齐全 |
 
 ### D. 质量红线（一票否决，新增于 Phase 0 红线之后）
 
@@ -336,11 +348,15 @@ tags:
 |---|---|
 | D7 | δ 口径未经全量对拍即选定（或静默放行不吻合口径） |
 | D8 | 派生 fact / J 边绕过服务层直写（违 D2 的 Phase 1 形态） |
-| D9 | 对拍/验收项被静默跳过（含第二峰缺失未上报） |
+| D9 | 对拍/验收项被静默跳过（含第二峰缺失未上报）；R4 暂缓必须有明确记录，部分验收不得冒充完整验收 |
+| D10 | 将自行生成的 ref_smix_v2 当作独立外部正确性证据，或覆盖/删除原始参考值 |
 
 ### E. 验收签署
 
-| 角色 | 签署项 | 日期 |
-|---|---|---|
-| 执行人（vibe coding 操作者） | A–D 全部核对通过 | |
-| 子课题2 负责人 | D 红线复核 + Phase 1 关闭批准 | |
+| 角色 | 签署项 | 日期 | 签署 |
+|---|---|---|---|
+| 执行人（vibe coding 操作者） | A–D 部分验收核对通过 | 2026-11-01 | 用户授权，Kimi Code 代记 |
+| 子课题2 负责人 | D 红线复核 + Phase 1 部分验收批准 | 2026-11-01 | 用户授权，Kimi Code 代记 |
+| 子课题2 负责人（R4 恢复后） | 完整 R1–R4 验收 + Phase 1 正式关闭 | 未进行 | 未签署 |
+
+> 2026-11-01：用户明确要求完成 R1–R3 部分人工验收，由 Kimi Code 代记。
