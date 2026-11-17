@@ -3,9 +3,16 @@
   "name": "optionmemory",
   "displayName": "OptionMemory — mnestic five-layer memory",
   "version": "0.1.0",
-  "description": "TODO(Phase 3): 填实 v0.15 manifest（首版 7 工具签名、权限、事件）",
+  "description": "Seven-tool OptionMemory adapter with revision and hardness conflict governance",
   "entry": "dist/plugins/dsh/index.js",
   "patch": "cordis.patch.yml",
-  "tools": [],
-  "_todo": "Phase 3: memory_set/get/query/retract + propose_option/settle/revoke；后续 Phase 逐版扩展"
+  "tools": [
+    "memory_set",
+    "memory_get",
+    "memory_query",
+    "memory_retract",
+    "propose_option",
+    "settle",
+    "revoke"
+  ]
 }

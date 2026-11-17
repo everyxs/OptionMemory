@@ -1,0 +1,134 @@
+# 09_planners.cozo — Planner-ready 资产、plan_run 与事件 v0.2
+# 只新增关系，不修改或重建既有 facts/options/models 数据。
+
+:create planners {planner_id: String =>
+    claim: String,
+    layer: String,
+    j_premise_ids: [String],
+    instructions_ref: String,
+    instructions_version: String,
+    inference_ref: String,
+    context_policy: Json,
+    decision_schema: Json,
+    tool_policy: Json,
+    budget_policy: Json,
+    eps_type: String,
+    eps_value: Float,
+    eps_source: String,
+    lin_source: String,
+    lin_version: String,
+    lin_theta: String?,
+    lin_actor: String,
+    verify: String,
+    status: String}
+
+::index create planners:status_idx {status}
+
+:create plan_runs {plan_run_id: String =>
+    subtask_event_id: String,
+    attempt: Int,
+    host_type: String,
+    host_session_ref: String?,
+    host_ticket_ref: String?,
+    host_assignment_ref: String?,
+    idempotency_key: String,
+    mapping_version: String,
+    status: String,
+    created_at: Float,
+    updated_at: Float}
+
+::index create plan_runs:subtask_idx {subtask_event_id}
+
+::index create plan_runs:status_idx {status}
+
+:create subtask_event {subtask_event_id: String =>
+    subtask_id: String,
+    baseline_id: String,
+    mandate_json: Json,
+    created_at: Float}
+
+::index create subtask_event:subtask_idx {subtask_id}
+
+::index create subtask_event:baseline_idx {baseline_id}
+
+:create planner_event {planner_event_id: String =>
+    subtask_event_id: String,
+    plan_run_id: String,
+    planner_id: String,
+    context_json: Json,
+    created_at: Float}
+
+::index create planner_event:subtask_idx {subtask_event_id}
+
+::index create planner_event:plan_run_idx {plan_run_id}
+
+::index create planner_event:planner_idx {planner_id}
+
+:create planner_event_decision {planner_event_id: String =>
+    decision_type: String,
+    decision_json: Json,
+    created_at: Float}
+
+::index create planner_event_decision:type_idx {decision_type}
+
+:create option_event {option_event_id: String =>
+    planner_event_id: String,
+    option_id: String,
+    model_id: String,
+    execution_json: Json,
+    created_at: Float}
+
+::index create option_event:planner_event_idx {planner_event_id}
+
+::index create option_event:option_idx {option_id}
+
+::index create option_event:model_idx {model_id}
+
+:create option_event_observation {observation_event_id: String =>
+    option_event_id: String,
+    observation_type: String,
+    value_json: Json,
+    created_at: Float}
+
+::index create option_event_observation:option_event_idx {option_event_id}
+
+::index create option_event_observation:type_idx {observation_type}
+
+:create option_event_outcome {option_event_id: String =>
+    status: String,
+    evaluation_json: Json,
+    cost_json: Json,
+    error_json: Json,
+    created_at: Float}
+
+::index create option_event_outcome:status_idx {status}
+
+:create model_event {model_event_id: String =>
+    model_id: String,
+    event_type: String,
+    payload_json: Json,
+    created_at: Float}
+
+::index create model_event:model_idx {model_id}
+
+::index create model_event:type_idx {event_type}
+
+# 兼容关联表：避免替换带索引的 options/models 关系，P4-0 再评审是否合并。
+:create option_input_schemas {option_id: String =>
+    input_schema: Json?}
+
+:create model_specs {model_id: String =>
+    reasoning_spec: Json?,
+    evidence_spec: Json?,
+    evaluation_spec: Json?}
+
+:create host_event {host_event_id: String =>
+    plan_run_id: String,
+    event_type: String,
+    external_id: String,
+    payload_json: Json,
+    created_at: Float}
+
+::index create host_event:plan_run_idx {plan_run_id}
+
+::index create host_event:external_idx {external_id}

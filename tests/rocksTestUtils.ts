@@ -19,12 +19,20 @@ async function waitReady(port: number, deadlineMs = 15_000): Promise<void> {
   }
 }
 
-async function applySchema(port: number): Promise<void> {
+async function applySchema(port: number, includePlannerSchema: boolean, includeMergedFields: boolean): Promise<void> {
   const endpoint = `http://127.0.0.1:${port}/text-query`;
   const dir = resolve("schema");
-  const files = (await readdir(dir)).filter((file) => file.endsWith(".cozo")).sort();
+  const files = (await readdir(dir)).filter((file) =>
+    file.endsWith(".cozo") && (includePlannerSchema || file !== "09_planners.cozo")
+  ).sort();
   for (const file of files) {
-    const text = await readFile(resolve(dir, file), "utf8");
+    let text = await readFile(resolve(dir, file), "utf8");
+    if (!includeMergedFields && file === "05_options.cozo") {
+      text = text.replace(/,\s*input_schema:[\s\S]*?\}/, "}");
+    }
+    if (!includeMergedFields && file === "06_models.cozo") {
+      text = text.replace(/,\s*reasoning_spec: Json\?,\s*evidence_spec: Json\?,\s*evaluation_spec: Json\?\}/, "}");
+    }
     for (const block of text.split(/\r?\n\s*\r?\n/)) {
       const hasStatement = block.split(/\r?\n/).some((line) => line.trim().length > 0 && !line.trim().startsWith("#"));
       if (!hasStatement) continue;
@@ -59,14 +67,14 @@ export interface RocksTestServer {
   stop: (options?: { preserve?: boolean }) => Promise<void>;
 }
 
-export async function startRocksTestServer(port = 9075, existingDirectory?: string): Promise<RocksTestServer> {
+export async function startRocksTestServer(port = 9075, existingDirectory?: string, includePlannerSchema = true, includeMergedFields = true): Promise<RocksTestServer> {
   const directory = existingDirectory ?? await mkdtemp(resolve(".data/rocksdb-test-"));
   const exe = resolve(process.platform === "win32" ? "target/debug/mnestic-mem-adapter.exe" : "target/debug/mnestic-mem-adapter");
   if (!existsSync(exe)) throw new Error(`mnestic adapter binary not found: ${exe}`);
   const child: ChildProcess = spawn(exe, ["--engine", "rocksdb", "--data", directory, "--port", String(port)], { stdio: "ignore" });
   try {
     await waitReady(port);
-    await applySchema(port);
+    await applySchema(port, includePlannerSchema, includeMergedFields);
   } catch (error) {
     await terminate(child);
     if (!existingDirectory) await rm(directory, { recursive: true, force: true });

@@ -1,0 +1,21 @@
+# 13_sidecar_events.cozo — 外部 Agent 原始轨迹与不确定性映射投影
+
+:create sidecar_event {sidecar_event_id: String =>
+    baseline_id: String,
+    scenario_id: String,
+    run_id: String,
+    tool_id: String?,
+    call_id: String?,
+    event_type: String,
+    external_id: String,
+    payload_json: Json,
+    mapping_json: Json,
+    created_at: Float}
+
+::index create sidecar_event:baseline_idx {baseline_id}
+
+::index create sidecar_event:run_idx {run_id}
+
+::index create sidecar_event:call_idx {call_id}
+
+::index create sidecar_event:external_idx {external_id}

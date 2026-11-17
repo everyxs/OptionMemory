@@ -1,0 +1,22 @@
+# 10_runtime_inbox.cozo — 共享持久化调度输入、timer 和 lease
+
+:create runtime_inbox {event_id: String =>
+    event_type: String,
+    source: String,
+    external_id: String?,
+    payload: Json,
+    status: String,
+    available_at: Float,
+    waiting_condition: Json?,
+    attempts: Int,
+    lease_owner: String?,
+    lease_expires_at: Float?,
+    last_error: String?,
+    created_at: Float,
+    updated_at: Float}
+
+::index create runtime_inbox:status_available_idx {status, available_at}
+
+::index create runtime_inbox:lease_idx {lease_expires_at}
+
+::index create runtime_inbox:external_idx {external_id}

@@ -1,6 +1,6 @@
 ---
 创建时间: 2026-11-03
-更新时间: 2026-11-06
+更新时间: 2026-11-17
 类型: 开发手册
 所属项目: "26-04 AI4Science"
 对应路线图: "S01最小产品路线图（完整版：OptionMemory + LLM 原生 Planner）"
@@ -32,6 +32,12 @@ tags:
 > **后续 dataStore 模块**：按路线图 §十七 的 DS0–DS4 独立研发，定位仅为大体量数据访问与批处理。默认采用 fsspec + PyArrow，DuckDB 仅作可选加速后端；dataStore 负责物理数据、技术游标和测量，MemoryCore 负责治理元数据、plan_run 与治理事务。该模块不直接写 mnestic，不扩大当前 16 周 MVP 承诺。
 >
 > 本导航与下文 Phase 4–5 的旧 host 顺序、MemoryCore 状态归属或 SuperAgent 定位不一致时，以《S01最小产品路线图-完整版》2026-11-06 版和本导航为准。实施对应 Step 前必须先将该 Step 展开为新的文件、接口和故障测试清单，不得直接按旧顺序施工；Phase 0–2、原插件工具数量和其余治理契约不变。
+>
+> **分阶段实施手册**：Phase 4 见 `devNotes/Week9-12开发手册-多源解析与可靠调度.md`；Phase 5 见 `devNotes/Week13-14开发手册-持续Planner与决策链导出.md`；Phase 6 见 `devNotes/Week15-16开发手册-生成认证与SuperAgent持续适配.md`。三份手册已按本导航展开文件、接口、故障测试和独立验收清单。
+>
+> **2026-11-15 MemoryBridge 增量**：日常 Markdown 作为多源解析的一部分纳入 Phase 4。P4-1M 已完成摄入、MemoryCore Recall、显式捕获/修订和 OpenCode 自动注入最小闭环；P5-4 扩展为 SuperAgent 持续记忆与跨宿主适配，P6-4 扩展为 SuperAgent 主动记忆治理与跨 harness 恢复。Bridge 使用独立契约，不改变原 Phase 3–6 的 7/8/10 工具数量，不修改 Markdown 原文，不建立第二套治理中心。
+>
+> **2026-11-17 P4-3–P4-6 进度**：共享持久化调度、崩溃恢复、SuperAgent 隔离探针、Sidecar Mapping 和日常记忆 STOMP 最小闭环均已验收。真实副作用后的 outcome 丢失不会盲目重放；Ticket/Assignment/Input 可确定性映射；不完整 sidecar 链保留 raw/null，不补写 rationale/model/reward，real/simulated/sidecar 不混写。capture/revise/Recall 刷新已形成原生执行链，data 投影直接作为候选来源，真实 OpenCode/DSH 新会话与 NativeAdapter 通过。证据见 `docs/phase4-scheduler-acceptance.md`、`docs/phase4-superagent-acceptance.md`、`docs/phase4-sidecar-acceptance.md` 与 `docs/phase4-memory-stomp-acceptance.md`，全量回归为 33 个测试文件、123 项测试。Phase 4 原基线与整体验收、正式 SuperAgent 适配和完整持续服务尚未完成。
 
 ---
 
@@ -521,9 +527,129 @@ idempotency_key / mapping_version
 
 以原 Phase 4 的批量解析和结算为真实工作负载，实现可靠调度内核，并由 OpenCode LLM 完成首个交互式 Planner 闭环。本阶段不宣称完整 24/7 Super Router。
 
-## 九、Step P4-1：持久化队列
+## 八A、Step P4-0：字段权威审计与增量精简迁移（2026-11-15 追加）
 
-### 9.1 `runtime_inbox`
+在 P4-1 持久化队列和 P4-2/P4-3 Option Executor 实施前，先完成字段权威审计和可回滚迁移。该任务已批准纳入 Phase 4，不表示可以绕过逐字段评审直接删列。
+
+目标交付物：
+
+```text
+docs/phase4-field-authority.md       # 字段语义、权威来源、兼容投影与逐字段处置
+scripts/migrate_phase4_fields.ts     # 备份、预检、增量迁移、行数/ID/J/≺校验与回滚
+tests/field_migration.test.ts        # Mem 与独立 RocksDB 副本迁移、回滚和兼容测试
+```
+
+审计与处置范围：
+
+| 字段/关系 | 必须明确的权威与处置 |
+|---|---|
+| `Option.model_binding` ↔ `Model.option_id` | 权威外键、反向查询投影及不一致修复 |
+| Model `j_records` ↔ governance 事件 J | 事件权威、Model 投影及同步边界 |
+| `calibration_history` ↔ 成功率/误差/成本摘要 | 证据明细与派生快照的生成关系 |
+| `theta_version` ↔ `lin_theta` | 世界模型版本与谱系生成模型版本是否可分；不可分时统一语义 |
+| `utility_queries` 等统计字段 | 事件明细与派生计数的关系 |
+| 未观测数值和适用域 | `null / observed:false / uncalibrated`，不得以 0 或空字符串冒充实测值 |
+
+### 评审后合并路径（2026-11-15 已批准方向）
+
+用户已选择在评审后把兼容字段合并回 `options.input_schema` 与 `models.reasoning_spec/evidence_spec/evaluation_spec`。该决定确定目标方向，但不授权立即替换生产关系，仍须完成以下独立评审和签署：
+
+1. `docs/phase4-field-authority.md` 明确旧表列、兼容表行与 API 的一一映射，证明无双写、无重复事实和无语义回退。
+2. 在独立 RocksDB 副本中先备份，再执行目标结构生成、兼容表数据回填、索引重建、行数/关键 ID/J/≺/质量状态核对和回滚。
+3. 切换期间以旧表为唯一写入目标，兼容表只读；所有读取和七工具回归通过后，方可签署退役兼容表。退役前不得删除兼容表或其历史记录。
+4. 若原子替换、索引恢复或回滚无法保证，停止合并并保留 additive compatibility tables，不得以 `:replace` 绕过限制。
+
+### P4-0 终态边界：主表、事件与投影
+
+字段精简不得理解为“所有字段一律并入旧表”。目标结构固定为：
+
+- **Option/Model 主表**：只保存静态资产定义、绑定和 declarative spec，包括评审后合并的 input_schema/reasoning_spec/evidence_spec/evaluation_spec。
+- **事件关系**：保存执行、观察、评价、真实成本和校准证据，包括 option_event、outcome、model_event 及需要拆出的校准明细，禁止为了精简而塞进主表。
+- **查询投影**：保存派生统计、反向绑定和兼容读取，不作为第二写入源。
+
+只有属于主表的规范字段才合并；证据明细必须留在事件关系。每个字段都须在 `docs/phase4-field-authority.md` 标记为主表字段、事件证据或查询投影，未分类不得迁移。
+
+实施纪律：
+
+1. 先备份并记录 facts/options/models/subtasks/justifications 行数、关键 ID、J/≺、604/97 质量分组和 R4 阻塞状态。
+2. 优先采用兼容字段、增量回填和只读投影；必须保留原始证据和历史治理事件。
+3. 未经上述合并评审与签署，禁止删表重建生产 RocksDB；若 mnestic 只能重建关系，停止并单独评审，不得静默执行。
+4. 在 Mem 和独立 RocksDB 副本验证迁移、重复执行和回滚，生产只读核对通过后才允许正式迁移。
+5. Phase 0–3 测试、原七工具和 R4 边界不得回归；未完成字段不得被伪装成已精简。
+
+P4-0 未关闭前，不得让后续 Executor 或 Planner 依赖已废弃字段；新接口应以 P4-0 确认的权威关系为准。
+
+## 九、Step P4-1：OpenCode 对话式垂直闭环
+
+### 9.1 Planner Agent
+
+`.opencode/agents/optionmemory-planner.md`：
+
+- `mode=primary`；
+- 默认禁止 edit/shell/subagent 等直接执行权限；
+- 只开放 Planner 专用只读查询和 `planner_decision`；
+- 每次返回 decision_json，不只输出自然语言计划；
+- 必须引用证据和未知项，不得扩大 mandate。
+
+`planner_decision` 使用独立 Planner 契约，不加入原 OptionMemory host 工具清单。
+
+### 9.2 两类真实 Option
+
+1. tool Option：`infer_phase_structure_from_xrd`，调用既有 R2/deriveClosure。
+2. subagent Option：例如 `review_s01_evidence`，调用只读 materials evidence reviewer。
+
+子 Agent 的 Session、目录或后台运行只是 Option 的运行配置，不建立 Executor 资产。Option 的受控实现注册、I/β 校验和执行语义统一遵循 §11.5。
+
+### 9.3 事件回流
+
+OpenCode 的 session/subagent/tool 事件先转换为 runtime_inbox，再唤醒 Planner。至少处理：
+
+```text
+session.idle
+session.error
+tool.execute.after
+subagent 完成通知
+人工新输入
+```
+
+host 事件与 option_event 必须确定性去重；无法可靠映射时写异常并停止自动重放。
+
+### 9.4 解析工作负载接入
+
+parse_csv_materials 的批次使用 outbox 和 idempotency key；parser 版本写入 execution_json。解析结果、闭包和 J 血缘仍走原服务层，不另建解析专用事件体系。
+
+## 九A、Step P4-1M：OpenCode 日常记忆最小闭环
+
+日常 Markdown 是 data 层外部原始数据，Bridge 是带来源和幂等语义的只读摄入适配器。详细任务与验收见 `devNotes/Week9-12开发手册-多源解析与可靠调度.md` P4-1M。
+
+- 注册 `parse_markdown_note` atomic Option，输出 DocumentProjection、FactCandidate 和 Observation，复用同一 Option Executor 和事件契约。
+- MemoryCore 保存 raw_ref、document/chunk ID、必要投影、content_hash、namespace、parser_version、source link 和 mapping_stale；原文不复制、不改写。
+- 使用硬过滤、结构过滤和候选过滤控制摄入体量，过滤原文仍留在文件系统。
+- source link 与 J/≺ 分别表达原文出处和逻辑推导；候选经 ν 门与服务层，不自动 settle。
+- 外部原文变化只重新摄入和标记 mapping_stale，不自动 retract；identity 不确定时不得继承旧映射。
+- 实现独立只读 `memory_recall`：关键词/bigram、namespace、Top-K、token budget、状态裁注和可选 facts 联合召回；当前随机 embedding 不作为语义证据。
+- 实现 `bridge_capture/bridge_revise/bridge_recall` 和 superseding 修订，原文与 AGENTS.md 不被修改，历史不删除。
+- 通过 V2 `ctx.session.hook("context")` 自动注入非指令 REFERENCE_MEMORY，session_id+message_id+query_hash 持久化去重，continuation 复用。
+- Planner 仅使用只读 bridge_recall 获取历史证据，召回文本不得扩大 mandate，capture/revise/settle/revoke 仍走独立授权路径。
+- 真实 OpenCode 会话 A 捕获、会话 B 自动召回、修订后新会话使用新版本；证据见 `docs/phase4-memory-bridge-acceptance.md`。
+- 自动 compaction、直接读取强制裁注、持续后台整理和真实向量不在本切片承诺内。
+
+## 十、Step P4-2：DSH 同切片验证
+
+DSH 使用与 OpenCode 相同的 S01 工作负载和核心契约验证，不另建一套 Planner、调度器或 Question Center：
+
+- 原生 Planner、工具权限和 subagent 适配；
+- Planner `ask` 映射到 `ask_user_question` / `ctx.userQuestions`，操作审批使用 approval intent；
+- 按目标 DSH/Cordis pin 探针 `askTimed`、pending/continued 和 Remote `answer`，外部 runtime 经 root Session/Adapter 提问，不绕过调用身份限制；
+- 同一 plan_run、事件 ID、错误和 outcome 语义；
+- DSH/OpenCode 交叉读取同一决策与执行链，保持 gate、reason、J/≺ 和证据来源一致；
+- DSH/Cordis 版本兼容、host 重启和 RocksDB 数据保留有独立记录。
+
+OpenCode 使用原生 question/permission ask，DSH 使用原生 userQuestions/approval；回答只唤醒一次 plan_run，核心只保存 `host_question_ref`、`answer_event_id` 与恢复关联。
+
+## 十一、Step P4-3：共享持久化后台执行与恢复
+
+### 11.1 `runtime_inbox`
 
 ```text
 event_id: String, pk
@@ -533,6 +659,7 @@ external_id: String?
 payload: Json
 status: String
 available_at: Float
+waiting_condition: Json?
 attempts: Int
 lease_owner: String?
 lease_expires_at: Float?
@@ -548,7 +675,7 @@ event_type = request / timer / option_outcome / model_event / human_input / host
 
 `event_id` 由来源和外部幂等键确定生成；同一 trigger 重发不得产生第二条有效任务。
 
-### 9.2 `runtime_outbox`
+### 11.2 `runtime_outbox`
 
 ```text
 decision_id: String, pk
@@ -572,9 +699,7 @@ status = pending / leased / dispatched / done / dead / cancelled
 
 Planner 决策事件与 outbox 必须在同一持久化边界内提交。若 mnestic 无法保证跨关系原子写入，停止并报告，不得先执行后补日志。
 
-## 十、Step P4-2：调度循环与 Decision Gate
-
-### 10.1 调度循环
+### 11.3 调度循环
 
 ```text
 1. 领取到期 inbox（lease）
@@ -589,9 +714,9 @@ Planner 决策事件与 outbox 必须在同一持久化边界内提交。若 mne
 10. 崩溃后回收过期 lease
 ```
 
-Timer 的真实状态是 `available_at/waiting_condition`；进程内 timer 仅是唤醒提示。
+Timer 的真实状态是 `available_at/waiting_condition`；进程内 timer 仅是唤醒提示。DSH/OpenCode 共用同一个有限生命周期后台 runtime，不分别持有权威队列。
 
-### 10.2 Decision gate
+### 11.4 Decision gate
 
 检查：
 
@@ -604,46 +729,50 @@ Timer 的真实状态是 `available_at/waiting_condition`；进程内 timer 仅�
 - dry-run 是否只记录建议；
 - stop/pause 是否仍有效。
 
-## 十一、Step P4-3：OpenCode Planner
+### 11.5 Option Executor 实施契约（2026-11-15 补充）
 
-### 11.1 Planner Agent
+`src/runtime/option-executor.ts` 是 Option 的内部运行模块，不是 Executor 领域资产，也不是 `src/api/tool-executor.ts`。后者只分发首版 7 个记忆工具，不能代替通用 Option 执行器。
 
-`.opencode/agents/optionmemory-planner.md`：
-
-- `mode=primary`；
-- 默认禁止 edit/shell/subagent 等直接执行权限；
-- 只开放 Planner 专用只读查询和 `planner_decision`；
-- 每次返回 decision_json，不只输出自然语言计划；
-- 必须引用证据和未知项，不得扩大 mandate。
-
-`planner_decision` 使用独立 Planner 契约，不加入原 OptionMemory host 工具清单。
-
-### 11.2 两类真实 Option
-
-1. tool Option：`infer_phase_structure_from_xrd`，调用既有 R2/deriveClosure。
-2. subagent Option：例如 `review_s01_evidence`，调用只读 materials evidence reviewer。
-
-子 Agent 的 Session、目录或后台运行只是 Option 的运行配置，不建立 Executor 资产。
-
-### 11.3 事件回流
-
-OpenCode 的 session/subagent/tool 事件先转换为 runtime_inbox，再唤醒 Planner。至少处理：
+执行入口接收 `option_id`、调用参数、`option_event_id`/idempotency key、mandate 上下文和 `AbortSignal`，并完成：
 
 ```text
-session.idle
-session.error
-tool.execute.after
-subagent 完成通知
-人工新输入
+加载 Option/Model 与当前状态
+  → 校验 mandate、I/i_preconditions 和输入 schema
+  → 以 (pi_type, pi_ref) 查找受控实现
+  → 调用实现并传递取消信号
+  → 按 beta_success/beta_output_schema 校验结果
+  → 写 option_event_observation/outcome
+  → 结果进入 runtime_inbox，唤醒后续 Planner
 ```
 
-host 事件与 option_event 必须确定性去重；无法可靠映射时写异常并停止自动重放。
+实现注册与适配要求：
 
-### 11.4 解析工作负载接入
+- `(pi_type, pi_ref)` 只能解析到显式注册的实现，禁止 `eval(pi_ref)`、动态执行数据库代码字符串或未经审查的远程代码。
+- 未登记 `pi_type/pi_ref`、实现版本不匹配、输入或输出不符合 schema 时必须 `blocked`，不得伪造 outcome。
+- `infer_phase_structure_from_xrd` 通过 host-neutral 适配器复用现有 `deriveClosure()`，固定 R2 语义并读取派生事实与 J 边，不复制闭包实现。
+- `measure_*`、`parse_*`、subagent 和未来 external verifier 均采用同一适配边界；湿实验只能连接真实实验流程或证据登记，不得用代码冒充物理执行。
+- Option 的代码保留在经过版本控制的实现库中；`pi_ref` 保存版本化引用，执行事件保存实现快照/版本、`pi_theta`、attempt 和 real/simulated/sidecar 来源。
+- `contested/revoked/disabled` Option、失效前提和越权输入不得执行；Planner 只能提交 decision，不能绕过 Executor 直接产生副作用。
+- 同一 idempotency key 不重复产生外部副作用。执行中崩溃或响应丢失时先对账，不能仅凭失败重试盲目重放。
 
-parse_csv_materials 的批次使用 outbox 和 idempotency key；parser 版本写入 execution_json。解析结果、闭包和 J 血缘仍走原服务层，不另建解析专用事件体系。
+P4-1/P4-3 故障测试至少覆盖：未知 `pi_ref`、I 不满足、输入/输出 schema 错误、实现抛错、取消信号、重复执行、执行中崩溃、响应丢失和过期 lease。每个测试必须区分真实副作用与模拟执行，且不得修改生产 RocksDB。
 
-## 十二、Step P4-4：Sidecar Mapping Contract v0.1
+P4-3 已于 2026-11-17 验收通过。独立 RocksDB 真实重启覆盖决策后分发前崩溃、过期 lease、真实副作用后的 outcome 丢失和记忆执行保留；重复 trigger、timer、dry-run、stop、subtask 串行与日常记忆边界均通过。恢复遇到执行记录但无 outcome 时返回 `reconcile_required`，不盲目重放。完整 ID、故障注入与共享回归见 `docs/phase4-scheduler-acceptance.md`。
+
+## 十二、Step P4-4：SuperAgent 隔离兼容探针
+
+只在独立数据目录验证接口，不形成生产依赖或完整持续服务：
+
+- 自定义 Executor 的 start/deliver/stop 可映射到 plan_run；
+- assignmentStarted、report 和 Ticket Attention 回调可以往返；
+- 重复 start/deliver 和 host restart 的幂等与恢复行为；
+- Ticket、Assignment、Input ID 足以支撑确定性映射。
+
+若核心契约无法映射，应在 Phase 4 内修订，不留待 Phase 5 返工。探针不替代 Phase 5 的 `superagent-adapter v0.1` 正式验收。
+
+P4-4 已于 2026-11-17 验收通过。隔离探针完成确定性 Ticket/Assignment/Input 映射、assignmentStarted/report/Ticket Attention ACK、deliver 到 runtime inbox、重复输入防重和两次真实 RocksDB 重启恢复。回调失败保存 `reconcile_required`，不盲目重试；显式记忆不被宿主事件隐式复制。详见 `docs/superagent-isolation-probe.md` 与 `docs/phase4-superagent-acceptance.md`。
+
+## 十二A、Step P4-5：Sidecar Mapping Contract v0.1
 
 契约至少定义：
 
@@ -657,24 +786,64 @@ parse_csv_materials 的批次使用 outbox 和 idempotency key；parser 版本�
 
 不得从调用序列反推 plan template，不得补写源 Agent 未暴露的决策理由。
 
+### 12A.1 五项技能测量扩展
+
+2026-11-17 追加前五项测量，舍弃第六项组合 DAG。Option 只增加可空 `created_at / parent_option_id / parent_version / origin_event_id` 创建血缘；不得用 sidecar 首次调用反推。
+
+Sidecar 的 `skill.registered / skill.updated / skill.rollback` 只关联已注册 Option，不直接改写生命周期。其他映射统一复用现有事件：
+
+- `subtask_event` 是问题实例，不新增 `problem_id`；
+- execute/ignore decision 分析调用与未调用，ignore 不生成 option_event；
+- `observed_option_version / observed_model_version` 保存历史观测版本；
+- `environment` 写入 option_event 的 environment observation；
+- `verification={verifier_id,verdict,evidence_refs}` 写入 model_event.critique，不能自动替代独立认证；
+- `drift` 写入 model_event.drift，未提供时不创建；
+- `revision_ref` 关联回滚，`lifecycle_ref` 从 option_event 继承到 drift。
+
+完整字段、五项读取方式、迁移与验收纪律见 `devNotes/Week9-12开发手册-多源解析与可靠调度.md` §9.1。生产 9070 已于 2026-11-17 完成本轮新增字段迁移，备份为 `.data/production-lineage-backup-20261117-224512`，原计数、绑定、604/97 分组和 R4 边界不变。
+
+P4-5 已于 2026-11-17 验收通过。`sidecar_event` 保存原始 payload、映射引用和 unmapped 原因；完整链可投影原生事件，不完整链保持 raw/null。raw-first 重启恢复、baseline 隔离、显式零奖励、冲突重放拒绝和原生 real 与 sidecar 观察分离均通过。追加扩展仅给 Option 增加可空创建血缘字段，使用现有 subtask/option/model/revision 支持新技能、调用时机、旧问题解决、环境漂移和回滚重启用五项测量；不实现组合 DAG。详见 `docs/sidecar-mapping-v0.1.md` 与 `docs/phase4-sidecar-acceptance.md`。
+
+## 十二B、Step P4-6：日常记忆 STOMP 最小闭环（2026-11-17 新增，已通过）
+
+仅做最小增量，不新增表或日常记忆字段：
+
+- 将 `memory-capture@v1 / memory-revise@v1` 注册为 atomic Option，复用现有文档实现；OpenCode/DSH 统一经 subtask、explicit mandate、真实 execute decision 和 OptionExecutor 写入，不额外生成 Planner rationale。
+- capture/revise 的默认目标是 data 层 DocumentProjection/chunk；chunk 同时作为 Recall 内容和可选事实来源，不建立独立 FactCandidate 持久层。需要推导时才经 ν 门形成 facts + source link。
+- Recall 刷新外部 Markdown 必须通过 `markdown-note@v1`，Recall 读取本身不伪造执行事件；document superseding 与 declarative fact revision 不混用。
+- OptionImplementationResult 可返回真实 `model_events=anticipation/critique/calibration/drift`，未提供时不创建；Sidecar 补 `pre_state/post_state/anticipation` 映射，实际状态与预测不混写。
+- 先观察后适配，以一个 OpenCode 原生只读工具/Skill 和一个 DSH 原生工具/subagent 证明 NativeAdapter 的成功、失败、权限拒绝、取消与 `mode=real`，不重写 harness。
+
+不实现组合 DAG、嵌套 Option、自动 Skill 生成、通用全类型适配、RL 或未来工具，不重放 RocksDB 原生历史。
+
+专项故障覆盖 capture/revise 各写入阶段崩溃、缺 outcome 对账、文件读取中变化、解析/Recall 降级、非法 namespace/敏感路径、缺 mandate、撤销资产、未知实现、schema 错误、Sidecar 状态缺失/冲突、NativeAdapter 权限/超时/取消、host reload/unload 和旧库迁移回滚。任何失败不得伪造 Model 事件或重复记忆写入。
+
+验收必须包含真实 OpenCode/DSH 新会话的 capture → 跨会话 Recall → revise → 再次 Recall，chunk 直接作事实来源、pre/post 与 anticipation 分离、real/sidecar 隔离、原七工具与共享记忆回归。详细实施和 A–G 清单见 `devNotes/Week9-12开发手册-多源解析与可靠调度.md` §9A 与 §十一。
+
+**P4-6 执行验收签署：通过（Kimi Code CLI，2026-11-17），仅覆盖日常记忆 STOMP 最小闭环，不替代 Phase 4 原基线与整体验收。**
+
 ## 十三、Phase 4 增量验收
 
+- P4-0 字段权威矩阵、增量迁移和回滚通过；关键 ID、J/≺、质量分组与 R4 边界不变。
 - 原 Phase 4 解析、结算和七工具兼容验收独立通过。
 - 重复 trigger 不重复建单或执行。
 - 决策后、分发前崩溃可恢复且不重复副作用。
 - Option 已产生副作用但响应丢失时按 idempotency key 对账，不盲目重放。
 - wait 期间 Planner 调用次数为 0，timer 到期唤醒一次。
 - 未授权主动规划只产生 dry-run，stop 不被自动事件绕过。
-- OpenCode LLM 真实作出决策，tool/subagent 两类 Option 真实执行并回流。
+- OpenCode 与 DSH 的真实 LLM 均作出决策，tool/subagent 两类 Option 真实执行并回流；DSH 同切片验证通过。
+- 两种 host 使用各自原生提问与审批，回答只唤醒一次；同一 plan_run 可跨 host 查询、回答或停止。
+- SuperAgent 隔离探针证明 start/deliver/stop/report/Attention 可映射，但不计入完整持续服务验收。
 - sidecar 可映射不完整资产链且不伪造语义。
+- P4-6 capture/revise/Recall 刷新形成原生 STOMP 链，data 投影直接作为候选来源，世界状态与预测分离，最小 NativeAdapter 和真实双宿主记忆闭环通过；证据见 `docs/phase4-memory-stomp-acceptance.md`。
 
 ---
 
-# Phase 5：持续父 Planner、DSH 与决策链可观测
+# Phase 5：持续父 Planner、SuperAgent Executor 正式适配与决策链可观测
 
 ## 十四、目标
 
-在原 memory_why 和事件导出基础上，形成持续 planner-runtime，并验证 DSH/OpenCode 共享同一控制状态。
+在原 memory_why 和事件导出基础上，形成持续 planner-runtime，验证 DSH/OpenCode 共享同一控制状态，并完成 `superagent-adapter v0.1` 正式适配。SuperAgent 承接完整长期持续宿主，OptionMemory 不复制其 Ticket 状态机。
 
 ## 十五、Step P5-1：持续 planner-runtime
 
@@ -693,22 +862,31 @@ Planner Agent + Scheduler + Option dispatcher
 - 同一 subtask_event 决策串行；
 - Planner 实例替换后从 MemoryCore 恢复；
 - host Session 退出不影响持久任务状态；
-- 进程内 timer 不是唯一调度依据。
+- 进程内 timer 不是唯一调度依据；
+- DSH/OpenCode 共用同一个 planner-runtime，不在宿主内分别持有权威队列；
+- 跨 harness handoff 只在 Option 边界进行：暂停新分发、完成副作用对账、校验目标 Mandate/权限/能力、原子转移 lease并记录事件；不支持运行中 Option 热迁移，不自动迁移宿主授权、工作目录或后台进程。
 
-## 十六、Step P5-2：DSH SuperAgent 评估与适配
+## 十六、Step P5-2：SuperAgent Executor 正式适配（superagent-adapter v0.1）
 
-| SuperAgent | 本路线 |
+实现 `src/plugins/superagent/executor.ts` 与 `events.ts`，映射：
+
+- `start(ticket, assignment)` → 创建或恢复 plan_run；
+- `deliver(ticket, assignment)` → 将 Trigger、Policy 变化和人工输入转为 Planner observation；
+- `stop(ticket, assignment, reason)` → 持久化取消并阻止后续 Option 分发；
+- Planner 开始、输入接收、Attention 和最终状态 → assignmentStarted/inputsDelivered/inputsRead/report 回调；
+- **一个 Assignment 对应一个 plan_run/attempt**，plan_run 内可包含多个 Planner 决策和多个 option_event，不得映射为单个 option_event。
+
+状态归属固定为：
+
+| 事实 | 权威持有方 |
 |---|---|
-| Source / Trigger | runtime_inbox 来源事件 |
-| Ticket | subtask_event |
-| Mandate | mandate_json + decision gate |
-| Main Session | 父 Planner Agent |
-| Assignment | option_event，需核查粒度差异 |
-| Report | option_event_outcome |
-| Outbox | runtime_outbox |
-| Worker slot | Option 并发与 lease |
+| Source、Thread、Ticket、Mandate、Assignment 外部生命周期 | SuperAgent |
+| Subscription、follow-up ownership、Attention、Channel Outbox、人工 stop | SuperAgent |
+| plan_run、Planner 决策、Option 执行事件、Model 校准、证据、J/≺、认证和撤销 | OptionMemory / MemoryCore |
+| Ticket 内部规划控制面 | OptionMemory Planner，SuperAgent Eval 只做接单、授权和路由 |
+| 并发约束 | SuperAgent Worker slot 约束 plan_run 数量；Option/subagent lease 与预算由 OptionMemory 另行控制 |
 
-不得长期保留 SuperAgent Store 与 MemoryCore 两套控制事实。DSH 深度适配以原 Phase 3 首版和 pin rc 兼容性验证为前置。
+不得长期保留 SuperAgent Store 与 MemoryCore 两套同义控制事实。SuperAgent 原型版本、许可证、适配差异、DSH/Cordis 依赖和兼容性单独记录，不默认与现有 pin 兼容；Phase 4 隔离探针不能替代本 Step 的正式适配验收。
 
 ## 十七、Step P5-3：决策链血缘与导出
 
@@ -724,20 +902,36 @@ memory_why 在原推导链之外，可关联：
 事件导出增加：
 
 - planner_event*、option_event*、model_event；
-- baseline_id；
+- baseline_id、plan_run_id 和 host 类型；
+- ticket/assignment/trigger 等外部 ID；
 - real/simulated/sidecar；
 - planner/instructions/inference/policy 版本过滤。
 
-J/≺ 与 Planner 决策链通过 ID 关联，不混成一种边。
+J/≺ 与 Planner 决策链通过 ID 关联，不混成一种边；plan_run 与 Assignment 也只通过 ID 关联，不形成第二种任务状态机。
+
+## 十七A、Step P5-4：SuperAgent 持续记忆与跨宿主适配
+
+详细任务与验收见 `devNotes/Week13-14开发手册-持续Planner与决策链导出.md` P5-4。OpenCode 日常记忆最小闭环已在 Phase 4 完成，本步骤不重复实现 Recall。
+
+- `source_id + ticket_id + assignment_id + input_id → namespace/session_id/message_id/query_hash`，长期项目与临时 Assignment 隔离。
+- deliver 使用同一 MemoryCore Recall 重建 Planner observation，不经过 OpenCode context hook，不复制召回实现。
+- 捕获或修订先形成 candidate，经 Ticket Attention/Report.question 批准后应用；人工 stop 后不得继续自动捕获或恢复记忆驱动执行。
+- OpenCode 与 SuperAgent 交叉读取同一 document/fact/recall_event，双方修订在下次 Recall/deliver 生效，不形成第二份记忆。
+- handoff、重启和重复 deliver 按 query_hash/幂等键对账；新 Input 才刷新 Recall。
+- Report 导出实际使用的 memory_uri、recall_id、策略版本、状态和批准引用，未知 rationale 不补写。
 
 ## 十八、Phase 5 增量验收
 
 - 原 memory_why、事件导出和八工具验收独立通过。
-- planner-runtime 重启不丢 inbox/outbox/subtask 状态。
+- planner-runtime 重启不丢 inbox/outbox/subtask/plan_run 状态。
 - DSH/OpenCode 写入同一事件链，不形成第二套控制事实。
 - 可持续处理 timer、外部事件和 Option 结果。
+- 跨 harness handoff 只发生在 Option 边界，权限不足或副作用未对账时 blocked，不重复副作用。
+- SuperAgent start/deliver/stop/report/Attention 正式适配通过；一个 Assignment 对应一个 plan_run，多个 Option 可回放。
+- SuperAgent 与 OptionMemory 的状态归属符合 P5-2，SuperAgent Eval 不越权规划 Ticket 内部实现。
 - 能区分 Planner 选错、Option 失败、Model 不可用和证据失效。
 - DSH rc 兼容性、升级回归和 RocksDB 数据保留有独立记录。
+- Source/Ticket/Assignment 隔离、跨宿主 Recall/修订、Attention 批准、人工 stop 和 handoff 恢复通过；未重复建设 MemoryCore。
 
 ---
 
@@ -794,6 +988,18 @@ policy_version / mandate_ref
 
 RL 导出是只读投影，不实现训练，不要求所有 Option 具有数值 T/R。模拟 rollout 必须显式标记，不进入真实认证。
 
+## 二十二A、Step P6-4：SuperAgent 主动记忆治理与跨 harness 恢复
+
+详细文件、故障测试和签署清单见 `devNotes/Week15-16开发手册-生成认证与SuperAgent持续适配.md` P6-4。OpenCode 日常闭环已在 Phase 4 验收，本步骤面向长期 Source/Ticket。
+
+- 父 Planner 可基于 timer、mapping_stale、冲突、Option outcome 或来源修订提出记忆维护候选；主动发现与执行分离，执行必须命中 mandate/policy。
+- 支持重读来源、生成候选、请求人工复核、重新 Recall、创建 superseding 候选和回滚；候选不得自评、自证或自动成为权威事实。
+- 记忆维护使用统一 option_event/model_event，记录 parser/extractor 版本、成本、错误和 Ticket/Assignment；Recall 命中不等于能力认证。
+- handoff 保存 query_hash、document/chunk、candidate/approval、lease、revision 和幂等键，目标重新校验 namespace/Mandate/active_release。
+- 回滚发布指向旧结论的新 superseding 版本，不篡改历史；revoke 不替代 Ticket stop。
+- Report/RL-ready 关联 memory_uri、recall_id、revision、approval 和真实执行事件，未知 rationale/reward 保持 null。
+- 长期 Ticket 的 Attention、人工 stop、跨宿主恢复和真实适配验收不得以 mock 代替。
+
 ## 二十三、Phase 6 增量验收
 
 - 原生成、认证和十工具验收独立通过。
@@ -802,6 +1008,25 @@ RL 导出是只读投影，不实现训练，不要求所有 Option 具有数值
 - 不同 baseline 和证据来源可隔离统计。
 - RL-ready 导出不虚构状态、reward 或下一状态。
 - simulated/sidecar 不进入真实认证成功率。
+- 长期 Ticket 的维护候选、Attention 批准、人工 stop、跨 harness Recall/修订/恢复通过；认证不混用抽取器自评。
+
+## 二十三A、后续治理扩展：评价 Option 与外部 verifier（不纳入当前 MVP）
+
+> 2026-11-15 讨论补充。本节与《S01最小产品路线图-完整版》§13.7 对齐，是 Phase 6 之后的独立研发方向，不改变当前 source_priority、七工具、R4 阻塞和阶段验收承诺。
+
+后续可新增 `option_score` 与 `external_verifier` 两类 settlement 模式。训练评价 Option 和外部 verifier 只生产评价证据，OptionMemory governance API 仍是唯一状态变更入口；候选 Option 不得自评赋权，Planner/verifier 不得直接写 facts/options/models。
+
+评价契约至少包含候选 fact/option ID、逐项分数或 verdict、不确定度、证据引用、评价者及版本、baseline/context、执行事件和有效期；外部 verifier 增加签名或认证引用。配置按谓词声明 cardinality、单位和值归一化、策略模式、阈值、胜败状态映射、异常处理和策略版本，凭据只保存 `credentialRef`。
+
+自动门控必须满足：
+
+- 评价者与候选 Option 独立，评价 Option/Model 当前 `settled`，校准覆盖当前上下文且未出域；
+- 阈值来自独立真实验证，simulated、未验证 sidecar 和 97 条待复核记录不得进入真实裁决成功率；
+- 同级、分差不足、不确定度过高、缺证据、版本不匹配或出域时 `manual_review`；
+- verifier 超时或不可用转 `manual_review`，签名无效、越权或证据篡改时 `blocked`；
+- 请求与响应按幂等键对账，治理链可回放到 option_event、model_event 或 verifier 证据，重复请求不重复改变状态。
+
+启用顺序固定为：EV0 影子建议 → EV1 人工确认辅助裁决 → EV2 限定 baseline/context 自动裁决 → EV3 逐域评审扩展。每阶段分别验证评价者独立性、阈值、签名、证据隔离、人工 stop、撤销、幂等和完整回放，未签署不得进入下一阶段。具体实施前仍须展开独立文件、接口和故障测试清单。
 
 ---
 
@@ -843,31 +1068,49 @@ OpenCode 必须有真实 LLM 和真实 subagent 调用记录，不能只用 mock
 - 数据迁移前后比较行数、关键 id、J/≺ 和质量状态；
 - 不在生产 RocksDB 中做故障或撤回测试。
 
+### 24.5 日常记忆强制回归与增量交互
+
+P4-1M 之后所有 Step 必须执行 `docs/memory-regression-acceptance.md` 的共享回归，并分别归档增量功能、记忆交互、质量/安全指标和未实现项：
+
+- P4-2：DSH/OpenCode 联合召回、状态/来源一致和跨 host 修订。
+- P4-3：崩溃、lease、重复 trigger、wait/stop 与记忆副作用边界。
+- P4-4：Ticket/Assignment/Input 映射和重复 start/deliver 防重。
+- P4-5：sidecar 不补写 rationale/model/reward，证据来源隔离。
+- P5：持续 runtime、Ticket Attention、跨宿主修订、handoff 和 Report 证据。
+- P6：主动维护候选、认证、RL-ready、长期 Ticket stop/恢复/回滚；Skill 版本和 active_release 一致。
+- 每一步的真实宿主双会话或 Ticket 记录不可由 mock 替代，P4-1M 既有双会话不能作为后续免测证明。
+
 ---
 
 ## 二十五、阶段关闭清单
 
 ### Phase 3：planner-schema v0.1 + continuous-host contract v0.1
 
-- [ ] 原七工具与冲突治理通过。
-- [ ] Planner/Option/Model 增量 schema 可回滚。
-- [ ] 事件 v0.2、plan_run 和 option_event_* 命名落地。
-- [ ] 基础 decision gate 和 Datalog 图查询通过。
-- [ ] continuous-host contract 与原生 Attention 适配通过，未重复建设宿主交互或各自调度器。
+- [x] 原七工具与冲突治理通过。
+- [x] Planner/Option/Model 增量 schema 可回滚。
+- [x] 事件 v0.2、plan_run 和 option_event_* 命名落地。
+- [x] 基础 decision gate 和 Datalog 图查询通过。
+- [x] continuous-host contract 与原生 Attention 适配通过，未重复建设宿主交互或各自调度器。
 
 ### Phase 4：planner-runtime v0.1.0
 
+- [x] P4-0 字段权威审计、增量迁移与回滚通过。
 - [ ] 原解析与结算通过。
-- [ ] inbox/outbox、lease、幂等、timer 和恢复通过。
-- [ ] OpenCode 真实 Planner 闭环通过。
-- [ ] Sidecar Mapping Contract v0.1 通过。
+- [x] P4-1M Markdown 摄入、MemoryCore Recall、显式捕获/修订和 OpenCode 自动注入最小闭环通过。
+- [x] inbox/outbox、lease、幂等、timer 和恢复通过。
+- [x] OpenCode 真实 Planner 闭环通过。
+- [x] DSH 同切片验证通过。
+- [x] SuperAgent 隔离兼容探针通过。
+- [x] Sidecar Mapping Contract v0.1 通过。
 
-### Phase 5：planner-runtime v0.2.0
+### Phase 5：planner-runtime v0.2.0 / superagent-adapter v0.1
 
 - [ ] 原 memory_why 和八工具通过。
 - [ ] 持续父 Planner 和实例恢复通过。
 - [ ] DSH 适配不形成第二套控制状态。
-- [ ] 决策链血缘与事件导出通过。
+- [ ] SuperAgent Executor 正式适配与 Assignment → plan_run 映射通过。
+- [ ] Option 边界 handoff 和决策链血缘与事件导出通过。
+- [ ] P5-4 SuperAgent 持续记忆、跨宿主 Recall/修订、Attention 和恢复通过。
 
 ### Phase 6：planner-runtime v0.3.0
 
@@ -875,6 +1118,7 @@ OpenCode 必须有真实 LLM 和真实 subagent 调用记录，不能只用 mock
 - [ ] 主动规划不越权，人工 stop 持续有效。
 - [ ] 真实/模拟/sidecar 证据隔离。
 - [ ] RL-ready 导出通过，未把 RL 训练冒充为首版交付。
+- [ ] P6-4 SuperAgent 主动记忆治理、Attention、stop、跨 harness 恢复和证据链通过。
 
 ---
 

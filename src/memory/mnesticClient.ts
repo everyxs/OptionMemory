@@ -23,6 +23,51 @@ import {
   type RuleRow,
   type SubtaskRow,
 } from "./assets";
+import {
+  MODEL_EVENT_COLUMNS,
+  OPTION_EVENT_COLUMNS,
+  OPTION_OBSERVATION_COLUMNS,
+  OPTION_OUTCOME_COLUMNS,
+  PLAN_RUN_COLUMNS,
+  PLANNER_COLUMNS,
+  PLANNER_DECISION_COLUMNS,
+  PLANNER_EVENT_COLUMNS,
+  SUBTASK_EVENT_COLUMNS,
+  HOST_EVENT_COLUMNS,
+  OPTION_INPUT_SCHEMA_COLUMNS,
+  MODEL_SPEC_COLUMNS,
+  type ModelEventRow,
+  type HostEventRow,
+  type OptionEventRow,
+  type OptionInputSchemaRow,
+  type ModelSpecRow,
+  type OptionObservationRow,
+  type OptionOutcomeRow,
+  type PlanRunRow,
+  type PlannerDecisionRow,
+  type PlannerEventRow,
+  type PlannerRow,
+  type SubtaskEventRow,
+} from "./planner";
+import {
+  MEMORY_CHUNK_COLUMNS,
+  MEMORY_DOCUMENT_COLUMNS,
+  MEMORY_RECALL_EVENT_COLUMNS,
+  MEMORY_SOURCE_LINK_COLUMNS,
+  type MemoryChunkRow,
+  type MemoryDocumentRow,
+  type MemoryRecallEventRow,
+  type MemorySourceLinkRow,
+} from "./document-projections";
+import {
+  RUNTIME_INBOX_COLUMNS,
+  RUNTIME_OUTBOX_COLUMNS,
+  RUNTIME_SUBTASK_LEASE_COLUMNS,
+  type RuntimeInboxRow,
+  type RuntimeOutboxRow,
+  type RuntimeSubtaskLeaseRow,
+} from "./runtime";
+import { SIDECAR_EVENT_COLUMNS, type SidecarEventRow } from "./sidecar";
 
 export interface MnesticClientOptions {
   /** 默认 http://127.0.0.1:9070/text-query */
@@ -82,6 +127,7 @@ const ALL_JUSTIFICATIONS = `?[${JUSTIFICATION_COLUMNS.join(", ")}] := *justifica
 const ALL_OPTIONS = `?[${OPTION_COLUMNS.join(", ")}] := *options{${OPTION_COLUMNS.join(", ")}}`;
 const COUNT_REVISION = `?[count(id)] := *facts{id, predicate, args}, predicate == "revision", first(args) == $id`;
 const GET_OPTION_BY_ID = `?[${OPTION_COLUMNS.join(", ")}] := *options{${OPTION_COLUMNS.join(", ")}}, option_id == $id`;
+const GET_MODEL_BY_ID = `?[${MODEL_COLUMNS.join(", ")}] := *models{${MODEL_COLUMNS.join(", ")}}, model_id == $id`;
 const GET_PROCEDURAL_BY_OPTION = `?[${PROCEDURAL_KNOWLEDGE_COLUMNS.join(", ")}] := *procedural_knowledge{${PROCEDURAL_KNOWLEDGE_COLUMNS.join(", ")}}, o_id == $id`;
 
 /** putFact 的行形：键为 facts 列名（snake_case），全列必填。 */
@@ -205,7 +251,7 @@ export class MnesticClient {
   }
 
   async putOption(row: OptionRow): Promise<void> {
-    await this.putAssetRows("options", "option_id", OPTION_COLUMNS, [row]);
+    await this.putAssetRows("options", "option_id", OPTION_COLUMNS, [{ ...row, input_schema: row.input_schema ?? null }]);
   }
 
   async listOptions(): Promise<OptionRow[]> {
@@ -219,8 +265,21 @@ export class MnesticClient {
     await this.putAssetRows("subtasks", "subtask_id", SUBTASK_COLUMNS, [row]);
   }
 
+  async getSubtaskById(id: string): Promise<NamedRows> {
+    return this.getAssetById("subtasks", "subtask_id", SUBTASK_COLUMNS, id);
+  }
+
   async putModel(row: ModelRow): Promise<void> {
-    await this.putAssetRows("models", "model_id", MODEL_COLUMNS, [row]);
+    await this.putAssetRows("models", "model_id", MODEL_COLUMNS, [{
+      ...row,
+      reasoning_spec: row.reasoning_spec ?? null,
+      evidence_spec: row.evidence_spec ?? null,
+      evaluation_spec: row.evaluation_spec ?? null,
+    }]);
+  }
+
+  async getModelById(modelId: string): Promise<NamedRows> {
+    return this.execute(GET_MODEL_BY_ID, { id: modelId });
   }
 
   async getOptionById(optionId: string): Promise<NamedRows> {
@@ -237,6 +296,311 @@ export class MnesticClient {
 
   async putPlanTemplate(_row: PlanTemplateRow): Promise<void> {
     throw new MnesticError("plan_templates registration is reserved and disabled in the MVP");
+  }
+
+  private async getAssetById(
+    table: string,
+    key: string,
+    columns: readonly string[],
+    id: string,
+  ): Promise<NamedRows> {
+    const cols = columns.join(", ");
+    return this.execute(`?[${cols}] := *${table}{${cols}}, ${key} == $id`, { id });
+  }
+
+  private async listAssetByField(
+    table: string,
+    columns: readonly string[],
+    field: string,
+    value: string,
+  ): Promise<NamedRows> {
+    const cols = columns.join(", ");
+    return this.execute(`?[${cols}] := *${table}{${cols}}, ${field} == $value`, { value });
+  }
+
+  async putPlanner(row: PlannerRow): Promise<void> {
+    await this.putAssetRows("planners", "planner_id", PLANNER_COLUMNS, [row]);
+  }
+
+  async getPlannerById(id: string): Promise<NamedRows> {
+    return this.getAssetById("planners", "planner_id", PLANNER_COLUMNS, id);
+  }
+
+  async putPlanRun(row: PlanRunRow): Promise<void> {
+    await this.putAssetRows("plan_runs", "plan_run_id", PLAN_RUN_COLUMNS, [row]);
+  }
+
+  async getPlanRunById(id: string): Promise<NamedRows> {
+    return this.getAssetById("plan_runs", "plan_run_id", PLAN_RUN_COLUMNS, id);
+  }
+
+  async putSubtaskEvent(row: SubtaskEventRow): Promise<void> {
+    await this.putAssetRows("subtask_event", "subtask_event_id", SUBTASK_EVENT_COLUMNS, [row]);
+  }
+
+  async getSubtaskEventById(id: string): Promise<NamedRows> {
+    return this.getAssetById("subtask_event", "subtask_event_id", SUBTASK_EVENT_COLUMNS, id);
+  }
+
+  async putPlannerEvent(row: PlannerEventRow): Promise<void> {
+    await this.putAssetRows("planner_event", "planner_event_id", PLANNER_EVENT_COLUMNS, [row]);
+  }
+
+  async getPlannerEventById(id: string): Promise<NamedRows> {
+    return this.getAssetById("planner_event", "planner_event_id", PLANNER_EVENT_COLUMNS, id);
+  }
+
+  async listPlannerEventsBySubtaskId(id: string): Promise<NamedRows> {
+    return this.listAssetByField("planner_event", PLANNER_EVENT_COLUMNS, "subtask_event_id", id);
+  }
+
+  async putPlannerDecision(row: PlannerDecisionRow): Promise<void> {
+    await this.putAssetRows("planner_event_decision", "planner_event_id", PLANNER_DECISION_COLUMNS, [row]);
+  }
+
+  async getPlannerDecisionByEventId(id: string): Promise<NamedRows> {
+    return this.getAssetById("planner_event_decision", "planner_event_id", PLANNER_DECISION_COLUMNS, id);
+  }
+
+  async putOptionEvent(row: OptionEventRow): Promise<void> {
+    await this.putAssetRows("option_event", "option_event_id", OPTION_EVENT_COLUMNS, [row]);
+  }
+
+  async getOptionEventById(id: string): Promise<NamedRows> {
+    return this.getAssetById("option_event", "option_event_id", OPTION_EVENT_COLUMNS, id);
+  }
+
+  async listOptionEventsByOptionId(id: string): Promise<NamedRows> {
+    return this.listAssetByField("option_event", OPTION_EVENT_COLUMNS, "option_id", id);
+  }
+
+  async listOptionEventsByPlannerEventId(id: string): Promise<NamedRows> {
+    return this.listAssetByField("option_event", OPTION_EVENT_COLUMNS, "planner_event_id", id);
+  }
+
+  async putOptionObservation(row: OptionObservationRow): Promise<void> {
+    await this.putAssetRows("option_event_observation", "observation_event_id", OPTION_OBSERVATION_COLUMNS, [row]);
+  }
+
+  async getOptionObservationById(id: string): Promise<NamedRows> {
+    return this.getAssetById("option_event_observation", "observation_event_id", OPTION_OBSERVATION_COLUMNS, id);
+  }
+
+  async listOptionObservationsByOptionEventId(id: string): Promise<NamedRows> {
+    return this.listAssetByField("option_event_observation", OPTION_OBSERVATION_COLUMNS, "option_event_id", id);
+  }
+
+  async putOptionOutcome(row: OptionOutcomeRow): Promise<void> {
+    await this.putAssetRows("option_event_outcome", "option_event_id", OPTION_OUTCOME_COLUMNS, [row]);
+  }
+
+  async getOptionOutcomeByOptionEventId(id: string): Promise<NamedRows> {
+    return this.getAssetById("option_event_outcome", "option_event_id", OPTION_OUTCOME_COLUMNS, id);
+  }
+
+  async putModelEvent(row: ModelEventRow): Promise<void> {
+    await this.putAssetRows("model_event", "model_event_id", MODEL_EVENT_COLUMNS, [row]);
+  }
+
+  async getModelEventById(id: string): Promise<NamedRows> {
+    return this.getAssetById("model_event", "model_event_id", MODEL_EVENT_COLUMNS, id);
+  }
+
+  async putOptionInputSchema(row: OptionInputSchemaRow): Promise<void> {
+    await this.putAssetRows("option_input_schemas", "option_id", OPTION_INPUT_SCHEMA_COLUMNS, [row]);
+  }
+
+  async getOptionInputSchemaById(id: string): Promise<NamedRows> {
+    return this.getAssetById("option_input_schemas", "option_id", OPTION_INPUT_SCHEMA_COLUMNS, id);
+  }
+
+  async putModelSpecs(row: ModelSpecRow): Promise<void> {
+    await this.putAssetRows("model_specs", "model_id", MODEL_SPEC_COLUMNS, [row]);
+  }
+
+  async getModelSpecsById(id: string): Promise<NamedRows> {
+    return this.getAssetById("model_specs", "model_id", MODEL_SPEC_COLUMNS, id);
+  }
+
+  async putHostEvent(row: HostEventRow): Promise<void> {
+    await this.putAssetRows("host_event", "host_event_id", HOST_EVENT_COLUMNS, [row]);
+  }
+
+  async getHostEventById(id: string): Promise<NamedRows> {
+    return this.getAssetById("host_event", "host_event_id", HOST_EVENT_COLUMNS, id);
+  }
+
+  async listHostEventsByPlanRunId(id: string): Promise<NamedRows> {
+    return this.listAssetByField("host_event", HOST_EVENT_COLUMNS, "plan_run_id", id);
+  }
+
+  async putSidecarEvent(row: SidecarEventRow): Promise<void> {
+    await this.putAssetRows("sidecar_event", "sidecar_event_id", SIDECAR_EVENT_COLUMNS, [row]);
+  }
+
+  async getSidecarEventById(id: string): Promise<NamedRows> {
+    return this.getAssetById("sidecar_event", "sidecar_event_id", SIDECAR_EVENT_COLUMNS, id);
+  }
+
+  async listSidecarEventsByBaselineId(id: string): Promise<NamedRows> {
+    return this.listAssetByField("sidecar_event", SIDECAR_EVENT_COLUMNS, "baseline_id", id);
+  }
+
+  async listSidecarEventsByRunId(id: string): Promise<NamedRows> {
+    return this.listAssetByField("sidecar_event", SIDECAR_EVENT_COLUMNS, "run_id", id);
+  }
+
+  async putMemoryDocument(row: MemoryDocumentRow): Promise<void> {
+    await this.putAssetRows("memory_documents", "document_id", MEMORY_DOCUMENT_COLUMNS, [row]);
+  }
+
+  async getMemoryDocumentById(id: string): Promise<NamedRows> {
+    return this.getAssetById("memory_documents", "document_id", MEMORY_DOCUMENT_COLUMNS, id);
+  }
+
+  async listMemoryDocuments(): Promise<NamedRows> {
+    return this.execute(`?[${MEMORY_DOCUMENT_COLUMNS.join(", ")}] := *memory_documents{${MEMORY_DOCUMENT_COLUMNS.join(", ")}}`);
+  }
+
+  async putMemoryChunk(row: MemoryChunkRow): Promise<void> {
+    await this.putAssetRows("memory_chunks", "chunk_version_id", MEMORY_CHUNK_COLUMNS, [row]);
+  }
+
+  async getMemoryChunkVersionById(id: string): Promise<NamedRows> {
+    return this.getAssetById("memory_chunks", "chunk_version_id", MEMORY_CHUNK_COLUMNS, id);
+  }
+
+  async listMemoryChunksByDocumentId(id: string): Promise<NamedRows> {
+    return this.listAssetByField("memory_chunks", MEMORY_CHUNK_COLUMNS, "document_id", id);
+  }
+
+  async listMemoryChunks(): Promise<NamedRows> {
+    return this.execute(`?[${MEMORY_CHUNK_COLUMNS.join(", ")}] := *memory_chunks{${MEMORY_CHUNK_COLUMNS.join(", ")}}`);
+  }
+
+  async putMemorySourceLink(row: MemorySourceLinkRow): Promise<void> {
+    await this.putAssetRows("memory_source_links", "link_id", MEMORY_SOURCE_LINK_COLUMNS, [row]);
+  }
+
+  async listMemorySourceLinksByFactId(id: string): Promise<NamedRows> {
+    return this.listAssetByField("memory_source_links", MEMORY_SOURCE_LINK_COLUMNS, "fact_id", id);
+  }
+
+  async putMemoryRecallEvent(row: MemoryRecallEventRow): Promise<void> {
+    await this.putAssetRows("memory_recall_events", "recall_id", MEMORY_RECALL_EVENT_COLUMNS, [row]);
+  }
+
+  async getMemoryRecallEventById(id: string): Promise<NamedRows> {
+    return this.getAssetById("memory_recall_events", "recall_id", MEMORY_RECALL_EVENT_COLUMNS, id);
+  }
+
+  async listMemoryRecallEvents(): Promise<NamedRows> {
+    return this.execute(`?[${MEMORY_RECALL_EVENT_COLUMNS.join(", ")}] := *memory_recall_events{${MEMORY_RECALL_EVENT_COLUMNS.join(", ")}}`);
+  }
+
+  async putRuntimeDecision(decision: PlannerDecisionRow, outbox: RuntimeOutboxRow): Promise<void> {
+    const decisionScript = `?[planner_event_id, decision_type, decision_json, created_at] <- $decision :put planner_event_decision {planner_event_id => decision_type, decision_json, created_at}`;
+    const outboxScript = `?[${RUNTIME_OUTBOX_COLUMNS.join(", ")}] <- $outbox :put runtime_outbox {decision_id => ${RUNTIME_OUTBOX_COLUMNS.slice(1).join(", ")}}`;
+    await this.execute(`{${decisionScript};}\n{${outboxScript};}`, {
+      decision: [[decision.planner_event_id, decision.decision_type, decision.decision_json, decision.created_at]],
+      outbox: [RUNTIME_OUTBOX_COLUMNS.map((column) => outbox[column])],
+    });
+  }
+
+  async putRuntimeInbox(row: RuntimeInboxRow): Promise<void> {
+    await this.putAssetRows("runtime_inbox", "event_id", RUNTIME_INBOX_COLUMNS, [row]);
+  }
+
+  async getRuntimeInboxById(id: string): Promise<NamedRows> {
+    return this.getAssetById("runtime_inbox", "event_id", RUNTIME_INBOX_COLUMNS, id);
+  }
+
+  async listRuntimeInbox(): Promise<NamedRows> {
+    return this.execute(`?[${RUNTIME_INBOX_COLUMNS.join(", ")}] := *runtime_inbox{${RUNTIME_INBOX_COLUMNS.join(", ")}}`);
+  }
+
+  async leaseRuntimeInbox(id: string, owner: string, now: number, expiresAt: number): Promise<NamedRows> {
+    const columns = RUNTIME_INBOX_COLUMNS.join(", ");
+    const nonKeyColumns = RUNTIME_INBOX_COLUMNS.slice(1).join(", ");
+    const current = await this.getRuntimeInboxById(id);
+    if (!current.rows.length) return { ...current, rows: [] };
+    const row = Object.fromEntries(current.headers.map((header, index) => [header, current.rows[0][index]])) as unknown as RuntimeInboxRow;
+    row.status = "leased";
+    row.attempts += 1;
+    row.lease_owner = owner;
+    row.lease_expires_at = expiresAt;
+    row.updated_at = now;
+    try {
+      await this.execute(
+        `{?[${columns}] := *runtime_inbox{${columns}}, event_id == $id, status == "leased", (lease_expires_at ~ 0.0) >= $now :ensure_not runtime_inbox {event_id => ${nonKeyColumns}};}\n{?[${columns}] <- $row :put runtime_inbox {event_id => ${nonKeyColumns}};}`,
+        { id, now, row: [RUNTIME_INBOX_COLUMNS.map((column) => row[column])] },
+      );
+    } catch {
+      return { headers: [], rows: [], next: null };
+    }
+    const result = await this.getRuntimeInboxById(id);
+    const ownerIndex = result.headers.indexOf("lease_owner");
+    return { ...result, rows: result.rows.filter((row) => row[ownerIndex] === owner) };
+  }
+
+  async putRuntimeOutbox(row: RuntimeOutboxRow): Promise<void> {
+    await this.putAssetRows("runtime_outbox", "decision_id", RUNTIME_OUTBOX_COLUMNS, [row]);
+  }
+
+  async getRuntimeOutboxById(id: string): Promise<NamedRows> {
+    return this.getAssetById("runtime_outbox", "decision_id", RUNTIME_OUTBOX_COLUMNS, id);
+  }
+
+  async listRuntimeOutbox(): Promise<NamedRows> {
+    return this.execute(`?[${RUNTIME_OUTBOX_COLUMNS.join(", ")}] := *runtime_outbox{${RUNTIME_OUTBOX_COLUMNS.join(", ")}}`);
+  }
+
+  async leaseRuntimeOutbox(id: string, owner: string, now: number, expiresAt: number): Promise<NamedRows> {
+    const columns = RUNTIME_OUTBOX_COLUMNS.join(", ");
+    const nonKeyColumns = RUNTIME_OUTBOX_COLUMNS.slice(1).join(", ");
+    const current = await this.getRuntimeOutboxById(id);
+    if (!current.rows.length) return { ...current, rows: [] };
+    const row = Object.fromEntries(current.headers.map((header, index) => [header, current.rows[0][index]])) as unknown as RuntimeOutboxRow;
+    row.status = "leased";
+    row.attempts += 1;
+    row.lease_owner = owner;
+    row.lease_expires_at = expiresAt;
+    row.updated_at = now;
+    try {
+      await this.execute(
+        `{?[${columns}] := *runtime_outbox{${columns}}, decision_id == $id, status == "leased", (lease_expires_at ~ 0.0) >= $now :ensure_not runtime_outbox {decision_id => ${nonKeyColumns}};}\n{?[${columns}] <- $row :put runtime_outbox {decision_id => ${nonKeyColumns}};}`,
+        { id, now, row: [RUNTIME_OUTBOX_COLUMNS.map((column) => row[column])] },
+      );
+    } catch {
+      return { headers: [], rows: [], next: null };
+    }
+    const result = await this.getRuntimeOutboxById(id);
+    const ownerIndex = result.headers.indexOf("lease_owner");
+    return { ...result, rows: result.rows.filter((row) => row[ownerIndex] === owner) };
+  }
+
+  async getRuntimeSubtaskLease(id: string): Promise<NamedRows> {
+    return this.getAssetById("runtime_subtask_lease", "subtask_event_id", RUNTIME_SUBTASK_LEASE_COLUMNS, id);
+  }
+
+  async leaseRuntimeSubtask(id: string, owner: string, now: number, expiresAt: number): Promise<NamedRows> {
+    const columns = RUNTIME_SUBTASK_LEASE_COLUMNS.join(", ");
+    const nonKeyColumns = RUNTIME_SUBTASK_LEASE_COLUMNS.slice(1).join(", ");
+    try {
+      await this.execute(
+        `{?[${columns}] := *runtime_subtask_lease{${columns}}, subtask_event_id == $id, lease_expires_at >= $now :ensure_not runtime_subtask_lease {subtask_event_id => ${nonKeyColumns}};}\n{?[${columns}] <- $row :put runtime_subtask_lease {subtask_event_id => lease_owner, lease_expires_at, updated_at};}`,
+        { id, now, row: [[id, owner, expiresAt, now]] },
+      );
+    } catch {
+      return { headers: [], rows: [], next: null };
+    }
+    const result = await this.getRuntimeSubtaskLease(id);
+    const ownerIndex = result.headers.indexOf("lease_owner");
+    return { ...result, rows: result.rows.filter((row) => row[ownerIndex] === owner) };
+  }
+
+  async putRuntimeSubtaskLease(row: RuntimeSubtaskLeaseRow): Promise<void> {
+    await this.putAssetRows("runtime_subtask_lease", "subtask_event_id", RUNTIME_SUBTASK_LEASE_COLUMNS, [row]);
   }
 
   async listActiveRules(): Promise<RuleRow[]> {

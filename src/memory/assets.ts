@@ -17,7 +17,8 @@ export const OPTION_COLUMNS = [
   "i_preconditions", "pi_type", "pi_ref", "pi_fallback", "beta_success",
   "beta_output_schema", "rule_ref", "j_premise_ids", "eps_type", "eps_value",
   "eps_source", "lin_source", "lin_version", "lin_theta", "verify", "status",
-  "subtask_binding", "model_binding",
+  "subtask_binding", "model_binding", "input_schema",
+  "created_at", "parent_option_id", "parent_version", "origin_event_id",
 ] as const;
 
 export const MODEL_COLUMNS = [
@@ -25,7 +26,7 @@ export const MODEL_COLUMNS = [
   "calibration_history", "prediction_error", "cost_model", "theta_version",
   "estimated_initiation_region", "eps_type", "eps_value", "eps_source",
   "status", "j_records", "lin_source", "lin_version", "lin_theta", "lin_actor",
-  "verify",
+  "verify", "reasoning_spec", "evidence_spec", "evaluation_spec",
 ] as const;
 
 export const PROCEDURAL_KNOWLEDGE_COLUMNS = [
@@ -99,6 +100,11 @@ export interface OptionRow {
   status: string;
   subtask_binding: string;
   model_binding: string;
+  input_schema?: unknown;
+  created_at?: number | null;
+  parent_option_id?: string | null;
+  parent_version?: string | null;
+  origin_event_id?: string | null;
 }
 
 export type OptionInput = Omit<OptionRow, "option_type" | "template_id"> &
@@ -125,6 +131,9 @@ export interface ModelRow {
   lin_theta: string | null;
   lin_actor: string;
   verify: string;
+  reasoning_spec?: unknown;
+  evidence_spec?: unknown;
+  evaluation_spec?: unknown;
 }
 
 export interface ProceduralKnowledgeRow {

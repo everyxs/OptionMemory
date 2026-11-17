@@ -3,3 +3,7 @@ export * from "./assets";
 export * from "./mnesticClient";
 export * from "./client";
 export * from "./events";
+export * from "./planner";
+export * from "./document-projections";
+export * from "./runtime";
+export * from "./sidecar";

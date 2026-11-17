@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 一键按序建表：schema/01_facts.cozo … 08_plan_templates.cozo
+# 一键按序建表：schema/01_facts.cozo 起，按文件名顺序应用全部两位编号关系
 # 注意：mnestic 一次请求只执行一条语句（实测：多 :create 只有最后一条生效），
 # 故每个文件按空行切分为独立语句逐条 POST；全部成功后打印每表结构供核对。
 # 用法：schema/apply_all.sh   （Env: MNESTIC_ENDPOINT，默认 127.0.0.1:9070）
@@ -8,6 +8,8 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENDPOINT="${MNESTIC_ENDPOINT:-http://127.0.0.1:9070/text-query}"
 TABLES=(facts rules justifications subtasks options models procedural_knowledge plan_templates)
+SCHEMA_FILES=("$HERE"/0[1-9]_*.cozo "$HERE"/1[0-9]_*.cozo)
+if (($#)); then SCHEMA_FILES=("$@"); fi
 TMPD="$(mktemp -d)"
 trap 'rm -rf "$TMPD"' EXIT
 
@@ -30,7 +32,7 @@ console.log(line(r.headers));console.log(w.map(x=>"-".repeat(x)).join("-+-"));
 r.rows.forEach(row=>console.log(line(row)))})'
 }
 
-for f in "$HERE"/0[1-8]_*.cozo; do
+for f in "${SCHEMA_FILES[@]}"; do
   echo "=== $(basename "$f")"
   rm -f "$TMPD"/blk_*
   awk -v outdir="$TMPD" 'BEGIN{RS="";} {print > (outdir "/blk_" NR)}' "$f"

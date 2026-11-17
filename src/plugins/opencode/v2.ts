@@ -1,13 +1,16 @@
 import { z } from "zod";
-import { memory_get, memory_query, memory_set } from "../../api/memory";
-import { registerOption } from "../../api/registry";
-import { assertReadOnlyQuery } from "../../api/readOnlyQuery";
+import { executeOptionMemoryTool, type OptionMemoryToolName } from "../../api/tool-executor";
 import {
   OPTIONMEMORY_TOOL_CONTRACTS,
   toolContractToJsonSchema,
   type ToolContract,
 } from "../../api/tool-contracts";
 import { configureOpenCodeMemory } from "./config";
+import { PLANNER_TOOL_CONTRACTS } from "../../api/planner-contracts";
+import { getPlannerContext, listPlannerOptions, submitPlannerDecision } from "../../runtime/planner";
+import { registerOpenCodeReviewer, registerOpenCodeV2Reviewer } from "./planner";
+import { recordOpenCodePlannerEvent } from "./planner-events";
+import type { PluginInput } from "@opencode-ai/plugin" with { "resolution-mode": "import" };
 
 interface ToolEditor {
   add(definition: {
@@ -29,30 +32,6 @@ export interface OpenCodeV2Context {
 
 const json = (value: unknown): string => JSON.stringify(value, null, 2);
 
-async function executeTool(name: string, input: unknown): Promise<string> {
-  switch (name) {
-    case "memory_set":
-      return json(await memory_set(
-        z.object(OPTIONMEMORY_TOOL_CONTRACTS.memory_set.args).parse(input),
-      ));
-    case "memory_get": {
-      const args = z.object(OPTIONMEMORY_TOOL_CONTRACTS.memory_get.args).parse(input);
-      return json(await memory_get(args.id));
-    }
-    case "memory_query": {
-      const args = z.object(OPTIONMEMORY_TOOL_CONTRACTS.memory_query.args).parse(input);
-      assertReadOnlyQuery(args.datalog);
-      return json(await memory_query(args.datalog));
-    }
-    case "propose_option":
-      return json(await registerOption(
-        z.object(OPTIONMEMORY_TOOL_CONTRACTS.propose_option.args).parse(input),
-      ));
-    default:
-      throw new Error(`unsupported OptionMemory tool: ${name}`);
-  }
-}
-
 export async function setupOpenCodeV2(
   ctx: OpenCodeV2Context,
   options?: Record<string, unknown>,
@@ -64,9 +43,55 @@ export async function setupOpenCodeV2(
         name: contract.name,
         description: contract.description,
         input: toolContractToJsonSchema(contract),
-        execute: async (input) => ({ content: await executeTool(contract.name, input) }),
+        execute: async (input) => ({
+          content: json(await executeOptionMemoryTool(contract.name as OptionMemoryToolName, input)),
+        }),
       });
     }
   });
   console.error("[optionmemory] V2 setup completed");
+}
+
+export async function setupOpenCodePlannerV2(
+  ctx: OpenCodeV2Context & Partial<PluginInput>,
+  options?: Record<string, unknown>,
+): Promise<void> {
+  configureOpenCodeMemory(options);
+  if (ctx.client && ctx.directory) registerOpenCodeReviewer(ctx.client, ctx.directory);
+  const v2 = ctx as unknown as {
+    session?: Parameters<typeof registerOpenCodeV2Reviewer>[0];
+    location?: { directory?: string };
+  };
+  if (!ctx.client && v2.session && v2.location?.directory) registerOpenCodeV2Reviewer(v2.session, v2.location.directory);
+  await ctx.tool.transform((editor) => {
+    editor.add({
+      name: "planner_context",
+      description: PLANNER_TOOL_CONTRACTS.planner_context.description,
+      input: z.toJSONSchema(z.object(PLANNER_TOOL_CONTRACTS.planner_context.args)) as Record<string, unknown>,
+      execute: async (input) => ({ content: json(await getPlannerContext((input as { plan_run_id: string }).plan_run_id)) }),
+    });
+    editor.add({
+      name: "planner_options",
+      description: PLANNER_TOOL_CONTRACTS.planner_options.description,
+      input: z.toJSONSchema(z.object(PLANNER_TOOL_CONTRACTS.planner_options.args)) as Record<string, unknown>,
+      execute: async (input) => ({ content: json(await listPlannerOptions((input as { plan_run_id: string }).plan_run_id)) }),
+    });
+    editor.add({
+      name: "planner_decision",
+      description: PLANNER_TOOL_CONTRACTS.planner_decision.description,
+      input: z.toJSONSchema(z.object(PLANNER_TOOL_CONTRACTS.planner_decision.args)) as Record<string, unknown>,
+      execute: async (input, context) => {
+        const decisionInput = input as Parameters<typeof submitPlannerDecision>[0];
+        const result = await submitPlannerDecision({ ...decisionInput, signal: context.signal });
+        await recordOpenCodePlannerEvent({
+          planRunId: decisionInput.plan_run_id,
+          eventType: "tool.execute.after",
+          externalId: `planner_decision:${decisionInput.idempotency_key}`,
+          payload: { tool: "planner_decision", plannerEventId: result.plannerEventId, optionEventId: result.execution?.optionEventId ?? null, gate: result.gate },
+        });
+        return { content: json(result) };
+      },
+    });
+  });
+  console.error("[optionmemory-planner] V2 setup completed");
 }

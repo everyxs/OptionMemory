@@ -1,0 +1,30 @@
+# 11_runtime_outbox.cozo — 原子决策外发、执行幂等与 subtask 串行 lease
+
+:create runtime_outbox {decision_id: String =>
+    subtask_event_id: String,
+    decision_type: String,
+    payload: Json,
+    idempotency_key: String,
+    status: String,
+    available_at: Float,
+    attempts: Int,
+    lease_owner: String?,
+    lease_expires_at: Float?,
+    last_error: String?,
+    created_at: Float,
+    updated_at: Float}
+
+::index create runtime_outbox:status_available_idx {status, available_at}
+
+::index create runtime_outbox:subtask_idx {subtask_event_id}
+
+::index create runtime_outbox:lease_idx {lease_expires_at}
+
+::index create runtime_outbox:idempotency_idx {idempotency_key}
+
+:create runtime_subtask_lease {subtask_event_id: String =>
+    lease_owner: String,
+    lease_expires_at: Float,
+    updated_at: Float}
+
+::index create runtime_subtask_lease:expiry_idx {lease_expires_at}

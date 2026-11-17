@@ -47,6 +47,10 @@ export async function registerOption(input: OptionInput): Promise<RegisterResult
     ...input,
     option_type: input.option_type ?? "atomic",
     template_id: input.template_id ?? null,
+    created_at: input.created_at ?? null,
+    parent_option_id: input.parent_option_id ?? null,
+    parent_version: input.parent_version ?? null,
+    origin_event_id: input.origin_event_id ?? null,
   };
   const missing = [
     ...missingStrings(option, [

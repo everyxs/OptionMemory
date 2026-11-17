@@ -1,10 +1,10 @@
 ---
 创建时间: 2026-10-31
-更新时间: 2026-11-06
+更新时间: 2026-11-15
 类型: 开发手册
 所属项目: "26-04 AI4Science"
 对应路线图: "S01最小产品路线图（OptionMemory 版）Phase 3 · Week 7–8"
-状态: 实施中（Step 1 已完成，Step 2–7 待实施）
+状态: 已关闭（2026-11-15 完成阶段验收签署）
 tags:
   - 开发手册
   - OptionMemory
@@ -26,7 +26,15 @@ tags:
 >
 > **2026-11-06 增量修订**：在原冲突治理与双 host v0.1.0 基线之外，新增 Planner-ready 资产、事件 v0.2 和 continuous-host contract v0.1，分别验收。DSH/OpenCode 保持对话宿主，长任务后续接入同一个共享 planner-runtime；本阶段不分别建设持续服务平台，不实现 SuperAgent 或 dataStore，原 7 工具和治理验收不变。
 >
-> **Step 1 实施进展（2026-11-06）**：已实现 `src/runtime/conflict.ts` 与 `src/api/governance.ts` 的 M1 检测和隔离。450/512 HV 双方及受影响派生锥标 contested，关联 measure options 标 probation，历史原值可查询，冲突事件按 fact ID 对幂等；相同硬度值和多值 xrd_peak 不误报。同时修正 `memory_retract`/`restoreFact` 的级联范围，仅处理受影响依赖锥，并新增无关派生事实保持 in 的回归。独立 RocksDB 重启、部分写入对账与 Mem/RocksDB 对拍均已通过，当前 51 项全套测试通过，Step 2 待实施。
+> **Step 1 实施进展（2026-11-06）**：已实现 `src/runtime/conflict.ts` 与 `src/api/governance.ts` 的 M1 检测和隔离。450/512 HV 双方及受影响派生锥标 contested，关联 measure options 标 probation，历史原值可查询，冲突事件按 fact ID 对幂等；相同硬度值和多值 xrd_peak 不误报。同时修正 `memory_retract`/`restoreFact` 的级联范围，仅处理受影响依赖锥，并新增无关派生事实保持 in 的回归。独立 RocksDB 重启、部分写入对账与 Mem/RocksDB 对拍均已通过，当时 51 项全套测试通过。
+>
+> **Step 2–3 实施进展（2026-11-14）**：新增 `config/settlement-policy.json`、`src/runtime/settlement.ts` 与 `tests/settlement.test.ts`，固定 experiment > simulation > literature，未知或同级来源要求人工复核。`settle` 将胜方 fact/Option 置 in/settled，`revoke` 将败方置 archived/revoked；确定性 governance/revision 事件保存完整裁决链且重复调用不重复记账。已注册 Model 同步为 settled/retracted 并以 j_records 关联同一治理事件；`tests/measure-settlement.test.ts` 验证 subtask/option/model 绑定及未观测成本、误差和校准值的 null 语义。
+>
+> **Step 4–5 实施进展（2026-11-14）**：首版契约已补齐 memory_retract/settle/revoke，恰好 7 工具。新增 `src/api/tool-executor.ts` 作为共享分发，OpenCode V1/V2 与 DSH `inject`/`apply`/`ctx.tools.register`/`ctx.memory` 均复用同一契约和核心服务。`tests/dsh.test.ts` 已通过真实 Mem 的交叉读写与跨 host 治理链，manifest 已登记 7 工具。
+>
+> **Step 6 验收完成（2026-11-15）**：OpenCode 2.3.0 实测 V2 setup 成功，隔离的 opencode-ai 1.19.5 V1 CLI 实测 agent 中全部 7 工具注册成功。DSH 已升级至 0.2.2-rc.1，`materials-agent` 隔离 profile 安装成功，实时 `ctx.tools.schemas()` 返回全部 7 工具。DSH 与 OpenCode 的真实 LLM 分别在两套独立 RocksDB 上完成七工具 S01 治理流程，最终均为 512 HV fact `in`、450 HV fact `archived`、experiment Option `settled`、literature Option `revoked`，独立 retract fact 为 `out`。移除/重装后各实例 facts 均为 9 条，关键 ID 与状态不变，输出 `DATA_RETENTION_PASS`。
+>
+> **Step 7 验收完成（2026-11-15）**：Planner 注册与版本回查、Option/Model 兼容字段、事件 v0.2 执行图、continuous-host 和原生 Attention 均已实现。采用 additive compatibility tables 避免替换带索引关系，迁移、重复执行与回滚通过。DSH userQuestions 与 OpenCode V1 permission 原生探针均证明回答只唤醒一次。`pnpm build` 与 22 个测试文件、76 项测试全部通过，待 Phase 3 汇总签署。
 
 ---
 
@@ -43,7 +51,7 @@ tags:
 ### 双 host 模块目标
 
 - 形成可安装的 DSH v0.1.0 与可发现的 OpenCode 项目级 v0.1.0；
-- DSH v0.1.0-rc.8（pin）与 OpenCode 当前兼容版本分别加载无错；
+- DSH v0.2.2-rc.1（pin）与 OpenCode 当前兼容版本分别加载无错；
 - 两种 host 的 LLM 均可调用同一首版 7 工具完成 S01 写入、查询、推导、修订和冲突治理；
 - 模块经 HTTP 使用独立 mnestic 服务，加载/卸载/重装不影响 RocksDB 数据；
 - 核心 `src/memory`、`src/api`、`src/runtime` 不引入 Cordis/DSH/OpenCode 依赖。
@@ -69,8 +77,8 @@ tags:
 - Phase 0 正式关闭，Phase 1 R1–R3 部分验收完成，Phase 2 出口检查通过。
 - `memory_retract` 的输入/输出、错误与审计契约已冻结。
 - R3 v2 与质量记录保持原值不变、幂等和血缘完整；R4 仍明确阻塞。
-- DSH v0.1.0-rc.8 与 vendored `@deepseek-ai/cordis` 可用，materials-agent 专用 profile 已准备。
-- OpenCode 与 `@opencode-ai/plugin@1.19.5` 可用，当前 4 工具开发版通过测试，`.opencode/plugins/optionmemory.ts` 可被发现。
+- DSH v0.2.2-rc.1、`@deepseek-ai/cordis@~4.1.0` 与 `@deepseek-ai/dsh-tools@0.2.2-rc.1` 可用，materials-agent 专用 profile 已准备。
+- OpenCode 与 `@opencode-ai/plugin@1.19.5` 可用，当前 7 工具首版通过测试，`.opencode/plugins/optionmemory.ts` 可被发现。
 - RocksDB 实例可通过 HTTP 访问，默认仅绑定 `127.0.0.1`；token 配置路径已预留。
 - 既有 `pnpm build` / `pnpm test` 全绿。
 
@@ -138,9 +146,9 @@ tags:
 
 **验收**：
 
-- [ ] 512 HV 对应 option settled，450 HV 对应 option revoked/dormant。
-- [ ] 裁决链含完整 ≺，来源优先级未被误用。
-- [ ] 未知来源不会自动 settle，重复裁决不重复写事件。
+- [x] 512 HV 对应 option settled，450 HV 对应 option revoked/dormant。
+- [x] 裁决链含完整 ≺，来源优先级未被误用。
+- [x] 未知来源不会自动 settle，重复裁决不重复写事件。
 
 ### Step 3：measure option/model 结算
 
@@ -155,10 +163,17 @@ tags:
 交付：option/model/subtask 记录 + 结算记录 + 验收查询。
 ```
 
+**实现澄清（2026-11-15）**：
+
+- `Option.model_binding` 只是 Model ID，不代表完整 Model 行已经注册。Step 2 允许在 Model 缺失时仅完成 fact/Option 裁决；Step 3 关闭前必须通过 `registerModel` 写入完整 Model 字段。
+- 已注册 Model 通过 `model_id = option.model_binding` 和 `model.option_id = option.option_id` 双向核对，settle/revoke 分别同步为 `settled/retracted`，并把对应 governance event ID 追加到 `j_records`。
+- 若 Model 在裁决后补注册，可使用相同参数重复调用 settle/revoke 补齐状态与血缘；确定性事件 ID 保证不重复写 governance/revision。
+- `achievable_probability=0`、`prediction_error=0` 和空字符串是旧 schema 的占位形式，不是实测结果。未观测成本、误差、成功率和适用域必须以 `observed:false`、`null` 或 `uncalibrated` 明确表达，字段精简与迁移统一由 Phase 4 P4-0 处理。
+
 **验收**：
 
-- [ ] measure_hardness 及 model 完整入库，绑定和状态正确。
-- [ ] 结算含来源、成本、误差和裁决版本，无虚构校准指标。
+- [x] measure_hardness 及 model 完整入库，绑定和状态正确。
+- [x] 结算含来源、成本、误差和裁决版本，无虚构校准指标。
 
 ### Step 4：统一 7 工具契约
 
@@ -177,8 +192,8 @@ tags:
 
 **验收**：
 
-- [ ] 工具清单恰好为 memory_set/get/query/retract + propose_option/settle/revoke。
-- [ ] 无未来工具占位，参数和错误语义与核心 API 一致。
+- [x] 工具清单恰好为 memory_set/get/query/retract + propose_option/settle/revoke。
+- [x] 无未来工具占位，参数和错误语义与核心 API 一致。
 
 ### Step 5：DSH + OpenCode 双 host 适配
 
@@ -207,9 +222,10 @@ tags:
 
 **验收**：
 
-- [ ] 两种 host 对同一输入返回相同业务结果。
-- [ ] 核心层无 Cordis/DSH/OpenCode 依赖，工具 schema 无重复维护。
-- [ ] OpenCode V1/V2 均能加载，DSH profile 加载无错。
+- [x] 两种 host 对同一输入返回相同业务结果。
+- [x] 核心层无 Cordis/DSH/OpenCode 依赖，工具 schema 无重复维护。
+- [x] DSH 0.2.2-rc.1 profile 安装与实时 7 工具注册通过。
+- [x] OpenCode V1/V2 实际加载无错（V1 1.19.5 agent 全部 7 工具为 true；V2 2.3.0 setup 通过）。
 
 ### Step 6：集成测试与 LLM 联调
 
@@ -227,9 +243,9 @@ tags:
 
 **验收**：
 
-- [ ] 两种 LLM host 均实际调用 7 工具完成 S01 治理流程。
-- [ ] memory_why/query_achievable/certify 未提前注册。
-- [ ] 数据在加载/卸载/重装后保留，未实现项明确列出。
+- [x] 两种 LLM host 均实际调用 7 工具完成 S01 治理流程。
+- [x] memory_why/query_achievable/certify 未提前注册。
+- [x] 数据在加载/卸载/重装后保留，未实现项明确列出。
 
 ---
 
@@ -266,11 +282,11 @@ tags:
 
 **增量验收**：
 
-- [ ] Datalog 可遍历 subtask → plan_run → planner_event → option_event → option/model。
-- [ ] continuous-host 契约可映射 start/deliver/stop/report，plan_run 不包含宿主专有任务状态机。
-- [ ] OpenCode/DSH 使用各自原生提问与审批，回答只唤醒一次，未重复建设 Question Center。
-- [ ] DSH 版本与 root Session 调用边界有实证，不把 master 新能力默认套用到旧 rc。
-- [ ] 原七工具、冲突治理、R4 边界和既有测试不回归；SuperAgent/dataStore 未提前落地。
+- [x] Datalog 可遍历 subtask → plan_run → planner_event → option_event → option/model。
+- [x] continuous-host 契约可映射 start/deliver/stop/report，plan_run 不包含宿主专有任务状态机。
+- [x] OpenCode/DSH 使用各自原生提问与审批，回答只唤醒一次，未重复建设 Question Center。
+- [x] DSH 版本与 root Session 调用边界有实证，不把 master 新能力默认套用到旧 rc。
+- [x] 原七工具、冲突治理、R4 边界和既有测试不回归；SuperAgent/dataStore 未提前落地。
 
 ---
 
@@ -294,7 +310,7 @@ tags:
 
 ### 6.1 适配层
 
-已建立 `src/api/tool-contracts.ts`，当前登记 4 个已实现工具，并可导出 JSON Schema；Phase 3 在同一模块补齐至 7 工具。`src/api/readOnlyQuery.ts` 提供共享只读防护。DSH/OpenCode 必须从同一契约生成各自 schema，不得手工维护两份功能清单。
+已建立 `src/api/tool-contracts.ts`，当前登记首版 7 个已实现工具，并可导出 JSON Schema。`src/api/tool-executor.ts` 统一执行分发，`src/api/readOnlyQuery.ts` 提供共享只读防护。DSH/OpenCode 从同一契约生成各自 schema，不手工维护两份功能清单。
 
 框架交互只允许进入各自目录：
 
@@ -318,12 +334,12 @@ tags:
 - 固定实体/谓词/血缘查询模板；或
 - 解析并拒绝含 `:put`、`:rm`、`:create`、`:replace`、`:delete` 等写操作的查询。
 
-拒绝时返回明确错误，不将请求转发给 mnestic。OpenCode 当前开发版已实现以 `?` 开头校验和写操作拦截，Phase 3 保持同一防护。
+拒绝时返回明确错误，不将请求转发给 mnestic。OpenCode 首版已实现以 `?` 开头校验和写操作拦截，两个 host 保持同一防护。
 
 ### 6.4 OpenCode 模块
 
 - `index.ts` 同时提供 V1 server hooks 与 V2 id/setup；`tools.ts` 用于 V1，`v2.ts` 通过 `ctx.tool.transform` 和共享 JSON Schema 注册工具；
-- 当前 4 工具开发版只作提前验证，Phase 3 必须补齐 retract/settle/revoke 至 7 工具；
+- 当前首版已包含 retract/settle/revoke，恰好 7 工具；
 - V1 用 `opencode plugin list` 核查；V2 用 `opencode --standalone --print-logs --log-level debug debug agents` 核查 `[optionmemory] V2 setup completed`，不能仅凭 plugin list 为空判断失败；
 - 配置、使用与版本边界统一维护在 `docs/opencode-plugin.md`。
 
@@ -392,47 +408,47 @@ opencode --standalone --print-logs --log-level debug debug agents
 
 ### A. 交付物存在性
 
-- [ ] M1 冲突检测、ν-gate 隔离、settlement policy 和 measure option/model 实现及测试。
-- [ ] `src/api/tool-contracts.ts` 中恰好 7 个工具及对应 JSON Schema。
-- [ ] `src/plugins/dsh/` 的 apply/ctx.memory/tools、manifest 和 materials-agent profile 配置。
-- [ ] `src/plugins/opencode/` 的 V1/V2 入口、工具适配和 `.opencode/plugins/optionmemory.ts`。
-- [ ] 双 host 契约测试、交叉数据测试、演示脚本、联调记录与 v0.1.0 模块包。
-- [ ] `schema/09_planners.cozo`、事件 v0.2、continuous-host contract、双 host Attention 适配及对应测试（Planner 增量）。
+- [x] M1 冲突检测、ν-gate 隔离、settlement policy 和 measure option/model 实现及测试。
+- [x] `src/api/tool-contracts.ts` 中恰好 7 个工具及对应 JSON Schema。
+- [x] `src/plugins/dsh/` 的 apply/ctx.memory/tools、manifest 和 materials-agent profile 配置。
+- [x] `src/plugins/opencode/` 的 V1/V2 入口、工具适配和 `.opencode/plugins/optionmemory.ts`。
+- [x] 双 host 契约测试、交叉数据测试、演示脚本、联调记录与 v0.1.0 模块包。
+- [x] `schema/09_planners.cozo`、事件 v0.2、continuous-host contract、双 host Attention 适配及对应测试（Planner 增量）。
 
 ### B. 治理功能验收
 
-- [ ] 450/512 HV 双方 contested，关联 options probation，派生锥暂停。
-- [ ] 实验 option settle、文献 option revoke 转休眠，来源优先级与裁决链完整。
-- [ ] 休眠 option/fact 可查询，无物理删除，重复裁决不重复记账。
-- [ ] 未知来源不自动获胜，measure_hardness 的 model 结算含成本与误差。
-- [ ] R3-RefRepair-01 保持独立，不替代本多元冲突验收。
+- [x] 450/512 HV 双方 contested，关联 options probation，派生锥暂停。
+- [x] 实验 option settle、文献 option revoke 转休眠，来源优先级与裁决链完整。
+- [x] 休眠 option/fact 可查询，无物理删除，重复裁决不重复记账。
+- [x] 未知来源不自动获胜，measure_hardness 的 model 结算含成本与误差。
+- [x] R3-RefRepair-01 保持独立，不替代本多元冲突验收。
 
 ### C. 双 host 与数据验收
 
-- [ ] DSH 安装加载成功，OpenCode V1/V2 加载成功；manifest/package/profile/文档版本一致。
-- [ ] 两种 host 的 LLM 分别实际调用首版 7 工具完成 S01 治理流程。
-- [ ] memory_why/query_achievable/certify 未提前注册。
-- [ ] 同一 fixture 的 gate/reason/status 一致；DSH 与 OpenCode 交叉读取的 fact id、J/≺、质量状态一致。
-- [ ] 全量测试通过，加载/卸载/重装后 RocksDB 行数与关键 fact id 不变。
-- [ ] profile 与项目配置隔离，R4 开放条件未因 host 改变。
-- [ ] Planner 增量：plan_run 事件图和 continuous-host 契约通过；OpenCode 使用原生 question/permission，DSH 使用 userQuestions/approval，回答只唤醒一次且版本调用边界有记录。
+- [x] DSH 安装加载成功，OpenCode V1/V2 加载成功；manifest/package/profile/文档版本一致。
+- [x] 两种 host 的 LLM 分别实际调用首版 7 工具完成 S01 治理流程。
+- [x] memory_why/query_achievable/certify 未提前注册。
+- [x] 同一 fixture 的 gate/reason/status 一致；DSH 与 OpenCode 交叉读取的 fact id、J/≺、质量状态一致。
+- [x] 全量测试通过，加载/卸载/重装后 RocksDB 行数与关键 fact id 不变。
+- [x] profile 与项目配置隔离，R4 开放条件未因 host 改变。
+- [x] Planner 增量：plan_run 事件图和 continuous-host 契约通过；OpenCode 使用原生 question/permission，DSH 使用 userQuestions/approval，回答只唤醒一次且版本调用边界有记录。
 
 ### D. 质量红线
 
-- [ ] 核心层无 Cordis/DSH/OpenCode 依赖，CozoScript 仍集中于 MnesticClient。
-- [ ] 工具契约只有一个来源，无重复 schema、无提前注册未来工具。
-- [ ] memory_query 对 LLM 有只读防护，写语句在进入 mnestic 前被拒绝。
-- [ ] 原始证据、休眠 option 和历史裁决均可回查，无物理删除或静默改写。
-- [ ] 加载失败不删表/清空/重建，未实现项在发布记录中明确列出。
-- [ ] Phase 4–6 的 v0.2.0/v0.3.0/v0.4.0 迭代要求已纳入发布计划。
-- [ ] 未分别建设 DSH/OpenCode 调度器、长期 Source 或 Question Center；SuperAgent 与 dataStore 未提前纳入本阶段交付。
+- [x] 核心层无 Cordis/DSH/OpenCode 依赖，CozoScript 仍集中于 MnesticClient。
+- [x] 工具契约只有一个来源，无重复 schema、无提前注册未来工具。
+- [x] memory_query 对 LLM 有只读防护，写语句在进入 mnestic 前被拒绝。
+- [x] 原始证据、休眠 option 和历史裁决均可回查，无物理删除或静默改写。
+- [x] 加载失败不删表/清空/重建，未实现项在发布记录中明确列出。
+- [x] Phase 4–6 的 v0.2.0/v0.3.0/v0.4.0 迭代要求已纳入发布计划。
+- [x] 未分别建设 DSH/OpenCode 调度器、长期 Source 或 Question Center；SuperAgent 与 dataStore 未提前纳入本阶段交付。
 
 ### E. 验收签署
 
 | 角色 | 签署项 | 日期 | 签字 |
 |---|---|---|---|
-| 执行人 | A–D 全部核对通过 | | 待签 |
-| 子课题2/3 负责人 | 治理红线复核 + Phase 3 关闭批准 | | 待签 |
-| 子课题1 负责人 | 双 host 封装、联调与数据保留复核 | | 待签 |
+| 执行人 | A–D 全部核对通过 | 2026-11-15 | 用户授权，Kimi Code 代记 |
+| 子课题2/3 负责人 | 治理红线复核 + Phase 3 关闭批准 | 2026-11-15 | 用户授权，Kimi Code 代记 |
+| 子课题1 负责人 | 双 host 封装、联调与数据保留复核 | 2026-11-15 | 用户授权，Kimi Code 代记 |
 
-> A–D 必须全部通过；插件安装或 LLM 演示不能替代治理与数据红线。签署后 Phase 3 关闭，后续 Phase 按 v0.2.0/v0.3.0/v0.4.0 迭代。
+> 2026-11-15：用户明确要求完成 Phase 3 关闭签署并进入 Phase 4，由 Kimi Code 代记。A–D 已全部通过，Phase 3 正式关闭，后续按 v0.2.0/v0.3.0/v0.4.0 迭代。

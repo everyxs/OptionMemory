@@ -1,10 +1,11 @@
 # optionmemory
 
-OptionMemory —— mnestic（CozoScript HTTP）上的五层记忆，提供 DSH 与 OpenCode 两种 host 适配层。本目录当前交付记忆服务层、Phase 1 资产注册、R1–R3 闭包推导及 OpenCode 4 工具开发版；R4 暂缓。DSH 首版提前至 Phase 3 交付，后续 Phase 以插件版本迭代。
+OptionMemory —— mnestic（CozoScript HTTP）上的五层记忆，提供 DSH 与 OpenCode 两种 host 适配层。当前已交付 Phase 0–2、Phase 3 冲突治理与首版 7 工具适配；R4 暂缓，Phase 3 平台联调与 Planner-ready 增量仍在实施。
 
 ## 运行前提
 
-- Node >= 20，pnpm（本仓库锁定 `pnpm@11.7.0`）。
+- Node >= 24.9.0，pnpm（本仓库锁定 `pnpm@11.7.0`）。
+- DSH 适配目标：`@deepseek-ai/dsh@0.2.2-rc.1`（npm latest 标签，仍为 RC）、`@deepseek-ai/cordis@~4.1.0`、`@deepseek-ai/dsh-tools@0.2.2-rc.1`。
 - mnestic 实例：`scripts/mnestic_start.sh` 启动（默认 `127.0.0.1:9070`，首次自动 `cargo build`）。
   双模式：`--mem`（默认，内存）/ `--rocks`（RocksDB 持久化，数据目录 `.data/mnestic`）；
   重编译 rocks feature 需 libclang（bindgen 依赖），未设 `LIBCLANG_PATH` 时启动脚本自动探测用户级 LLVM（`%LOCALAPPDATA%\LLVM`）。
@@ -48,7 +49,7 @@ memory_set_batch(facts: FactInput[]): Promise<{ inserted: number; skipped: numbe
 ## Phase 1 接口
 
 - `src/api/registry.ts`：`registerRule` / `registerOption` / `registerSubtask` / `registerModel`；option 默认 `option_type="atomic"`、`template_id=null`，R4 在全量标定和明确批准前禁止注册为 active。
-- `src/api/tool-contracts.ts`：单一 host-neutral 工具契约，可导出 JSON Schema 供未来 DSH 使用。
+- `src/api/tool-contracts.ts`：单一 host-neutral 7 工具契约；`src/api/tool-executor.ts` 统一执行分发，DSH 适配将其转换为 `defineTool` 参数与 canonical output。
 - `src/api/readOnlyQuery.ts`：两种 host 共用的只读查询防护。
 - `src/runtime/deriveClosure.ts`：`deriveClosure(scope?)` 支持 R1 composition 派生、R2 FCC/BCC join、R3 smix 计算；派生 facts 经批量 ν 门写入，J 边按 `(derived_id, rule_id, premise_ids)` 幂等。
 - `putPlanTemplate` 仅保留客户端入口，MVP 中显式禁用，plan_templates 保持空表。
@@ -83,21 +84,34 @@ src/
   api/memory.ts           # 四个记忆接口
   api/registry.ts         # Phase 1 资产注册接口
   api/revision.ts         # memory_retract 与 revision 血缘
-  api/tool-contracts.ts   # 单一工具契约与 JSON Schema 导出
+  api/governance.ts       # M1 冲突隔离与 settle/revoke 治理链
+  api/tool-contracts.ts   # 单一 7 工具契约与 JSON Schema 导出
+  api/tool-executor.ts    # DSH/OpenCode 共享工具分发
   api/readOnlyQuery.ts    # 共享只读查询防护
-  plugins/dsh/            # DSH 适配层（Phase 3 首版）
-  plugins/opencode/       # OpenCode 适配层（当前 4 工具）
+  plugins/dsh/            # DSH 适配层（首版 7 工具）
+  plugins/opencode/       # OpenCode 适配层（首版 7 工具）
 tests/
   globalSetup.ts          # 拉起 9071 测试实例 + 建表
   memory.test.ts          # 9 个记忆服务用例
   closure.test.ts         # 8 个闭包/注册用例
   opencode.test.ts        # 5 个 OpenCode V1/V2 适配用例
+  dsh.test.ts             # 3 个双 host 契约与交叉数据用例
+  settlement.test.ts      # 4 个 settlement policy 与治理链用例
+  settlement-auto-isolation.test.ts # 1 个无预检测调用的自动 M1 隔离用例
+  measure-settlement.test.ts # 3 个 measure option/model 结算用例
+  dsh-json.test.ts        # 2 个 DSH canonical JSON 投影用例
+  planner-assets.test.ts  # 3 个 Planner 注册与兼容字段用例
+  telemetry-v02.test.ts   # 3 个事件 v0.2 与执行图用例
+  continuous-host.test.ts # 2 个 continuous-host 契约用例
+  attention-adapters.test.ts # 3 个原生 Attention 用例
+  step7-migration.test.ts # 1 个迁移与回滚用例
+  field_migration.test.ts # 1 个 P4-0 字段合并与回滚用例
   tool-contracts.test.ts  # 4 个共享契约用例
   justifications.test.ts  # 1 个共享 J 写入用例
   revision.test.ts        # 8 个撤回与 ν 门模式用例
-  dependency.test.ts      # 2 个依赖锥与恢复用例
+  dependency.test.ts      # 3 个依赖锥与恢复用例
   s01_revision.test.ts    # 1 个 S01 成分更正用例
-schema/                   # 8 表建表脚本 + apply_all.sh
+schema/                   # 9 个建表脚本 + apply_all.sh
 server/                   # mnestic 适配层（Rust；--engine mem|rocksdb --data <dir>）
 docs/mnestic-api-cheatsheet.md  # mnestic 0.17.0 API 取证速查
 ```
@@ -107,5 +121,5 @@ docs/mnestic-api-cheatsheet.md  # mnestic 0.17.0 API 取证速查
 ```bash
 pnpm install   # 依赖（pnpm-workspace.yaml 已批准 esbuild / msgpackr-extract 构建脚本）
 pnpm build     # tsc 编译到 dist/
-pnpm test      # vitest：自动起 9071 实例，38 用例
+pnpm test      # vitest：自动起 9071 实例，23 个测试文件、77 用例
 ```

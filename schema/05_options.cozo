@@ -27,6 +27,11 @@
     verify: String,
     status: String,
     subtask_binding: String,
-    model_binding: String}
+    model_binding: String,
+    input_schema: Json?,
+    created_at: Float?,
+    parent_option_id: String?,
+    parent_version: String?,
+    origin_event_id: String?}
 
 ::index create options:status_idx {status}

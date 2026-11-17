@@ -24,6 +24,9 @@
     lin_version: String,
     lin_theta: String?,
     lin_actor: String,
-    verify: String}
+    verify: String,
+    reasoning_spec: Json?,
+    evidence_spec: Json?,
+    evaluation_spec: Json?}
 
 ::index create models:option_id_idx {option_id}

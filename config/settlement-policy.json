@@ -1,0 +1,11 @@
+{
+  "id": "hardness-source-priority",
+  "version": "1.0",
+  "predicate": "hardness",
+  "sourcePriority": {
+    "experiment": 3,
+    "simulation": 2,
+    "literature": 1
+  },
+  "unknownSource": "manual_review"
+}

@@ -25,13 +25,13 @@ tags:
 
 | #   | 检查项                                    | 标准                                                                                                      |
 | --- | -------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 1   | Node.js ≥ **22.19**（DSH 平台要求）与 pnpm 可用 | `node -v`（低于 22.19 先升级，勿侥幸）                                                                             |
+| 1   | Node.js ≥ **24.9.0**（当前 DSH 平台要求）与 pnpm 可用 | `node -v`（低于 24.9.0 先升级，勿侥幸）                                                                             |
 | 2   | Python ≥ 3.10（Week 2 数据处理用，本周仅需确认）     | `python --version`                                                                                      |
 | 3   | mnestic fork 已克隆到工作区                   | 仓库：`shuruheel/mnestic`（0.17.0+，fork 含 provenance semirings / `:reconcile` / 双时态，见 26-03 工程计划 v1.4 附录 F） |
 | 4   | mnestic 可独立启动（Mem 模式先行，RocksDB 后置）     | 按仓库 README 跑通 hello world                                                                               |
 | 5   | 项目骨架目录创建                               | `26-04 AI4Science/optionmemory-materials/`（结构按 dsh-plugin-memory-core 先例）                               |
 | 6   | HEA-Lens-1540 数据集就位                    | `04-创造层/项目/26-04 AI4Science/datasets/`（Week 2 使用，本周确认即可）                                                |
-| 7   | DSH / OpenCode 开发环境（可选本周，Phase 3 首版封装前必须）             | DSH v0.1.0-rc.8 pin、`@deepseek-ai/cordis` vendored 版、`@opencode-ai/plugin` 可用；各 host 升级前全量集成测试                     |
+| 7   | DSH / OpenCode 开发环境（可选本周，Phase 3 首版封装前必须）             | DSH v0.2.2-rc.1、`@deepseek-ai/cordis@~4.1.0`、`@deepseek-ai/dsh-tools@0.2.2-rc.1`、`@opencode-ai/plugin` 可用；各 host 升级前全量集成测试                     |
 
 **建议目录骨架**（与通用版 §10.1 对齐；**Phase 3 首次交付 DSH + OpenCode host 模块，后续 Phase 逐版迭代**，DSH/OpenCode 专用文件自 Phase 0 起预留）：
 

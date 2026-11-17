@@ -91,11 +91,52 @@ export const proposeOptionContract = defineToolContract({
   },
 });
 
+export const memoryRetractContract = defineToolContract({
+  name: "memory_retract",
+  description: "Retract a fact, propagate invalidation, and preserve its revision history",
+  phase: 2,
+  readOnly: false,
+  args: {
+    id: z.string(),
+    actor: z.string().optional(),
+  },
+});
+
+const governanceArgs = {
+  option_id: z.string(),
+  factId: z.string(),
+  opposingFactId: z.string(),
+  proposer: z.string(),
+  arbiter: z.string(),
+  executor: z.string().optional(),
+  rationale: z.string().optional(),
+  policyVersion: z.string().optional(),
+};
+
+export const settleContract = defineToolContract({
+  name: "settle",
+  description: "Settle the higher-priority hardness measurement and preserve its governance chain",
+  phase: 3,
+  readOnly: false,
+  args: governanceArgs,
+});
+
+export const revokeContract = defineToolContract({
+  name: "revoke",
+  description: "Revoke the lower-priority hardness measurement and retain it as dormant history",
+  phase: 3,
+  readOnly: false,
+  args: governanceArgs,
+});
+
 export const OPTIONMEMORY_TOOL_CONTRACTS = {
   memory_set: memorySetContract,
   memory_get: memoryGetContract,
   memory_query: memoryQueryContract,
+  memory_retract: memoryRetractContract,
   propose_option: proposeOptionContract,
+  settle: settleContract,
+  revoke: revokeContract,
 } as const;
 
 export function toolContractToJsonSchema(

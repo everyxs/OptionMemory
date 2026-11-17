@@ -142,19 +142,20 @@ curl -s -X POST -H "Content-Type: application/json" \
 | `:replace` | 删表重建 | 用查询输出整体替换关系内容 | `src/query/stored.rs:133-134` |
 | `:reconcile` | fork 信念替换 | 见 §6.3（限 TxTime 关系） | `src/data/program.rs:234-238` |
 
-真实示例（`:create` + `:put` + `:rm` 三连）。来源：`src/runtime/tests.rs:459-465`：
+真实示例（`:put` + `:rm` 两个 imperative block）。来源：`src/runtime/tests.rs:459-465`：
 
 ```cozoscript
-?[fr, to, data] <- [[1,2,3],[4,5,6]] :put friends {fr, to => data}
-?[fr, to] <- [[1,9],[4,5]] :rm friends {fr, to}
+{?[fr, to, data] <- [[1,2,3],[4,5,6]] :put friends {fr, to => data}}
+{?[fr, to] <- [[1,9],[4,5]] :rm friends {fr, to}}
 ```
 
 ### 3.2 事务支持
 
 - **单条脚本原子提交**：写脚本经 `transact_write()` 开启事务，全部执行完才 `commit_tx()`；中途任何错误 → 不提交即回滚。
   来源：`src/runtime/db.rs:1890-1942`（`execute_single`；开启 `:1918-1919`，提交 `:1942`）
-- **多语句脚本（imperative，`%if/%loop/%return` 等）同样整体原子**：所有语句共享一个事务，统一提交；源码注释明言 "one tx"。
+- **多语句脚本（imperative，`%if/%loop/%return` 等）同样整体原子**：所有语句共享一个事务，统一提交；源码注释明言 "one tx"。多个写操作必须分别包在 `{ ... }` 中；裸写多个 `?[...]` 写规则会报重复非 Horn 规则，不能误当多写事务（P4-3 实测）。
   来源：`src/runtime/imperative.rs:256-339`（共享 tx `:284-288`，注释 `:289-291`，提交 `:339`）；imperative 语法：`src/cozoscript.pest:270-290`
+- **常量规则参数是行集合**：`?[a,b] <- $rows` 的 `$rows` 必须传 `[[a,b]]`，不是 `[a,b]`。nullable 数值比较先做空值合并，例如 `(lease_expires_at ~ 0.0) >= $now`，避免空值求值错误（P4-3 实测）。
 - **提交唯一入口**：`commit_tx`，注释 "the single commit funnel for every write path"。
   来源：`src/runtime/transact.rs:281-284`
 - **脚本语言层面没有显式事务操作**（无 begin/commit/rollback 系统操作）：`::` 系统操作全量枚举中无此类 op。

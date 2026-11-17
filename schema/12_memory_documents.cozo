@@ -1,0 +1,58 @@
+# 12_memory_documents.cozo — 日常 Markdown 文档投影、来源关联与 Recall 审计
+# 原文仍在文件系统；本文件只保存可重建投影、持久映射和查询审计。
+
+:create memory_documents {document_id: String =>
+    raw_ref: String,
+    path: String,
+    namespace: String,
+    content_hash: String,
+    parser_version: String,
+    status: String,
+    supersedes: String?,
+    source_updated_at: Float?,
+    recorded_at: Float}
+
+::index create memory_documents:namespace_idx {namespace}
+
+::index create memory_documents:status_idx {status}
+
+:create memory_chunks {chunk_version_id: String =>
+    chunk_id: String,
+    document_id: String,
+    heading_path: String,
+    ordinal: Int,
+    content_hash: String,
+    text: String,
+    token_count: Int,
+    mapping_status: String,
+    created_at: Float}
+
+::index create memory_chunks:document_idx {document_id}
+
+::index create memory_chunks:chunk_idx {chunk_id}
+
+::index create memory_chunks:mapping_idx {mapping_status}
+
+:create memory_source_links {link_id: String =>
+    fact_id: String,
+    chunk_version_id: String,
+    relation: String,
+    created_at: Float}
+
+::index create memory_source_links:fact_idx {fact_id}
+
+::index create memory_source_links:chunk_idx {chunk_version_id}
+
+:create memory_recall_events {recall_id: String =>
+    session_id: String,
+    message_id: String,
+    query_hash: String,
+    namespace: String,
+    request_json: Json,
+    response_json: Json,
+    status: String,
+    created_at: Float}
+
+::index create memory_recall_events:message_idx {message_id}
+
+::index create memory_recall_events:namespace_idx {namespace}

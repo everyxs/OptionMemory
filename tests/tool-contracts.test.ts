@@ -9,17 +9,25 @@ import { OptionMemoryPlugin } from "../src/plugins/opencode/index";
 import { TEST_ENDPOINT } from "./testServer";
 
 describe("host-neutral tool contracts", () => {
-  it("只登记当前已实现的 4 个 Phase 1 工具", () => {
+  it("只登记 Phase 3 首版 7 工具，不提前注册未来工具", () => {
     expect(Object.keys(OPTIONMEMORY_TOOL_CONTRACTS).sort()).toEqual([
       "memory_get",
       "memory_query",
+      "memory_retract",
       "memory_set",
       "propose_option",
+      "revoke",
+      "settle",
     ]);
     for (const [name, contract] of Object.entries(OPTIONMEMORY_TOOL_CONTRACTS)) {
       expect(contract.name).toBe(name);
-      expect(contract.phase).toBe(1);
     }
+    expect(OPTIONMEMORY_TOOL_CONTRACTS.memory_retract.phase).toBe(2);
+    expect(OPTIONMEMORY_TOOL_CONTRACTS.settle.phase).toBe(3);
+    expect(OPTIONMEMORY_TOOL_CONTRACTS.revoke.phase).toBe(3);
+    expect(OPTIONMEMORY_TOOL_CONTRACTS).not.toHaveProperty("memory_why");
+    expect(OPTIONMEMORY_TOOL_CONTRACTS).not.toHaveProperty("query_achievable");
+    expect(OPTIONMEMORY_TOOL_CONTRACTS).not.toHaveProperty("certify");
     expect(OPTIONMEMORY_TOOL_CONTRACTS.memory_query.readOnly).toBe(true);
     expect(OPTIONMEMORY_TOOL_CONTRACTS.memory_set.readOnly).toBe(false);
   });

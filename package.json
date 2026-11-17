@@ -8,7 +8,12 @@
   "main": "dist/plugins/dsh/index.js",
   "exports": {
     ".": "./dist/plugins/dsh/index.js",
-    "./opencode": "./dist/plugins/opencode/index.js"
+    "./opencode": "./dist/plugins/opencode/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "engines": {
+    "node": ">=24.9.0",
+    "dsh": ">=0.2.2-rc.1 <0.3.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -17,10 +22,13 @@
   "dsh": {
     "bundle": {
       "manifest": "dsh.plugin.json",
-      "patch": "cordis.patch.yml"
+      "patch": "./cordis.patch.yml"
     }
   },
   "devDependencies": {
+    "@deepseek-ai/cordis": "4.1.0",
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-util-values": "0.2.2-rc.1",
     "@types/node": "^24.0.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
@@ -28,5 +36,9 @@
   "dependencies": {
     "@opencode-ai/plugin": "1.19.5",
     "zod": "4.1.8"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.1.0",
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.1"
   }
 }

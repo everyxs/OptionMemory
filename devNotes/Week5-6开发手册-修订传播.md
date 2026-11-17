@@ -4,7 +4,7 @@
 类型: 开发手册
 所属项目: "26-04 AI4Science"
 对应路线图: "S01最小产品路线图（OptionMemory 版）Phase 2 · Week 5–6"
-状态: 实施中（Step 1–5 已完成，待阶段验收签署）
+状态: 已关闭（2026-11-14 完成阶段验收签署）
 tags:
   - 开发手册
   - OptionMemory
@@ -32,7 +32,7 @@ tags:
 >
 > **Step 4 实施进展（2026-11-06）**：已从只读 RocksDB 提取 HEAL0444 真实 composition/ref_smix/ref_smix_v2/reference_quality、R3 规则与 J 边，形成 `tests/fixtures/r3_ref_repair_01/fixture.json`；实现 `scripts/check_r3_ref_repair.ts`、`tests/r3_ref_repair.test.ts`、`src/runtime/r3RefRepair.ts` 和 `optionbench-m/scenarios/R3-RefRepair-01.json`。场景 A–E 覆盖双值与质量、禁止覆盖/武断声明、新证据修订、替代辩护恢复和认证隔离；独立 Mem 脚本输出 `R3_REF_REPAIR_PASS`，43 项全套测试通过。
 >
-> **Step 5 实施进展（2026-11-06）**：已补齐 Procedural Knowledge 类型、注册、查询和写入路径，实现 `src/api/optionRevision.ts`、`scripts/revise_option_prerequisite.ts` 与 `tests/option_revision.test.ts`。XRD 前提撤回时 Option 标 out、Procedural Knowledge 标 out，恢复后分别回 probation/in，Model 保持不变；affected 含 XRD 与 phase_structure，重复操作不重复 revision。独立脚本输出 `PHASE2_STEP5_PASS`。同时将 `memory_retract`/`restoreFact` 的级联范围限定为受影响依赖锥，新增无关派生事实保持 in 的回归；补充独立 RocksDB 重启、部分写入对账与 Mem/RocksDB 对拍测试，51 项全套测试通过，`docs/phase2-baseline.md` 已归档。Phase 2 待关闭签署。
+> **Step 5 实施进展（2026-11-06）**：已补齐 Procedural Knowledge 类型、注册、查询和写入路径，实现 `src/api/optionRevision.ts`、`scripts/revise_option_prerequisite.ts` 与 `tests/option_revision.test.ts`。XRD 前提撤回时 Option 标 out、Procedural Knowledge 标 out，恢复后分别回 probation/in，Model 保持不变；affected 含 XRD 与 phase_structure，重复操作不重复 revision。独立脚本输出 `PHASE2_STEP5_PASS`。同时将 `memory_retract`/`restoreFact` 的级联范围限定为受影响依赖锥，新增无关派生事实保持 in 的回归；补充独立 RocksDB 重启、部分写入对账与 Mem/RocksDB 对拍测试，51 项全套测试通过，`docs/phase2-baseline.md` 已归档。Phase 2 已于 2026-11-14 完成关闭签署；R4 阻塞与 97 条待来源复核记录继续保留。
 >
 > **2026-11-06 路线链接**：后续采用“DSH/OpenCode 对话宿主 + 共享 planner-runtime 后台任务、SuperAgent 完整持续宿主、dataStore 独立后续模块”的架构，详见《S01最小产品路线图-完整版》。该调整不改变本阶段 Step 4–5 的 R3-RefRepair-01、Option 失效级联、R4 阻塞和验收边界，不把 dataStore 或 SuperAgent 工作提前纳入 Phase 2。
 
@@ -416,7 +416,7 @@ Phase 2 不得为了通过 R3 测试提前实现“来源优先级高者获胜�
 
 | 角色 | 签署项 | 日期 | 签字 |
 |---|---|---|---|
-| 执行人 | A–D 全部核对通过 | | 待签 |
-| 子课题2 负责人 | D 红线复核 + Phase 2 关闭批准 | | 待签 |
+| 执行人 | A–D 全部核对通过 | 2026-11-14 | 用户授权，Kimi Code 代记 |
+| 子课题2 负责人 | D 红线复核 + Phase 2 关闭批准 | 2026-11-14 | 用户授权，Kimi Code 代记 |
 
-> 只有 A–D 全部通过后才能签署。签署后进入 Phase 3；R4 暂缓按独立风险项保留，不以任何方式隐式放行。
+> 2026-11-14：用户明确要求完成 Phase 2 关闭签署，由 Kimi Code 代记。A–D 已全部通过，现进入 Phase 3；R4 暂缓与 97 条待来源复核记录按独立风险项保留，不以任何方式隐式放行。

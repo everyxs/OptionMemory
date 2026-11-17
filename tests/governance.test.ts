@@ -94,7 +94,7 @@ async function seed() {
   const repeated = await detectAndIsolateHardnessConflicts("S01");
   expect(repeated[0].reused).toBe(true);
   const events = await client.execute(
-    `?[count(id)] := *facts{id, predicate}, predicate == "conflict"`,
+    `?[count(id)] := *facts{id, predicate, args}, predicate == "conflict", get(args, 1) == "S01"`,
   );
   eventCount = Number(events.rows[0][0]);
 }

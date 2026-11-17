@@ -30,12 +30,15 @@ beforeAll(async () => {
 });
 
 describe("OpenCode OptionMemory adapter", () => {
-  it("只暴露当前已实现的 4 个工具", () => {
+  it("只暴露当前已实现的 7 个工具", () => {
     expect(Object.keys(tools).sort()).toEqual([
       "memory_get",
       "memory_query",
+      "memory_retract",
       "memory_set",
       "propose_option",
+      "revoke",
+      "settle",
     ]);
   });
 
@@ -92,7 +95,7 @@ describe("OpenCode OptionMemory adapter", () => {
     expect(option.rows[0]).toEqual(["atomic", null]);
   });
 
-  it("V2 默认定义注册 4 个 JSON Schema 工具并可执行", async () => {
+  it("V2 默认定义注册 7 个 JSON Schema 工具并可执行", async () => {
     expect(OptionMemoryDefinition.id).toBe("optionmemory");
     expect(OptionMemoryDefinition.setup).toBe(setupOpenCodeV2);
     expect(OptionMemoryDefinition.server).toBe(OptionMemoryPlugin);
@@ -107,8 +110,11 @@ describe("OpenCode OptionMemory adapter", () => {
     expect(registered.map((definition) => definition.name).sort()).toEqual([
       "memory_get",
       "memory_query",
+      "memory_retract",
       "memory_set",
       "propose_option",
+      "revoke",
+      "settle",
     ]);
     expect(registered.every((definition) => definition.input.type === "object")).toBe(true);
     const memorySet = registered.find((definition) => definition.name === "memory_set");

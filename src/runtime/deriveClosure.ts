@@ -8,6 +8,7 @@ import { writeJustifications } from "./justifications";
 export interface ClosureScope {
   entity?: string;
   predicate?: string;
+  ruleId?: string;
 }
 
 export interface ClosureResult {
@@ -107,7 +108,9 @@ export async function deriveClosure(scope: ClosureScope | string = {}): Promise<
     (normalized.entity === undefined || fact.args[0] === normalized.entity) &&
     (normalized.predicate === undefined || fact.predicate === normalized.predicate),
   );
-  const candidates = rules.flatMap((rule) => candidatesForRule(rule, facts));
+  const candidates = rules
+    .filter((rule) => normalized.ruleId === undefined || rule.rule_id === normalized.ruleId)
+    .flatMap((rule) => candidatesForRule(rule, facts));
 
   const write = await memory_set_batch(
     candidates.map((candidate) => candidate.fact),
