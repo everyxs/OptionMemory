@@ -46,17 +46,26 @@ node scripts/apply_schema.ts
 
 ## 三、OpenCode：第一次使用
 
-仓库已包含 Planner 和日常记忆插件。进入项目后运行：
+先进入仓库根目录（包含 `.opencode/` 和 `package.json` 的目录）：
+
+```bash
+cd /path/to/optionmemory
+# 本仓库示例：cd E:\DSHprojects
+```
+
+仓库已包含 Planner 和日常记忆插件。在**会话 A** 中保存记忆：
 
 ```bash
 opencode run --standalone --auto "请使用 bridge_capture 记住：本项目使用 pnpm 管理依赖。namespace=global，source_ref=session-a，idempotency_key=project-pnpm-v1。"
 ```
 
-然后在一个**新会话**中询问：
+保持同一目录、endpoint 和 namespace，在**会话 B** 中重新执行一次 `opencode run`，然后询问：
 
 ```text
 这个项目使用什么包管理器？请给出对应 memory_uri。
 ```
+
+每次 `opencode run` 都会创建新会话，可以使用不同终端或进程，但**不要添加 `--continue`**，否则是在继续旧会话，不能证明跨会话召回。
 
 OpenCode 会自动召回之前保存的内容，并将它作为非指令参考注入。
 
