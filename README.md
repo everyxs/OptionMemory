@@ -123,7 +123,7 @@ node scripts/migrate_phase4_fields.ts \
 pnpm test
 ```
 
-当前基线为 **33 个测试文件、123/123 通过**，测试使用独立实例，不需要启动生产 9070。
+当前基线为 **33 个测试文件、124/124 通过**，测试使用独立实例，不需要启动生产 9070。
 
 日常记忆完整故障与恢复验收：
 
@@ -133,7 +133,113 @@ node scripts/phase4_memory_stomp_acceptance.ts
 
 验收说明和真实 OpenCode/DSH 会话证据见 `docs/phase4-memory-stomp-acceptance.md`。
 
-## 七、当前边界
+## 七、常见使用案例
+
+### 案例 1：正确修订一条记忆
+
+先用 `bridge_recall` 找到原始 document 及其 namespace，再执行：
+
+```json
+{
+  "text": "本项目改用 yarn。",
+  "namespace": "global",
+  "source_ref": "session-revision",
+  "idempotency_key": "project-yarn-v2",
+  "supersedes": "document_原始ID"
+}
+```
+
+结果：
+
+- 新 document 为 `active`，原 document 为 `superseded`；
+- 新 document 的 `supersedes` 指向原 document；
+- 下一次 Recall 使用 yarn，历史版本仍可回查。
+
+`supersedes` 必须填 `document_id`，不要填 `chunk_version_id`。如果之前被拦截的调用已经绑定了幂等键，请换用新键，例如从 `project-yarn-v1` 改为 `project-yarn-v2`，不要改变参数后复用旧键。
+
+### 案例 2：外部 Markdown 更新后再次召回
+
+给 Bridge 配置允许读取的 `markdownRoot`，原文件初始为：
+
+```markdown
+# 项目决策
+
+使用 pnpm 管理依赖。
+```
+
+第一次 Recall 返回 pnpm。将文件改为：
+
+```markdown
+# 项目决策
+
+改用 yarn 管理依赖。
+```
+
+再次 Recall 时，Bridge 会：
+
+1. 只读计算新内容哈希；
+2. 通过 markdown Option 产生新解析事件；
+3. 将旧 chunk 标为 `mapping_stale`；
+4. 返回 yarn，而不是旧 pnpm。
+
+原文件不会被改写，未变化文件不会每次 Recall 都重复执行解析。
+
+### 案例 3：无效修订不会留下半成品
+
+以下调用会被拒绝，因为目标不存在或不在当前 namespace：
+
+```json
+{
+  "text": "不应写入的修订",
+  "namespace": "project:B",
+  "source_ref": "invalid-revision",
+  "idempotency_key": "invalid-revision-v1",
+  "supersedes": "document_不存在"
+}
+```
+
+预期错误：
+
+```text
+supersedes target is missing or outside namespace
+```
+
+现在会先校验目标，再写入，因此：
+
+- 不创建新 document/chunk；
+- 不产生有效修订；
+- 可以保留一条真实 failure 执行事件用于审计；
+- 修正目标后应使用新的幂等键重试。
+
+### 案例 4：导入 ReAct + Skills 历史轨迹
+
+外部 Agent 已执行一次 Skill 时，可以用 Sidecar 导入，而不是重新执行：
+
+```json
+{
+  "baseline_id": "baseline-demo",
+  "scenario_id": "scenario-s01",
+  "run_id": "run-001",
+  "event_type": "tool.result",
+  "external_id": "result-001",
+  "call_id": "call-001",
+  "output": { "phase_structure": "BCC+FCC" },
+  "status": "success",
+  "pre_state": { "phase": "unknown" },
+  "post_state": { "phase": "BCC+FCC" },
+  "anticipation": { "predicted_phase": "BCC", "confidence": null }
+}
+```
+
+映射结果：
+
+- `pre_state/post_state` 进入 option_event observation；
+- `anticipation` 进入 `model_event.anticipation`；
+- outcome 记录 `status=success`；
+- `mode=sidecar`，不会进入原生 real 认证证据；
+- 缺少明确 Planner decision、Option 或 Model 时保留 raw，引用为 `null`，不伪造完整链。
+
+## 八、当前边界
 
 - Phase 4 原基线的 HEA-Lens 全量解析、transient 结算和整体验收尚未全部关闭，R4 仍阻塞。
 - 当前提供最小 NativeAdapter；不承诺全类型工具、嵌套 Option 或自动 Skill 生成。

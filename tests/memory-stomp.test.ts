@@ -13,7 +13,7 @@ import {
 import { plannerEventIdFor } from "../src/runtime/planner";
 import { optionEventIdFor } from "../src/runtime/option-executor";
 import { getExecutionTrace } from "../src/api/telemetry";
-import { listStaleMappings } from "../src/api/document-projections";
+import { captureDailyMemory, listStaleMappings, reviseDailyMemory } from "../src/api/document-projections";
 import { MnesticClient } from "../src/memory/mnesticClient";
 import { TEST_ENDPOINT } from "./testServer";
 
@@ -136,5 +136,51 @@ describe("daily memory STOMP writes", () => {
     expect((await client.getOptionEventById(optionEventIdFor(`recall-refresh:${parsed.document_id}:${changed.content_hash}`))).rows).toHaveLength(1);
     expect((await listStaleMappings()).some((mapping) => mapping.document_id === parsed.document_id && mapping.mapping_status === "stale")).toBe(true);
     expect(await readFile(join(root, "project.md"), "utf8")).toContain("yarn");
+  });
+
+  it("rejects missing or cross-namespace revision targets before any document write", async () => {
+    const target = await captureDailyMemory({
+      text: "原始项目记忆",
+      namespace: "project:revision-owner",
+      source_ref: "revision-owner-source",
+      idempotency_key: "revision-owner-v1",
+    });
+    expect(target.gate).toBe("pass");
+    const invalidNamespace = "project:invalid-revision";
+    await expect(reviseDailyMemory({
+      text: "不应写入的修订",
+      namespace: invalidNamespace,
+      source_ref: "invalid-revision-source",
+      idempotency_key: "invalid-revision-v1",
+      supersedes: "document_missing",
+    })).rejects.toThrow("supersedes target is missing or outside namespace");
+    await expect(reviseDailyMemory({
+      text: "不应写入的修订",
+      namespace: invalidNamespace,
+      source_ref: "invalid-revision-source",
+      idempotency_key: "invalid-revision-v2",
+      supersedes: target.id,
+    })).rejects.toThrow("supersedes target is missing or outside namespace");
+    const result = await executeMemoryWrite({
+      operation: "revise",
+      host_type: "opencode",
+      host_session_ref: "invalid-revision-session",
+      namespace: invalidNamespace,
+      source_ref: "invalid-revision-source",
+      idempotency_key: "invalid-revision-v3",
+      arguments: {
+        text: "不应写入的修订",
+        namespace: invalidNamespace,
+        source_ref: "invalid-revision-source",
+        idempotency_key: "invalid-revision-v3",
+        supersedes: target.id,
+      },
+    });
+    expect(result).toMatchObject({ gate: "blocked", reason: "supersedes target is missing or outside namespace" });
+    const documents = await client.listMemoryDocuments();
+    expect(documents.rows.filter((row) => row[documents.headers.indexOf("namespace")] === invalidNamespace)).toHaveLength(0);
+    const trace = await getExecutionTrace(optionEventIdFor("invalid-revision-v3"));
+    expect(trace?.optionEvent.execution_json.mode).toBe("real");
+    expect(trace?.outcome?.status).toBe("failure");
   });
 });

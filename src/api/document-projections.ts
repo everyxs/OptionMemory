@@ -109,6 +109,11 @@ export interface CaptureMemoryInput {
 export async function captureDailyMemory(input: CaptureMemoryInput): Promise<ProjectionWriteResult> {
   validateText(input.text);
   if (!input.source_ref || !input.idempotency_key) throw new Error("source_ref and idempotency_key are required");
+  const client = getMemoryClient();
+  const target = input.supersedes ? oneRow<MemoryDocumentRow>(await client.getMemoryDocumentById(input.supersedes)) : undefined;
+  if (input.supersedes && (!target || target.namespace !== input.namespace)) {
+    throw new Error("supersedes target is missing or outside namespace");
+  }
   const rawRef = `capture://${input.source_ref}/${input.idempotency_key}`;
   const contentHash = hash(input.text);
   const result = await ingestDocumentProjection({
@@ -120,13 +125,10 @@ export async function captureDailyMemory(input: CaptureMemoryInput): Promise<Pro
     source_updated_at: now(),
     chunks: [{ heading_path: "Captured memory", ordinal: 0, content_hash: contentHash, text: input.text }],
   });
-  if (input.supersedes && !result.reused) {
-    const client = getMemoryClient();
-    const target = oneRow<MemoryDocumentRow>(await client.getMemoryDocumentById(input.supersedes));
-    if (!target || target.namespace !== input.namespace) throw new Error("supersedes target is missing or outside namespace");
+  if (target && !result.reused) {
     const current = oneRow<MemoryDocumentRow>(await client.getMemoryDocumentById(result.id));
     await client.putMemoryDocument({ ...target, status: "superseded" });
-    if (current) await client.putMemoryDocument({ ...current, supersedes: input.supersedes });
+    if (current) await client.putMemoryDocument({ ...current, supersedes: target.document_id });
   }
   return result;
 }
