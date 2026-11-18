@@ -135,6 +135,8 @@ node scripts/phase4_memory_stomp_acceptance.ts
 
 ## 七、日常 Markdown 使用案例
 
+> 以下 pnpm/yarn 仅用于演示记忆捕获、召回和修订。本仓库继续使用 pnpm 与 `pnpm-lock.yaml`，不需要执行包管理器迁移。
+
 ### 案例 1：跨会话记住项目决策
 
 `notes/project.md`：
