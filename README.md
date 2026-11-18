@@ -133,111 +133,88 @@ node scripts/phase4_memory_stomp_acceptance.ts
 
 验收说明和真实 OpenCode/DSH 会话证据见 `docs/phase4-memory-stomp-acceptance.md`。
 
-## 七、常见使用案例
+## 七、日常 Markdown 使用案例
 
-### 案例 1：正确修订一条记忆
+### 案例 1：跨会话记住项目决策
 
-先用 `bridge_recall` 找到原始 document 及其 namespace，再执行：
-
-```json
-{
-  "text": "本项目改用 yarn。",
-  "namespace": "global",
-  "source_ref": "session-revision",
-  "idempotency_key": "project-yarn-v2",
-  "supersedes": "document_原始ID"
-}
-```
-
-结果：
-
-- 新 document 为 `active`，原 document 为 `superseded`；
-- 新 document 的 `supersedes` 指向原 document；
-- 下一次 Recall 使用 yarn，历史版本仍可回查。
-
-`supersedes` 必须填 `document_id`，不要填 `chunk_version_id`。如果之前被拦截的调用已经绑定了幂等键，请换用新键，例如从 `project-yarn-v1` 改为 `project-yarn-v2`，不要改变参数后复用旧键。
-
-### 案例 2：外部 Markdown 更新后再次召回
-
-给 Bridge 配置允许读取的 `markdownRoot`，原文件初始为：
+`notes/project.md`：
 
 ```markdown
 # 项目决策
 
-使用 pnpm 管理依赖。
+2026-11-17：本项目使用 pnpm 管理依赖，避免混用 npm。
 ```
 
-第一次 Recall 返回 pnpm。将文件改为：
-
-```markdown
-# 项目决策
-
-改用 yarn 管理依赖。
-```
-
-再次 Recall 时，Bridge 会：
-
-1. 只读计算新内容哈希；
-2. 通过 markdown Option 产生新解析事件；
-3. 将旧 chunk 标为 `mapping_stale`；
-4. 返回 yarn，而不是旧 pnpm。
-
-原文件不会被改写，未变化文件不会每次 Recall 都重复执行解析。
-
-### 案例 3：无效修订不会留下半成品
-
-以下调用会被拒绝，因为目标不存在或不在当前 namespace：
-
-```json
-{
-  "text": "不应写入的修订",
-  "namespace": "project:B",
-  "source_ref": "invalid-revision",
-  "idempotency_key": "invalid-revision-v1",
-  "supersedes": "document_不存在"
-}
-```
-
-预期错误：
+在会话 A 中说：
 
 ```text
-supersedes target is missing or outside namespace
+请记住这条项目决策，namespace=global，source_ref=session-a，idempotency_key=project-pnpm-v1。
 ```
 
-现在会先校验目标，再写入，因此：
+在会话 B 中问：
 
-- 不创建新 document/chunk；
-- 不产生有效修订；
-- 可以保留一条真实 failure 执行事件用于审计；
-- 修正目标后应使用新的幂等键重试。
-
-### 案例 4：导入 ReAct + Skills 历史轨迹
-
-外部 Agent 已执行一次 Skill 时，可以用 Sidecar 导入，而不是重新执行：
-
-```json
-{
-  "baseline_id": "baseline-demo",
-  "scenario_id": "scenario-s01",
-  "run_id": "run-001",
-  "event_type": "tool.result",
-  "external_id": "result-001",
-  "call_id": "call-001",
-  "output": { "phase_structure": "BCC+FCC" },
-  "status": "success",
-  "pre_state": { "phase": "unknown" },
-  "post_state": { "phase": "BCC+FCC" },
-  "anticipation": { "predicted_phase": "BCC", "confidence": null }
-}
+```text
+这个项目应该使用哪个包管理器？请给出记忆来源。
 ```
 
-映射结果：
+预期回答为 **pnpm**，并附带对应 memory_uri。Agent 不需要重新打开 `notes/project.md`。
 
-- `pre_state/post_state` 进入 option_event observation；
-- `anticipation` 进入 `model_event.anticipation`；
-- outcome 记录 `status=success`；
-- `mode=sidecar`，不会进入原生 real 认证证据；
-- 缺少明确 Planner decision、Option 或 Model 时保留 raw，引用为 `null`，不伪造完整链。
+### 案例 2：实验记录更新后使用新值
+
+`notes/S01.md`：
+
+```markdown
+# S01 实验记录
+
+S01 的硬度为 512 HV。
+```
+
+配置 `markdownRoot=notes` 后，第一次 Recall 返回 512 HV。之后你手动把文件改为：
+
+```markdown
+# S01 实验记录
+
+S01 的硬度复核为 450 HV。
+```
+
+下一次 Recall 会返回 450 HV，并将旧 chunk 标为 `mapping_stale`。Bridge 不会修改你的 Markdown。
+
+如果还存在独立的 `hardness(S01, "512 HV")` declarative fact，文档更新不会自动把它改成 450 HV；事实修订仍需原 revision/retract 与证据治理，不能仅凭一段文字覆盖。
+
+### 案例 3：历史笔记与当前规则不一致
+
+`AGENTS.md`：
+
+```markdown
+本项目当前使用 pnpm。
+```
+
+历史笔记：
+
+```markdown
+2025 年本项目曾使用 npm。
+```
+
+询问“现在应使用什么包管理器”时，当前 `AGENTS.md` 规则优先，历史笔记只作为非指令背景。系统不会因为召回旧笔记就改用 npm，也不会自动改写历史记录或 `AGENTS.md`。
+
+如果历史笔记没有明确标注失效，Recall 会保留来源和冲突提示，而不是静默选择一条说法。
+
+### 案例 4：OpenCode 与 DSH 协同修订
+
+在 OpenCode 中保存：
+
+```text
+本项目使用 pnpm，namespace=global，source_ref=session-a，idempotency_key=project-pnpm-v1。
+```
+
+在 DSH 中使用 `bridge_recall` 查询，会读到同一份 pnpm 记忆和 memory_uri。确认后，在 DSH 中修订：
+
+```text
+请使用 bridge_revise，将本项目改为 yarn。
+supersedes 使用刚才的 document_id，namespace=global，idempotency_key=project-yarn-v1。
+```
+
+回到 OpenCode 新会话再次询问，应得到 **yarn** 和新 memory_uri。两个宿主共享同一 document 和 superseding 链，不会各自复制一份记忆。
 
 ## 八、当前边界
 
