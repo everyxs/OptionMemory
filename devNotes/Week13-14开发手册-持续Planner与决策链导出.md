@@ -1,6 +1,6 @@
 ---
 创建时间: 2026-11-15
-更新时间: 2026-11-15
+更新时间: 2026-11-18
 类型: 开发手册
 所属项目: "26-04 AI4Science"
 对应路线图: "S01最小产品路线图（完整版）Phase 5 · Week 13–14"
@@ -19,7 +19,9 @@ tags:
 
 > 本手册由《LLM 原生 Planner 与 Super Router 开发手册》和《S01 最小产品路线图-完整版》同步展开，包含原 Phase 5 基线与 Planner 增量。
 >
-> **实施顺序固定为**：P5-1 持续共享 planner-runtime → P5-2 SuperAgent Executor 正式适配 → P5-3 决策链血缘与导出 → P5-4 SuperAgent 持续记忆与跨宿主适配。
+> **实施顺序固定为**：P5-1 持续共享 planner-runtime → P5-2 SuperAgent Executor 正式适配 → P5-3 决策链血缘与导出 → P5-4 SuperAgent 持续记忆与跨宿主适配 → P5-5 procedural 元数据对话期召回（双线治理 A 项，2026-11-18 追加）。
+>
+> **2026-11-18 v5 最终分工（v5.1→v5.2→v5.3 修订）**：两段式且按产品切内容——**Stage A（W13–14，血缘尾件 W15a）= 可用记忆产品**：mds + skills 的完整 procedural 管理（识别→批准→注册门→settle/active_release→revoke→dormant→降维索引）、P5-5 join、P5-3 md 血缘、md 维护，**零 SuperAgent 依赖**（线1 = procedural 管理 + S2 读契约；线2 = join/识别/血缘/降维 + DS0 后台启动）；W14 末产品演示为出口。**Stage B（W15b–20）= SuperAgent + runtime 链（线1）∥ dataStore（线2）**：P5-1 于 W15b 开工（Stage A 期间线1 以富余产能预研设计），P5-2/P5-4/P6-4 等 SuperAgent 能力全部在 Stage B。总安排见 Dual-Track 手册 v5 Final §2.2/§2.3。
 >
 > SuperAgent 承接完整长期 Source/Ticket/Mandate/Assignment/Attention/Outbox；OptionMemory 持有 plan_run、Planner/Option 事件、证据和认证，**不复制 Ticket 状态机**。
 
@@ -42,6 +44,11 @@ tags:
 - 支持实例恢复、跨 harness Option 边界 handoff 和人工 stop。
 - 完成 `superagent-adapter v0.1` 正式适配。
 - memory_why 可关联 Planner 决策、Option 执行、Model 评价、plan_run/Assignment 及当时证据和版本。
+
+### 双线治理增量交付（2026-11-18 追加；v5.1 修订归属）
+
+- P5-5 procedural 元数据对话期召回：`bridge_recall` 活读资产链 + 状态裁注，procedural 能力元数据进入非指令召回；禁止预物化 declarative 影子。
+- v5.1 分工（MD-Memory 轨道）：**资产链读契约 = MM-L1（线1）**；**join 实现 = MM-L2（线2）**，S2 为人际契约；P5-3 的 md 血缘（source link、Recall/修订链）归线2；P5-4 全部归线1（MM-L1）。线2 同时并行 dataStore DS0/DS1。红线由 S1–S6 契约与测试强制（见 Dual-Track 手册 v5 §2A/§3）。
 
 ## 二、前置门槛与不变项
 
@@ -261,6 +268,7 @@ J/≺ 与 Planner 决策链通过 ID 关联，不混成一种边；plan_run 与 
 ## 六A、Step P5-4：SuperAgent 持续记忆与跨宿主适配
 
 > Phase 4 已完成 OpenCode 日常记忆最小闭环。本步骤只将该 MemoryCore/Recall 契约接入 SuperAgent 的 Source/Ticket/Assignment 生命周期，不重复实现摄入、召回或 OpenCode 注入。
+> **v5.1 归属：MM-L1（线1 交付）**——deliver→recall observation、Attention 批准流、handoff 对账、stop 语义均属 runtime/审批执行侧；线2 review 捕获/修订语义。
 
 ### 任务
 
@@ -282,6 +290,36 @@ J/≺ 与 Planner 决策链通过 ID 关联，不混成一种边；plan_run 与 
 - [ ] Ticket/assignment 隔离有效，重复 deliver 不重复捕获或产生重复执行。
 - [ ] Attention 未批准不落地，人工 stop 后不再自动捕获或恢复记忆驱动执行。
 - [ ] handoff/重启后 Recall 幂等，Report 含真实 memory_uri/recall_id/批准引用且原 8 工具不变。
+
+---
+
+## 六B、Step P5-5：procedural 元数据对话期召回（双线治理 A 项，2026-11-18 追加）
+
+> v5.1 分工：**资产链读契约归线1（MM-L1）**，**`bridge_recall` join 实现归线2（MM-L2）**，S2 为人际契约；线1 review join 的标注与非指令约束。
+
+> procedural 元数据的召回按语义分三种形态，本步骤只实现第二种：
+
+| 形态 | 机制 | 状态 |
+|---|---|---|
+| 执行期发现（mandate 内） | `planner_options`（subtask 绑定 + mandate scope 过滤，返回 input_schema/pi_ref 供 execute 决策） | 已存在，不改 |
+| 对话期发现（mandate 外） | `bridge_recall` 活读资产链 + 状态裁注 | **本步骤新增** |
+| 能力可达性查询 | `query_achievable` | Phase 6（P6-2） |
+
+### 任务
+
+1. `bridge_recall` 新增只读扩展（如 `include_procedural=true`，默认 false）：查询时**活读** options/procedural_knowledge 资产链，与 data 层 chunk 叙述内容在召回处 join，逐条裁注 `status/active_release/version`。**禁止预物化 declarative 影子**——settle/revoke/active_release 变更必须实时反映，不引入第二份可失效存储。
+2. 默认仅返回 `settled` 且处于 `active_release` 的能力元数据；`probation/revoked/dormant` 不进入默认召回，显式历史查询单独标注状态；revoked 不得因历史记忆重新加载为可用。
+3. 召回项仅含元数据（skill_id/option_id/version/status/active_release/evidence_ref），不含实现正文；注入语义仍为非指令参考，不构成执行授权。
+4. 线1 交付资产链只读查询契约（列清单、状态语义、幂等读），CozoScript 集中于 MnesticClient。
+5. 不改变原 8 工具数量；该扩展属 Bridge 独立契约，不混入工具计数。
+
+### 验收
+
+- [ ] 对话期询问“有哪些已认证能力”能命中 settled + active_release 元数据，含 evidence_ref 回链。
+- [ ] settle/revoke/active_release 变更后下一次召回即时反映，无物化缓存失效问题。
+- [ ] probation/revoked/dormant 不进入默认召回；显式历史查询单独标注状态。
+- [ ] 叙述内容来自 data 层 chunk，状态来自资产链活读，两者 join 后逐条裁注。
+- [ ] 原 8 工具与 Phase 0–4 全量回归不回归。
 
 ---
 
@@ -307,6 +345,7 @@ J/≺ 与 Planner 决策链通过 ID 关联，不混成一种边；plan_run 与 
 - P5-2：Ticket 内召回与 OpenCode 一致，Attention 前不落地，人工 stop 后不再自动捕获或恢复记忆驱动执行。
 - P5-3：memory_why 同时回查逻辑推导、原文 source link、Recall/修订和 Ticket/Assignment，不把不同边混为一类。
 - P5-4：OpenCode 修订在后续 Ticket deliver 生效，SuperAgent 修订可被 OpenCode 召回，重复 deliver 不重复执行。
+- P5-5：活读召回无物化影子，settle/revoke/active_release 实时反映；probation/revoked 不进入默认召回；注入仅为元数据，不构成执行授权。
 - handoff：Recall/document/chunk/candidate/approval/lease/revision 跨 harness 连续，目标权限不足 blocked，无双 lease、无重复副作用。
 
 ## 八、Phase 5 Repo 验收清单
@@ -340,6 +379,11 @@ J/≺ 与 Planner 决策链通过 ID 关联，不混成一种边；plan_run 与 
 - [ ] Source/Ticket/Assignment namespace 与跨宿主 Recall 一致性通过。
 - [ ] Attention 批准、重复 deliver、人工 stop、handoff/重启和修订后召回生效通过。
 - [ ] Report 包含真实 memory_uri/recall_id/策略版本，未重复建设 MemoryCore 或 Ticket 状态机。
+
+### E2. 双线治理（P5-5，2026-11-18 追加；v5.1 修订）
+
+- [ ] procedural 元数据对话期召回：活读 + 裁注 + join 通过，无物化影子。
+- [ ] S2 契约（线1 读契约 ↔ 线2 join）联调通过并归档；md-memory 轨道（P5-4 MM-L1 / P5-3 血缘与 P5-5 join MM-L2）验收记录在案。
 
 ### F. 共享记忆回归与质量指标
 

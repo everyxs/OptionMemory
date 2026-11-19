@@ -1,7 +1,7 @@
 # Phase 4 P4-3 共享持久化后台执行与恢复验收
 
 - 日期：2026-11-17
-- 状态：P4-3 通过；下一步为 P4-4 SuperAgent 隔离兼容探针，Phase 4 整体尚未签署
+- 状态：P4-3 通过；Phase 4 整体执行验收已于 2026-11-19 关闭，见 `docs/phase4-acceptance.md`
 - 数据边界：脚本创建独立临时 RocksDB 与 Markdown 根目录，完成后删除；未修改生产 9070 数据
 - 可重复入口：`pnpm build && node scripts/phase4_scheduler_acceptance.ts`
 - 机器证据：`.data/phase4-scheduler-acceptance-result.json`

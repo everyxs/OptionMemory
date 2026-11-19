@@ -315,7 +315,7 @@ export async function getExecutionTrace(optionEventId: string) {
   const client = getMemoryClient();
   const optionEvent = oneRow<OptionEventRow>(await client.getOptionEventById(optionEventId));
   if (!optionEvent) return null;
-  const [observations, outcome, plannerEvent, option, model, inputSchema, modelSpecs] = await Promise.all([
+  const [observations, outcome, plannerEvent, option, model, inputSchema, modelSpecs, modelEvents] = await Promise.all([
     client.listOptionObservationsByOptionEventId(optionEventId),
     client.getOptionOutcomeByOptionEventId(optionEventId),
     client.getPlannerEventById(optionEvent.planner_event_id),
@@ -323,6 +323,7 @@ export async function getExecutionTrace(optionEventId: string) {
     client.getModelById(optionEvent.model_id),
     client.getOptionInputSchemaById(optionEvent.option_id),
     client.getModelSpecsById(optionEvent.model_id),
+    client.listModelEventsByModelId(optionEvent.model_id),
   ]);
   const planner = oneRow<{ subtask_event_id: string; plan_run_id: string }>(plannerEvent);
   const [decision, subtaskEvent, planRun] = await Promise.all([
@@ -342,6 +343,8 @@ export async function getExecutionTrace(optionEventId: string) {
     planRun: oneRow(planRun),
     option: optionRow,
     model: modelRow,
+    modelEvents: rowsToObjects<{ payload_json: { option_event_id?: string } }>(modelEvents)
+      .filter((event) => event.payload_json?.option_event_id === optionEventId),
     inputSchema: {
       input_schema: optionRow?.input_schema ?? oneRow<OptionInputSchemaRow>(inputSchema)?.input_schema ?? null,
     },
@@ -374,9 +377,10 @@ export async function getOptionEvidence(optionId: string, _context?: Record<stri
   ]);
   const option = oneRow<OptionRow>(optionResult);
   if (!option) return null;
-  const [model, modelSpecs] = await Promise.all([
+  const [model, modelSpecs, modelEvents] = await Promise.all([
     client.getModelById(option.model_binding),
     client.getModelSpecsById(option.model_binding),
+    client.listModelEventsByModelId(option.model_binding),
   ]);
   const events = await Promise.all(rowsToObjects<{ option_event_id: string }>(optionEvents).map(async (optionEvent) => ({
     optionEvent,
@@ -396,5 +400,6 @@ export async function getOptionEvidence(optionId: string, _context?: Record<stri
       evaluation_spec: modelRow.evaluation_spec ?? oneRow<ModelSpecRow>(modelSpecs)?.evaluation_spec ?? null,
     } : undefined,
     events,
+    modelEvents: rowsToObjects(modelEvents),
   };
 }

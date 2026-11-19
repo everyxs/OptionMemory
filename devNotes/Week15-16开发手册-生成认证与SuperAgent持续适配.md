@@ -1,6 +1,6 @@
 ---
 创建时间: 2026-11-15
-更新时间: 2026-11-15
+更新时间: 2026-11-18
 类型: 开发手册
 所属项目: "26-04 AI4Science"
 对应路线图: "S01最小产品路线图（完整版）Phase 6 · Week 15–16"
@@ -19,7 +19,9 @@ tags:
 
 > 本手册由《LLM 原生 Planner 与 Super Router 开发手册》和《S01 最小产品路线图-完整版》同步展开，包含原 Phase 6 基线、Planner 增量及 SuperAgent 持续记忆治理。
 >
-> **实施顺序固定为**：P6-1 主动规划与生成 → P6-2 认证证据统一 → P6-3 RL-ready 导出 → P6-4 SuperAgent 主动记忆治理与跨 harness 恢复。
+> **实施顺序固定为**：P6-1 主动规划与生成 → P6-2 认证证据统一 → P6-3 RL-ready 导出 → P6-4 SuperAgent 主动记忆治理与跨 harness 恢复 → P6-5 declarative→procedural 候选管线与沉降/退役分层（双线治理 B 项，2026-11-18 追加）。
+>
+> **2026-11-18 v5 最终分工（v5.1→v5.2→v5.3 修订）**：**Stage A（W13–14+W15a）= 可用记忆产品（mds + skills，procedural 管理完整，零 SuperAgent 依赖）**——P6-5 全链、P5-5 join、P5-3 md 血缘均在此阶段完成；**Stage B（W15b–20）= SuperAgent 能力 + runtime 链 ∥ dataStore**——P5-2/P5-4/P6-4（含 runtime 侧与数据侧）等全部 SuperAgent 工作归 Stage B。本手册 Stage B 归属：P5-2/P5-3 机制/P5-4/v0.3.0 归线1（W16–18，Phase 5 runtime 关闭于 W18）；P6-1/P6-2/P6-3、P6-4 runtime 侧、v0.4.0 归线1（W19–20，回归两线共担）；P6-4 数据侧与 Horn 校验归线2（W18–19）；线2 同时并行 dataStore DS1/DS2。S1–S6 为人际契约（Stage A 定稿）。总安排见 Dual-Track 手册 v5 Final §2.2/§2.3。
 >
 > OpenCode 日常记忆最小闭环已在 Phase 4 独立验收，Phase 5 已完成 SuperAgent 基础记忆适配。本阶段只增强持续任务中的主动治理、认证和恢复，不重复建设 MemoryCore 或 Ticket 状态机。
 
@@ -49,9 +51,15 @@ tags:
 - 持续记忆评价进入统一 option_event/model_event，可与生成认证和 RL-ready 导出关联。
 - 人工 stop、Ticket 终止与 Option revoke 分别生效，主动发现不得自动扩权或自动发布核心 Skill。
 
+### 双线治理增量交付（2026-11-18 追加；v5.1 修订归属）
+
+- P6-5 declarative→procedural 候选管线（识别 → 候选 → 人工批准 → 注册门 → Option）、下行沉降三分离与退役分层（dormant 保留、运行时降权 ≠ 资产退役）。
+- v5.1 分工（MD-Memory 轨道）：注册门/资产化/active_release/dormant/校准红线归**线1**；**候选识别与降维索引、三分离叙事侧测试归线2（MM-L2）**，S1/S3 为人际契约；P6-4 按 runtime 侧（线1）/治理数据侧（线2）拆分。线2 同时并行 dataStore。红线由 S1–S6 契约与测试强制（见 Dual-Track 手册 v5 §2A/§3）。
+
 ## 二、前置门槛与不变项
 
-- Phase 5 全部关闭，包含 P4-1M OpenCode 日常记忆最小闭环、P5-4 SuperAgent 持续记忆适配、共享后台恢复和 SuperAgent 正式适配。
+- Phase 5 全部关闭，包含 P4-1M OpenCode 日常记忆最小闭环、P5-4 SuperAgent 持续记忆适配、P5-5 procedural 元数据对话期召回（活读 + 裁注）、共享后台恢复和 SuperAgent 正式适配。
+- P6-5 启动前，S1（候选 schema，线2→线1）与 S2（召回 join 契约，线1→线2）人际契约必须已定稿归档（v5.1；schema 变更两线会签）。
 - R4 阻塞、97 条待复核记录隔离、J/≺ 和 ν 门不变。
 - 原工具数量只从 8 增至 10；Bridge/Recall 是独立 API/插件契约，不混入该计数。
 - Markdown 原文是 data 层外部原始数据，Bridge 不写回，不建设第二套索引或治理中心。
@@ -170,6 +178,7 @@ RL 导出是只读投影，不实现训练，不要求所有 Option 具有数值
 ## 七、Step P6-4：SuperAgent 主动记忆治理与跨 harness 恢复
 
 > 对应 `devNotes/MemoryBridge开发方案.md` B3–B4 的持续任务部分。OpenCode 日常闭环已在 Phase 4 验收，本步骤面向长期 Source/Ticket 的主动治理、认证与恢复。
+> **v5.1 归属（MD-Memory 轨道拆分）**：7.1 主动发现→mandated 执行与审批流、7.3 handoff/lease/恢复 = **MM-L1（线1）**；7.1 的数据动作（重读来源/FactCandidate/superseding 候选/re-Recall 机制）、7.2 的 parser/extractor 版本与记忆维护数据链 = **MM-L2（线2）**。
 
 ### 7.1 主动重评估与候选整理
 
@@ -200,6 +209,35 @@ RL 导出是只读投影，不实现训练，不要求所有 Option 具有数值
 - [ ] handoff/重启后 Recall 与修订链连续，跨宿主读取一致且无重复副作用。
 - [ ] 维护质量证据进入 option/model 事件，认证不混用 simulated、sidecar 或抽取器自评。
 - [ ] Report/RL-ready 包含真实 memory/recall/revision/approval 引用，未知字段不虚构，原 10 工具不变。
+
+---
+
+## 七A、Step P6-5：declarative→procedural 候选管线、下行沉降与退役分层（双线治理 B 项，2026-11-18 追加）
+
+> v5.1 分工：**注册门、资产化、退役分层归线1**；**候选识别（MM-L2，线2 实现、线1 以 S1 消费方身份 review）与降维索引（MM-L2，线2 实现）**；S1/S2/S3/S5 为人际契约，schema 变更两线会签。
+
+### 任务
+
+1. **候选管线四步**：识别（线2 实现、线1 以 S1 消费方身份 review，从 data 层投影/候选中识别 procedural 候选，产出带待绑定 `package_hash` 的候选，不自动注册）→ 候选 → 人工批准 → 注册门（线1，实现包哈希校验 + mandate 绑定 + Option/Model 注册 probation）。哈希域在注册门切换：文本 `content_hash` 不再作为能力依据，实现包 `package_hash` 为准。
+2. **四条分流红线**：candidate ≠ capability；指令性正文不进入非指令注入池；摄入层不得直接产出资产；ν门（问真伪）与注册门（问授权）不可合一。
+3. **下行沉降三分离**（验收红线）：
+
+   | 内容 | 唯一权威 | 禁止 |
+   |---|---|---|
+   | 校准（成功率/预测误差/成本） | Model 字段 | 成为独立 fact |
+   | 执行流水 | option_event/outcome | 成为独立 fact |
+   | 叙述残留 | declarative 摘要 fact | 复制执行数据 |
+
+   合法 declarative 沉降仅两个窄场景：降维归档索引（evidence_ref 回链 dormant 资产，内容限存在性/教训/结论，线2 实现，三分离叙事侧测试两线会签）与跨域领域副产品（evidence_ref 指向 option_event，数据不同源）。
+4. **退役分层**：planner 运行时降权（stop/ignore/replan）仅作用于本次 plan_run，不改变 Option/Model 资产状态；资产级退役走 revoke（治理工具，arbiter 参与）——资产链记录永久 dormant 保留、Model 校准随资产 dormant、可选 declarative 索引；物理删除不存在；revoked 不因历史记忆重新加载。
+5. 与 `devNotes/MemoryBridge开发方案.md` §16 Skill 治理对接：skill 注册走同一候选管线，版本化 Option + active_release。
+
+### 验收
+
+- [ ] 候选管线四步贯通：未经人工批准的候选不能形成 Option；注册门校验 package_hash 与 mandate，文本哈希不被当作实现哈希。
+- [ ] outcome/校准数据不出现在 facts；仅降维索引与跨域副产品两条窄出口允许 declarative 沉降且带 evidence_ref。
+- [ ] planner stop/ignore 后资产状态不变；revoke 后资产 dormant 可查、不可删，且不因历史召回重新加载。
+- [ ] 原 10 工具、生成/认证和 R4 边界不回归；跨线用例（候选 schema、召回 join）双侧绿。
 
 ---
 
@@ -236,6 +274,7 @@ RL 导出是只读投影，不实现训练，不要求所有 Option 具有数值
 - P6-2：Recall 命中、projection loaded、抽取器自评均不等于 achievable；simulated/sidecar 不进入真实认证。
 - P6-3：RL-ready 导出 memory_uri/recall_id/revision/approval 和真实执行事件，未知 state/reward/rationale 不补写。
 - P6-4：长期 Ticket 的维护候选、Attention 批准、stop、跨 harness 恢复和回滚通过，历史不被篡改。
+- P6-5：未批准候选不成 Option；outcome/校准不入 facts；dormant 可查不可删；运行时降权不改资产状态。
 - Skill 扩展：projection_loaded 不等于执行成功，probation 不自动发现，revoked 不因历史记忆重新加载，version 与 active_release 一致。
 
 ## 十、Phase 6 Repo 验收清单
@@ -263,11 +302,16 @@ RL 导出是只读投影，不实现训练，不要求所有 Option 具有数值
 - [ ] 来源正确率、修订误用、Top-K、token、延迟、索引体量和真实成本有独立记录。
 - [ ] 真实 Ticket/Attention/handoff/恢复证据与未实现项独立归档。
 
+### E. 双线治理（P6-5，2026-11-18 追加）
+
+- [ ] 候选管线、沉降三分离与退役分层全部通过；候选 schema/召回 join 契约有会签归档。
+- [ ] 识别（线2）→注册门（线1）、活读 join（S2 联调）、降维索引（线2）集成用例验收通过；MD-Memory 轨道 MM-L1/MM-L2 验收与 review 记录在案（v5.1）。
+
 ### 验收签署
 
 | 角色 | 签署项 | 日期 | 签字 |
 |---|---|---|---|
-| 执行人 | A–D 全部核对通过 | | 待签 |
+| 执行人 | A–E 全部核对通过 | | 待签 |
 | 子课题1 负责人 | 双 host、生成、认证与数据保留 | | 待签 |
 | 子课题2 负责人 | 主动规划、Recall、事件链和 RL-ready | | 待签 |
 | 子课题3 负责人 | 日常记忆、证据质量、安全与 R4 边界 | | 待签 |

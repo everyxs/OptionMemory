@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { getMemoryClient } from "../memory/client";
 import type { ModelRow, OptionRow } from "../memory/assets";
-import type { ExecutionMode, ModelEventType, OptionOutcomeRow } from "../memory/planner";
+import type { ExecutionMode, ModelEventType, OptionOutcomeRow, OptionOutcomeStatus } from "../memory/planner";
 import {
   beginOptionExecution,
   finishOptionExecution,
@@ -11,6 +11,7 @@ import {
 } from "../api/telemetry";
 import { deriveClosure } from "./deriveClosure";
 import { executeMaterialsCsv, MATERIALS_CSV_PARSER_VERSION } from "./csv-materials";
+import { recordTransientCsvSettlement, transientSettlementIdFor } from "./transient-settlement";
 import { parseMarkdownNote } from "../bridge/markdown/parser";
 import { captureDailyMemory, MARKDOWN_PARSER_VERSION, reviseDailyMemory } from "../api/document-projections";
 
@@ -255,12 +256,30 @@ export class OptionExecutor {
       if (!outcome) return blocked("execution already exists without an outcome; reconcile before retrying");
       const observations = await client.listOptionObservationsByOptionEventId(optionEventId);
       const outputRow = observations.rows.find((row) => row[observations.headers.indexOf("observation_type")] === "output");
+      const inputRow = observations.rows.find((row) => row[observations.headers.indexOf("observation_type")] === "input");
+      const output = outputRow?.[observations.headers.indexOf("value_json")];
+      const existingOption = oneRow<OptionRow>(await client.getOptionById(existing.option_id));
+      if (existingOption?.pi_type === "parse" && existingOption.pi_ref === "materials-csv@v1") {
+        const existingModel = oneRow<ModelRow>(await client.getModelById(existing.model_id));
+        if (!existingModel) return blocked(`model not found: ${existing.model_id}`);
+        const settlement = await recordTransientCsvSettlement({
+          option: existingOption,
+          model: existingModel,
+          optionEventId,
+          arguments: (inputRow?.[observations.headers.indexOf("value_json")] ?? {}) as Record<string, unknown>,
+          output,
+          status: outcome.status,
+          cost: outcome.cost_json,
+          execution: existing.execution_json as { attempt: number; mode: ExecutionMode; parser_version: string | null },
+        });
+        if (settlement.gate === "blocked") return blocked(`settlement reconciliation required: ${settlement.reason ?? "unknown error"}`);
+      }
       return {
         ok: outcome.status === "success",
         gate: outcome.status === "blocked" ? "blocked" : "pass",
         status: outcome.status,
         outcome,
-        output: outputRow?.[observations.headers.indexOf("value_json")],
+        output,
         reused: true,
         ...base,
       };
@@ -305,6 +324,20 @@ export class OptionExecutor {
     if (started.gate === "blocked") return blocked(started.reason ?? "option execution was rejected");
     await recordOptionObservation({ option_event_id: optionEventId, observation_type: "input", value_json: request.arguments ?? {} });
     const startTime = Date.now();
+    const isCsvParse = option.pi_type === "parse" && option.pi_ref === "materials-csv@v1";
+    const settleCsv = async (status: OptionOutcomeStatus, output: unknown, cost: unknown) => {
+      if (!isCsvParse) return { gate: "pass" as const };
+      return recordTransientCsvSettlement({
+        option,
+        model,
+        optionEventId,
+        arguments: request.arguments ?? {},
+        output,
+        status,
+        cost,
+        execution,
+      });
+    };
     try {
       const result = await implementation(request.arguments ?? {}, {
         option,
@@ -313,17 +346,24 @@ export class OptionExecutor {
         idempotencyKey: request.idempotency_key,
         host_context: request.host_context,
       });
+      if (isCsvParse && typeof result.output === "object" && result.output !== null && !Array.isArray(result.output)) {
+        result.output = { ...result.output, settlement_id: transientSettlementIdFor(optionEventId) };
+      }
       if (request.signal?.aborted) throw new DOMException("Execution cancelled", "AbortError");
       const outputError = schemaError(result.output, option.beta_output_schema);
       if (outputError) {
         await recordOptionObservation({ option_event_id: optionEventId, observation_type: "error", value_json: { message: outputError } });
-        await finishOptionExecution({
+        const cost = { observed: true, duration_ms: Date.now() - startTime, monetary: null };
+        const outcome = await finishOptionExecution({
           option_event_id: optionEventId,
           status: "blocked",
           evaluation_json: { scalar_reward: null },
-          cost_json: { observed: true, duration_ms: Date.now() - startTime, monetary: null },
+          cost_json: cost,
           error_json: { kind: "output_schema", message: outputError },
         });
+        if (outcome.gate === "blocked") return blocked(outcome.reason ?? "could not persist outcome");
+        const settlement = await settleCsv("blocked", result.output, cost);
+        if (settlement.gate === "blocked") return blocked(`settlement reconciliation required: ${settlement.reason ?? "unknown error"}`);
         return blocked(outputError);
       }
       await recordOptionObservation({ option_event_id: optionEventId, observation_type: "output", value_json: result.output });
@@ -338,27 +378,36 @@ export class OptionExecutor {
       }
       const beta = option.beta_success as Record<string, unknown>;
       const output = result.output as Record<string, unknown>;
-      const success = beta?.derived && output.justified !== true ? false : !output.blocked || (Array.isArray(output.blocked) && output.blocked.length === 0);
+      const success = beta?.derived && output.justified !== true
+        ? false
+        : (!output.blocked || (Array.isArray(output.blocked) && output.blocked.length === 0)) && output.lineage_complete !== false;
+      const cost = { observed: true, duration_ms: Date.now() - startTime, monetary: null };
       const outcome = await finishOptionExecution({
         option_event_id: optionEventId,
         status: success ? "success" : "failure",
         evaluation_json: { ...result.evaluation, scalar_reward: result.evaluation?.scalar_reward ?? null },
-        cost_json: { observed: true, duration_ms: Date.now() - startTime, monetary: null },
+        cost_json: cost,
         error_json: success ? {} : { kind: "beta_success", message: "beta_success was not satisfied" },
       });
       if (outcome.gate === "blocked") return blocked(outcome.reason ?? "could not persist outcome");
+      const settlement = await settleCsv(success ? "success" : "failure", result.output, cost);
+      if (settlement.gate === "blocked") return blocked(`settlement reconciliation required: ${settlement.reason ?? "unknown error"}`);
       return { ok: success, gate: "pass", status: success ? "success" : "failure", output: result.output, ...base };
     } catch (error) {
       const cancelled = request.signal?.aborted || (error instanceof Error && error.name === "AbortError");
       const message = error instanceof Error ? error.message : String(error);
       await recordOptionObservation({ option_event_id: optionEventId, observation_type: "error", value_json: { message } });
-      await finishOptionExecution({
+      const cost = { observed: true, duration_ms: Date.now() - startTime, monetary: null };
+      const outcome = await finishOptionExecution({
         option_event_id: optionEventId,
         status: cancelled ? "blocked" : "failure",
         evaluation_json: { scalar_reward: null },
-        cost_json: { observed: true, duration_ms: Date.now() - startTime, monetary: null },
+        cost_json: cost,
         error_json: { kind: cancelled ? "cancelled" : "implementation_error", message },
       });
+      if (outcome.gate === "blocked") return blocked(outcome.reason ?? "could not persist outcome");
+      const settlement = await settleCsv(cancelled ? "blocked" : "failure", undefined, cost);
+      if (settlement.gate === "blocked") return blocked(`settlement reconciliation required: ${settlement.reason ?? "unknown error"}`);
       return { ok: false, gate: cancelled ? "blocked" : "pass", status: cancelled ? "blocked" : "failure", reason: message, ...base };
     }
   }

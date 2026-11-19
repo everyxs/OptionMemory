@@ -1,7 +1,7 @@
 # Phase 4 P4-4 SuperAgent 隔离兼容探针验收
 
 - 日期：2026-11-17
-- 状态：P4-4 通过；下一步为 P4-5 Sidecar Mapping Contract v0.1，Phase 4 整体尚未签署
+- 状态：P4-4 通过；Phase 4 整体执行验收已于 2026-11-19 关闭，见 `docs/phase4-acceptance.md`
 - 数据边界：独立临时 RocksDB，完成后删除；未修改生产 9070，未连接生产 SuperAgent
 - 可重复入口：`pnpm build && node scripts/phase4_superagent_acceptance.ts`
 - 机器证据：`.data/phase4-superagent-acceptance-result.json`

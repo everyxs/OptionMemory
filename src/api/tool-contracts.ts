@@ -115,7 +115,7 @@ const governanceArgs = {
 
 export const settleContract = defineToolContract({
   name: "settle",
-  description: "Settle the higher-priority hardness measurement and preserve its governance chain",
+  description: "Settle the winning option in a governed conflict and preserve its governance chain (proposer/arbiter/executor)",
   phase: 3,
   readOnly: false,
   args: governanceArgs,
@@ -123,7 +123,7 @@ export const settleContract = defineToolContract({
 
 export const revokeContract = defineToolContract({
   name: "revoke",
-  description: "Revoke the lower-priority hardness measurement and retain it as dormant history",
+  description: "Retire the losing option in a governed conflict to dormant history — queryable, never deleted",
   phase: 3,
   readOnly: false,
   args: governanceArgs,

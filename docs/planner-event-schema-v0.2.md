@@ -54,6 +54,8 @@ outcome 的 `evaluation_json.scalar_reward` 未观测时必须为 `null`，不�
 
 P4-6 起，OptionImplementationResult 可携带真实 `model_events=anticipation/critique/calibration/drift`，由 OptionExecutor 持久化；未提供时不创建。Sidecar 的 pre/post state 写入对应 observation，anticipation 写入 model_event，实际状态与预测不得混写。
 
+Phase 4 v0.2.0 的 CSV transient 结算复用 `model_event(event_type=calibration)`：`option_event` 开户，observation/outcome 记录输入、输出与真实成本，最终以 `schema_version=transient-settlement-v0.1` 的 Model 校准事件结算。payload 关联 `option_event_id/batch_id/option_type/template_id`，记录成功率、fact 接受率、闭包/J、真实耗时和未知货币成本；不把派生统计回写为第二份主表权威。缺 settlement 的重放只补事件，不重复解析。
+
 ## 门控与查询
 
 - 资产和事件引用必须存在且状态允许。
@@ -62,4 +64,4 @@ P4-6 起，OptionImplementationResult 可携带真实 `model_events=anticipation
 - real/simulated/sidecar 不得混写，未知 model/reward/rationale 保持 null/uncalibrated。
 - Planner 文本不得直接替代 settle/revoke 等 governance API。
 
-固定查询：`getExecutionTrace`、`getSubtaskDecisionChain`、`getOptionEvidence`，集中经 MnesticClient。
+固定查询：`getExecutionTrace`、`getSubtaskDecisionChain`、`getOptionEvidence`，集中经 MnesticClient。`getExecutionTrace` 返回本 option_event 关联的 `modelEvents`；`getOptionEvidence` 返回该 Model 的 `modelEvents`，用于 transient settlement 与后续证据查询。

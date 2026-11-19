@@ -42,5 +42,5 @@
 
 - 原七工具保持独立且不变；未注册 memory_why/query_achievable/certify。
 - R4 仍阻塞，97 条待复核记录未用于独立认证；生产数据未参与这些故障测试。
-- P4-1 的 CSV 验收使用隔离 Mem fixture。HEA-Lens-1540 全量批次、双 host v0.2.0 整体验收仍属于 Phase 4 Repo A，不在此声明完成。
-- P4-3 的持久化 inbox/outbox、lease、timer、崩溃恢复和跨关系原子提交尚未实施。
+- P4-1 的 CSV 验收使用隔离 Mem fixture；HEA-Lens-1540 全量批次和双 host v0.2.0 整体验收于 2026-11-19 完成，见 `docs/phase4-acceptance.md`。
+- P4-3 的持久化 inbox/outbox、lease、timer、崩溃恢复和跨关系原子提交已于后续步骤完成并通过 2026-11-19 共享回归。

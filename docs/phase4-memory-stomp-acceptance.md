@@ -1,7 +1,7 @@
 # Phase 4 P4-6 日常记忆 STOMP 最小闭环验收
 
 - 日期：2026-11-17
-- 状态：P4-6 通过；Phase 4 原基线与整体验收尚未全部关闭，不能直接签署进入 Phase 5
+- 状态：P4-6 通过；Phase 4 原基线与整体验收已于 2026-11-19 另行关闭，见 `docs/phase4-acceptance.md`
 - 数据边界：独立临时 RocksDB 和独立宿主库 `.data/phase4-memory-stomp-host`；未修改生产 9070
 - 故障验收：`node scripts/phase4_memory_stomp_acceptance.ts`
 - 机器证据：`.data/phase4-memory-stomp-acceptance-result.json`
@@ -110,7 +110,7 @@
 - RocksDB、字段迁移、scheduler、SuperAgent、Sidecar、原七工具、J/≺ 和日常记忆均包含在全量回归中。
 - 新 `schema/apply_all.sh` 在全新隔离库上未能建全 memory_documents 关系，本次使用逐块 POST 的已验证建表方式完成宿主验收；该脚本兼容问题单独保留，不冒充已修复。
 - 当前仅证明最小 NativeAdapter，不承诺全类型工具/嵌套 Option、自动 Skill 生成、组合 DAG、通用世界模型或完整持续服务。
-- Phase 4 原基线的 HEA-Lens 批量解析、transient 结算和双 host v0.2.0 升级仍需独立验收。
+- HEA-Lens 批量解析、transient 结算和双 host v0.2.0 升级已于 2026-11-19 独立验收通过，见 `docs/phase4-acceptance.md`。
 - 生产 9070 已于 2026-11-17 完成 Option 创建血缘迁移，备份为 `.data/production-lineage-backup-20261117-224512`；迁移前后计数、ID、绑定、probation、604/97 分组及 R4 边界不变，新增字段均为 null，详见 `docs/phase4-field-authority.md` §7。
 
 
@@ -122,4 +122,4 @@
 - 签署日期：2026-11-17
 - 签署依据：33 个测试文件、123/123 通过；独立 RocksDB 故障恢复及 OpenCode/DSH 真实会话通过；生产血缘迁移与数据核对通过。
 
-本签署仅覆盖 P4-6。Phase 4 原基线及整体验收仍为待签，不据此进入 Phase 5。
+本签署仅覆盖 P4-6；Phase 4 整体执行验收及最新 35 个测试文件、128/128 回归见 `docs/phase4-acceptance.md`。

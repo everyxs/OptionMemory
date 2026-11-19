@@ -37,7 +37,7 @@ tags:
 >
 > **2026-11-15 MemoryBridge 增量**：日常 Markdown 作为多源解析的一部分纳入 Phase 4。P4-1M 已完成摄入、MemoryCore Recall、显式捕获/修订和 OpenCode 自动注入最小闭环；P5-4 扩展为 SuperAgent 持续记忆与跨宿主适配，P6-4 扩展为 SuperAgent 主动记忆治理与跨 harness 恢复。Bridge 使用独立契约，不改变原 Phase 3–6 的 7/8/10 工具数量，不修改 Markdown 原文，不建立第二套治理中心。
 >
-> **2026-11-17 P4-3–P4-6 进度**：共享持久化调度、崩溃恢复、SuperAgent 隔离探针、Sidecar Mapping 和日常记忆 STOMP 最小闭环均已验收。真实副作用后的 outcome 丢失不会盲目重放；Ticket/Assignment/Input 可确定性映射；不完整 sidecar 链保留 raw/null，不补写 rationale/model/reward，real/simulated/sidecar 不混写。capture/revise/Recall 刷新已形成原生执行链，data 投影直接作为候选来源，真实 OpenCode/DSH 新会话与 NativeAdapter 通过。证据见 `docs/phase4-scheduler-acceptance.md`、`docs/phase4-superagent-acceptance.md`、`docs/phase4-sidecar-acceptance.md` 与 `docs/phase4-memory-stomp-acceptance.md`，全量回归为 33 个测试文件、123 项测试。Phase 4 原基线与整体验收、正式 SuperAgent 适配和完整持续服务尚未完成。
+> **2026-11-19 Phase 4 最终进度**：Phase 4 原基线与 P4-0–P4-6 均已通过 Repo 验收。S01/HEA-Lens CSV 已形成解析→写入→R1–R3 闭包→J 血缘→transient 结算链，真实全量批次为 701 个实体、3502 条原始 facts、1402 条派生 facts；v0.2.0 真实 OpenCode/DSH 执行与升级保留通过。共享持久化调度、崩溃恢复、SuperAgent 隔离探针、Sidecar Mapping 和日常记忆 STOMP 均已验收，最终全量回归为 **35 个测试文件、128/128 通过**。整体证据见 `docs/phase4-acceptance.md`。正式 SuperAgent 适配和完整持续服务尚未完成。
 
 ---
 

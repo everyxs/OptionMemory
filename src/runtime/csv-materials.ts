@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import { memory_set_batch } from "../api/memory";
+import { getMemoryClient } from "../memory/client";
 import type { FactInput } from "../memory/schema";
+import { deriveClosure } from "./deriveClosure";
 
 export const MATERIALS_CSV_PARSER_VERSION = "materials-csv-v1";
 
@@ -104,6 +106,9 @@ function heaLensRows(headers: string[], rows: string[][]): FactInput[] {
     facts.push(fact("composition", [entity, composition], "HEA-Lens-1540"));
     if (get("Alloy Name")) facts.push(fact("alloy_name", [entity, get("Alloy Name")], "HEA-Lens-1540"));
     if (get("Smix_ideal")) facts.push(fact("ref_smix", [entity, get("Smix_ideal")], "HEA-Lens-1540"));
+    if (get("lattice_distortion_parameter_delta")) {
+      facts.push(fact("ref_delta", [entity, get("lattice_distortion_parameter_delta")], "HEA-Lens-1540"));
+    }
     const reference = get("References");
     if (reference) facts.push(fact("source_ref", [entity, /^10\.\d{4,}\//.test(reference) ? `doi:${reference}` : reference], "HEA-Lens-1540"));
   }
@@ -124,15 +129,43 @@ export async function executeMaterialsCsv(input: {
     ? heaLensRows(rows[0], rows.slice(1))
     : generalRows(rows[0], rows.slice(1), source);
   const write = await memory_set_batch(facts);
+  const entities = [...new Set(facts.map((item) => item.args?.[0]).filter((value): value is string => typeof value === "string" && value.length > 0))];
+  const closure = entities.length > 0 ? await deriveClosure({ entities }) : {
+    inserted: 0,
+    skipped: 0,
+    blocked: [],
+    ids: [],
+    justificationsInserted: 0,
+    justificationsSkipped: 0,
+  };
+  const derivedIds = closure.ids.filter((id): id is string => typeof id === "string");
+  const justifications = await getMemoryClient().listJustifications();
+  const lineageComplete = derivedIds.every((id) => justifications.some((row) => row.derived_id === id && row.active));
+  const factCounts: Record<string, number> = {};
+  for (const item of facts) factCounts[item.predicate] = (factCounts[item.predicate] ?? 0) + 1;
   return {
     batch_id: input.batch_id,
     parser_version: MATERIALS_CSV_PARSER_VERSION,
     source_hash: createHash("sha256").update(input.csv).digest("hex"),
     input_rows: rows.length - 1,
+    input_entities: entities.length,
     candidate_facts: facts.length,
+    fact_counts: factCounts,
     inserted: write.inserted,
     skipped: write.skipped,
-    blocked: write.blocked,
+    blocked: [
+      ...write.blocked.map((item) => ({ ...item, stage: "parse" })),
+      ...closure.blocked.map((item) => ({ ...item, stage: "closure" })),
+    ],
     ids: write.ids,
+    closure: {
+      inserted: closure.inserted,
+      skipped: closure.skipped,
+      blocked: closure.blocked,
+      ids: closure.ids,
+      justificationsInserted: closure.justificationsInserted,
+      justificationsSkipped: closure.justificationsSkipped,
+    },
+    lineage_complete: lineageComplete,
   };
 }

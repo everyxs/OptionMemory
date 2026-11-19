@@ -1,10 +1,10 @@
 ---
 创建时间: 2026-11-15
-更新时间: 2026-11-17
+更新时间: 2026-11-19
 类型: 开发手册
 所属项目: "26-04 AI4Science"
 对应路线图: "S01最小产品路线图（完整版）Phase 4 · Week 9–12"
-状态: 实施中（P4-0 至 P4-6 均已完成，待原基线与 Phase 4 整体验收）
+状态: 已关闭（原基线与 P4-0 至 P4-6 均已完成，A–G Repo 验收通过）
 tags:
   - 开发手册
   - Phase4
@@ -570,11 +570,11 @@ Sidecar 新增 `skill.registered / skill.updated / skill.rollback` 三类原始�
 
 ### A. 原基线
 
-- [ ] CSV 解析出 S01 目标事实，HEA-Lens 批量导入成功。
+- [x] CSV 解析出 S01 目标事实，HEA-Lens 批量导入成功。
 - [x] P4-1M Markdown 摄入、MemoryCore Recall、显式捕获/修订、自动注入和真实双会话验收通过。
-- [ ] 解析 → 写入 → 闭包 → J 血缘通过。
-- [ ] transient 结算记录真实成功率、耗时和成本。
-- [ ] 双 host v0.2.0 保持七工具，升级与数据保留通过。
+- [x] 解析 → 写入 → 闭包 → J 血缘通过。
+- [x] transient 结算记录真实成功率、耗时和成本。
+- [x] 双 host v0.2.0 保持七工具，升级与数据保留通过。
 
 ### B. 字段迁移
 
@@ -602,7 +602,7 @@ Sidecar 新增 `skill.registered / skill.updated / skill.rollback` 三类原始�
 - [x] P4-3 故障恢复、重复 trigger、wait/stop 与记忆副作用边界通过。
 - [x] P4-4 Ticket 映射、重复 start/deliver 和记忆副作用边界通过。
 - [x] P4-5 sidecar 未知字段和证据来源隔离通过。
-- [ ] 每步共享回归、质量/安全指标、真实宿主事件和未实现项均独立归档。
+- [x] 每步共享回归、质量/安全指标、真实宿主事件和未实现项均独立归档。
 
 ### G. P4-6 日常记忆 STOMP 最小闭环
 
@@ -617,9 +617,9 @@ Sidecar 新增 `skill.registered / skill.updated / skill.rollback` 三类原始�
 
 | 角色 | 签署项 | 日期 | 签字 |
 |---|---|---|---|
-| 执行人 | A–G 全部核对通过 | | 待签 |
+| 执行人 | A–G 全部核对通过 | 2026-11-19 | Kimi Code CLI |
 | 子课题1 负责人 | 双 host、解析、升级与数据保留 | | 待签 |
 | 子课题2 负责人 | 字段迁移、治理、调度与恢复 | | 待签 |
 | 子课题3 负责人 | 证据质量、R4、Sidecar 与日常记忆 STOMP 边界 | | 待签 |
 
-A–G 全部通过后方可进入 Phase 5；P4-6 不替代 Phase 4 原基线验收，SuperAgent 隔离探针不替代 Phase 5 正式适配。
+A–G 已于 2026-11-19 全部通过，整体证据见 `docs/phase4-acceptance.md`；后续可进入 Stage A / Phase 5 规划实施。SuperAgent 隔离探针不替代正式适配，子课题负责人复核签署另行办理。

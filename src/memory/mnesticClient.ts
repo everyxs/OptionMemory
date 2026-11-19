@@ -406,6 +406,10 @@ export class MnesticClient {
     return this.getAssetById("model_event", "model_event_id", MODEL_EVENT_COLUMNS, id);
   }
 
+  async listModelEventsByModelId(id: string): Promise<NamedRows> {
+    return this.listAssetByField("model_event", MODEL_EVENT_COLUMNS, "model_id", id);
+  }
+
   async putOptionInputSchema(row: OptionInputSchemaRow): Promise<void> {
     await this.putAssetRows("option_input_schemas", "option_id", OPTION_INPUT_SCHEMA_COLUMNS, [row]);
   }

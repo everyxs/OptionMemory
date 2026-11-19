@@ -1,7 +1,7 @@
 # Phase 4 P4-5 Sidecar Mapping Contract v0.1 验收
 
 - 日期：2026-11-17
-- 状态：P4-5 通过；Phase 4 原基线与整体验收尚未全部关闭，不能提前进入 Phase 5 签署
+- 状态：P4-5 通过；Phase 4 原基线与整体执行验收已于 2026-11-19 关闭，见 `docs/phase4-acceptance.md`
 - 数据边界：独立临时 RocksDB，完成后删除；未修改生产 9070
 - 可重复入口：`pnpm build && node scripts/phase4_sidecar_acceptance.ts`
 - 机器证据：`.data/phase4-sidecar-acceptance-result.json`

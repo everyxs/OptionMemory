@@ -1,10 +1,10 @@
 ---
 创建时间: 2026-11-15
-更新时间: 2026-11-15
+更新时间: 2026-11-19
 类型: 开发方案（修订草案）
 所属项目: "26-04 AI4Science"
 相关路线图: "S01最小产品路线图（完整版：OptionMemory + LLM 原生 Planner）"
-状态: Phase 4 P4-1M 已完成；Phase 5–6 SuperAgent 适配待实施
+状态: Phase 4 已关闭；Phase 5–6 SuperAgent 适配待实施
 tags:
   - MemoryBridge
   - OptionMemory
@@ -24,7 +24,7 @@ tags:
 >
 > 原 `OPTIONMEMORY_TOOL_CONTRACTS` 七工具不变，既有 Planner 三工具保持独立；Bridge/Recall 使用独立版本线和契约。R4 阻塞、J/≺、ν 门、settlement/revoke 和 RocksDB 数据保留语义不变。
 >
-> 当前基线为：Phase 0–3 已关闭，Phase 4 P4-0 至 P4-6 的 Planner 增量步骤均已完成，全量回归为 33 个测试文件、123 项测试。真实双会话、修订、调度恢复、Ticket 映射、Sidecar 证据隔离和日常记忆 STOMP 闭环见 `docs/phase4-memory-bridge-acceptance.md`、`docs/phase4-dsh-acceptance.md`、`docs/phase4-scheduler-acceptance.md`、`docs/phase4-superagent-acceptance.md`、`docs/phase4-sidecar-acceptance.md` 和 `docs/phase4-memory-stomp-acceptance.md`；Phase 4 原基线/整体验收和后续 SuperAgent 正式适配不代表已经交付。
+> 当前基线为：Phase 0、2、3 已关闭，Phase 1 R1–R3 部分验收通过且 R4 仍阻塞；Phase 4 原基线与 P4-0 至 P4-6 Planner 增量均已通过 Repo 验收，全量回归为 **35 个测试文件、128/128 通过**。真实双会话、修订、调度恢复、Ticket 映射、Sidecar 证据隔离和日常记忆 STOMP 闭环见 `docs/phase4-memory-bridge-acceptance.md`、`docs/phase4-dsh-acceptance.md`、`docs/phase4-scheduler-acceptance.md`、`docs/phase4-superagent-acceptance.md`、`docs/phase4-sidecar-acceptance.md` 和 `docs/phase4-memory-stomp-acceptance.md`；CSV 全量、transient 结算和 v0.2.0 升级保留见 `docs/phase4-acceptance.md`。后续 SuperAgent 正式适配不代表已经交付。
 >
 > Obsidian 是可选编辑器，不是运行依赖。OpenCode Skills 的可选治理见第十六章，不与日常 Markdown 最小闭环捆绑交付。
 
@@ -757,7 +757,7 @@ P4-1M 之后的所有功能、宿主和版本增量必须执行 `docs/memory-reg
 
 ## 十六、可选 Skill 治理与原生执行扩展
 
-Skill 不按普通 Markdown 记忆处理，而按“版本化 Option＋OpenCode 原生技能投影”治理。该扩展不改变日常 Markdown 最小闭环。
+Skill 的**执行资格**不按普通 Markdown 记忆处理，而按“版本化 Option＋OpenCode 原生技能投影”治理；SKILL.md 的**叙述性内容**（描述、适用场景、变更记录）可经统一摄入成为 data 层知识 chunk，进入非指令召回池，正文与脚本不进入。该扩展不改变日常 Markdown 最小闭环。
 
 ### 16.1 权威与版本
 
@@ -775,7 +775,7 @@ Skill 不按普通 Markdown 记忆处理，而按“版本化 Option＋OpenCode 
 - settled/approved 版本可被发现，probation 设置 `metadata.opencode/autoinvoke: false` 且原生 `skill` 权限为 `ask`；
 - revoked 撤销投影且原生权限为 `deny`，不能只依赖 autoinvoke；
 - 防止其他目录的重复 skill ID 覆盖 approved projection；
-- Bridge 召回只返回 `skill_id/version/status/active_release/evidence_ref`，由 OpenCode 原生 skill 工具加载正文；
+- Bridge 召回只返回 `skill_id/version/status/active_release/evidence_ref`（查询时**活读**资产链 + 状态裁注，禁止预物化 declarative 影子；叙述内容来自 data 层 chunk，召回处 join），由 OpenCode 原生 skill 工具加载正文；
 - revoke 阻止未来加载，但不能抹除已注入正文、已读取文件或已产生的副作用。
 
 ### 16.3 原生执行与 MemoryCore 控制面
@@ -793,6 +793,34 @@ OpenCode 可承担 Skill 正文加载和实际工具执行，MemoryCore 执行�
 ```
 
 原生 `skill` 工具加载正文不等于任务执行成功。必须区分 `projection_loaded`、真实任务 outcome、tool failure、permission denied 和 cancellation。脚本副作用仍需脚本级幂等和对账，候选代码按不可信代码在隔离环境审查，核心 Skill 自动发布默认关闭并要求全量回归和人工批准。
+
+### 16.4 统一摄入与双门晋升（2026-11-18 追加）
+
+SKILL.md 与普通笔记走同一条摄入管线，分流发生在 data → knowledge 晋升处：
+
+```text
+SKILL.md ──统一摄入──> data 层知识 chunk（叙述：是什么/何时用；非指令召回）
+        └──候选识别──> procedural 候选（带待绑定 package_hash）
+              └──人工批准──> 注册门（实现包哈希校验 + mandate 绑定）
+                    └──> 版本化 Option（probation）→ settled + active_release
+```
+
+- 候选管线四步：识别 → 候选 → 人工批准 → 注册门。治理 lane 语义不变：识别与候选抽取属数据 lane（ν门前一侧），注册门与资产化属治理 lane；2026-11-18 v5.1 最终安排：**识别与降维索引由线2 实现（MM-L2），注册门与资产化由线1 实现**，S1 候选 schema 为两线人际契约。
+- 四条分流红线：candidate ≠ capability；指令性正文不进入非指令注入池；哈希域在注册门由文本 content_hash 切换为实现 package_hash；ν门（问真伪）与注册门（问授权）不可合一。
+- 对应任务：P6-5（`devNotes/Week15-16开发手册-生成认证与SuperAgent持续适配.md`）。
+
+### 16.5 下行沉降与退役分层（2026-11-18 追加）
+
+执行结果不复制为独立事实，按三分离落位：
+
+| 内容 | 唯一权威 | 禁止 |
+|---|---|---|
+| 校准（成功率/预测误差/成本） | Model 字段 | 成为独立 fact |
+| 执行流水 | option_event/outcome | 成为独立 fact |
+| 叙述残留 | declarative 摘要 fact | 复制执行数据 |
+
+- 合法 declarative 沉降仅两个窄场景：降维归档索引（evidence_ref 回链 dormant 资产，内容限存在性/教训/结论）与跨域领域副产品（evidence_ref 指向 option_event，数据不同源）。
+- 退役分层：planner 运行时降权（stop/ignore/replan）仅作用于本次 plan_run，不改资产状态；资产级退役走 revoke（治理工具，arbiter 参与）——资产链记录永久 dormant 保留、Model 校准随资产 dormant、可选 declarative 索引，物理删除不存在；revoked 不因历史记忆重新加载。
 
 ---
 

@@ -132,7 +132,13 @@ node scripts/migrate_phase4_fields.ts \
 pnpm test
 ```
 
-当前基线为 **33 个测试文件、124/124 通过**，测试使用独立实例，不需要启动生产 9070。
+当前基线为 **35 个测试文件、128/128 通过**，测试使用独立实例，不需要启动生产 9070。
+
+Phase 4 CSV 全量、闭包/J、transient 结算与 RocksDB 重启验收：
+
+```bash
+node scripts/phase4_csv_acceptance.ts
+```
 
 日常记忆完整故障与恢复验收：
 
@@ -140,7 +146,7 @@ pnpm test
 node scripts/phase4_memory_stomp_acceptance.ts
 ```
 
-验收说明和真实 OpenCode/DSH 会话证据见 `docs/phase4-memory-stomp-acceptance.md`。
+Phase 4 原基线、P4-0–P4-6、v0.2.0 真实双 host 与升级保留证据见 `docs/phase4-acceptance.md`；日常记忆专项证据见 `docs/phase4-memory-stomp-acceptance.md`。
 
 ## 七、日常 Markdown 使用案例
 
@@ -172,6 +178,28 @@ node scripts/phase4_memory_stomp_acceptance.ts
 
 ### 案例 2：实验记录更新后使用新值
 
+Bridge 三工具（capture/revise/recall）不直接读文件。外部 Markdown 必须先经受控解析 Option `memory_parse_markdown_note` 摄入；之后每次 Recall 都会先重读文件并校验内容哈希，文件变化时自动产生新版本。完整流程如下。
+
+#### 1. 配置 markdownRoot
+
+在仓库根目录的 `opencode.json` 中，把 memory-bridge 插件连同选项一起声明（`plugin` 字段支持 `["路径", 选项]` 元组）：
+
+```json
+{
+  "plugin": [
+    [
+      "./.opencode/plugins/optionmemory-memory-bridge.ts",
+      { "markdownRoot": "notes", "namespace": "project:s01" }
+    ]
+  ]
+}
+```
+
+- `markdownRoot`：允许读取的 Markdown 根目录。配置后 `bridge_recall` 和会话自动注入都会携带 `markdown_root`，Recall 时据此刷新已摄入的外部文档；相对路径按 opencode 启动目录（通常是仓库根）解析，也可填绝对路径。不配置则只召回已保存的投影，不刷新文件。
+- `namespace`：bridge 工具与自动注入的默认 namespace，建议按项目隔离（如 `project:s01`）。
+
+#### 2. 准备实验记录
+
 `notes/S01.md`：
 
 ```markdown
@@ -180,7 +208,44 @@ node scripts/phase4_memory_stomp_acceptance.ts
 S01 的硬度为 512 HV。
 ```
 
-配置 `markdownRoot=notes` 后，第一次 Recall 返回 512 HV。之后你手动把文件改为：
+#### 3. 首次摄入（受控 parse Option）
+
+首次摄入不是 Bridge 工具，而是受控 atomic Option（`pi_type=parse`，`pi_ref=markdown-note@v1`），会自动注册 Option/Model 并形成真实 execute decision。仓库最小方式是保存一个临时脚本调用构建产物（默认连 9070，可用 `OPTIONMEMORY_ENDPOINT` 覆盖）：
+
+```js
+// scripts/ingest_note.cjs —— 用法：node scripts/ingest_note.cjs <path> <idempotency_key>
+const { executeMemoryWrite } = require("../dist/api/memory-write-options.js");
+const [path, idempotencyKey] = process.argv.slice(2);
+
+executeMemoryWrite({
+  operation: "parse",
+  host_type: "opencode",
+  namespace: "project:s01",
+  source_ref: path,
+  idempotency_key: idempotencyKey,
+  arguments: { path, root: "notes", namespace: "project:s01" },
+}).then((result) => console.log(JSON.stringify(result, null, 2)));
+```
+
+```bash
+node scripts/ingest_note.cjs S01.md s01-note-v1
+```
+
+返回 `gate=pass` 及 `document_id`、`chunk_version_ids`、`content_hash`。解析器只读：校验根目录与符号链接，拒绝路径穿越及 `.git/.data/node_modules/dist/target/backups` 等排除目录，不写回原文。
+
+#### 4. 召回
+
+新会话中询问“S01 的硬度是多少”（自动注入），或显式调用：
+
+```json
+{ "query": "S01 硬度", "namespace": "project:s01" }
+```
+
+返回 512 HV 及对应 `md://<document_id>#<chunk_version_id>`。
+
+#### 5. 更新记录并再次召回
+
+手动把文件改为：
 
 ```markdown
 # S01 实验记录
@@ -188,27 +253,64 @@ S01 的硬度为 512 HV。
 S01 的硬度复核为 450 HV。
 ```
 
-下一次 Recall 会返回 450 HV，并将旧 chunk 标为 `mapping_stale`。Bridge 不会修改你的 Markdown。
+下一次 Recall（自动注入或显式调用，需已配置 `markdownRoot`）会先重读文件并计算内容哈希：未变化则幂等复用既有解析；变化则经同一 parse Option 产生新执行（幂等键 `recall-refresh:<document_id>:<content_hash>`），新 chunk 生效，旧 chunk 标为 `mapping_stale`，默认 `allow_history=false` 不再返回旧值。Bridge 全程不修改你的 Markdown。
+
+#### 6. 边界
 
 如果还存在独立的 `hardness(S01, "512 HV")` declarative fact，文档更新不会自动把它改成 450 HV；事实修订仍需原 revision/retract 与证据治理，不能仅凭一段文字覆盖。
 
-### 案例 3：历史笔记与当前规则不一致
+### 案例 3：历史实验笔记与当前规则不一致
 
-`AGENTS.md`：
+#### 1. 配置
+
+`opencode.json` 的 `markdownRoot` 与 `namespace` 配置同案例 2，保证 Recall 能同时命中多份已摄入笔记。
+
+#### 2. 准备当前规则与历史笔记
+
+当前复核结论 `notes/S01-review.md`：
 
 ```markdown
-本项目当前使用 pnpm。
+# S01 复核结论（2026-11-18）
+
+S01 硬度统一按 450 HV 记录；2025 年的 512 HV 旧测值作废，仅作背景。
 ```
 
-历史笔记：
+历史实验笔记 `notes/archive/2025-hardness.md`：
 
 ```markdown
-2025 年本项目曾使用 npm。
+# 2025 年硬度记录
+
+2025-03：S01 的硬度为 512 HV。
 ```
 
-询问“现在应使用什么包管理器”时，当前 `AGENTS.md` 规则优先，历史笔记只作为非指令背景。系统不会因为召回旧笔记就改用 npm，也不会自动改写历史记录或 `AGENTS.md`。
+并自行在 `AGENTS.md` 中维护当前规则（不要让模型代改），例如：
 
-如果历史笔记没有明确标注失效，Recall 会保留来源和冲突提示，而不是静默选择一条说法。
+```markdown
+S01 硬度按 notes/S01-review.md 的复核值记录。
+```
+
+#### 3. 分别摄入
+
+两份文件各执行一次受控 parse（不同 `idempotency_key`，复用案例 2 的脚本）：
+
+```bash
+node scripts/ingest_note.cjs S01-review.md s01-review-v1
+node scripts/ingest_note.cjs archive/2025-hardness.md s01-hardness-2025-v1
+```
+
+#### 4. 查询与预期行为
+
+询问“S01 现在应使用什么硬度值”：
+
+- Recall 同时命中当前复核 chunk 与历史 chunk，各自带 `memory_uri` 与状态；
+- 当前 `AGENTS.md` 与复核结论优先，历史笔记只作为非指令背景；
+- 如果历史笔记没有明确标注失效，Recall 会保留来源和冲突提示，而不是静默选择一条说法；
+- 系统不会因为召回旧笔记就改回 512 HV，也不会自动改写历史记录或 `AGENTS.md`。
+
+#### 5. 让旧值明确失效
+
+- 叙述层面：像本例一样在复核记录中写明“旧测值作废”，历史原文保留不动；
+- 结构化层面：若存在 `hardness(S01, ...)` declarative fact，用原治理路径（revision/retract 与证据）修订，不靠覆盖文字。
 
 ### 案例 4：OpenCode 与 DSH 协同修订
 
@@ -229,7 +331,7 @@ supersedes 使用刚才的 document_id，namespace=global，idempotency_key=proj
 
 ## 八、当前边界
 
-- Phase 4 原基线的 HEA-Lens 全量解析、transient 结算和整体验收尚未全部关闭，R4 仍阻塞。
+- Phase 4 原基线、HEA-Lens 全量解析、transient 结算、v0.2.0 双 host 升级与整体验收已关闭，见 `docs/phase4-acceptance.md`；Phase 1 的 R4 仍阻塞。
 - 当前提供最小 NativeAdapter；不承诺全类型工具、嵌套 Option 或自动 Skill 生成。
 - 外部历史轨迹可通过 Sidecar 导入，统一标记为 `mode=sidecar`，不与原生 real 证据混用，详见 `docs/sidecar-mapping-v0.1.md`。
 - SuperAgent 正式持续适配、memory_why/query_achievable/certify 和组合 DAG 尚未开放。

@@ -7,6 +7,7 @@ import { writeJustifications } from "./justifications";
 
 export interface ClosureScope {
   entity?: string;
+  entities?: string[];
   predicate?: string;
   ruleId?: string;
 }
@@ -106,6 +107,7 @@ export async function deriveClosure(scope: ClosureScope | string = {}): Promise<
   ]);
   const facts = allFacts.filter((fact) =>
     (normalized.entity === undefined || fact.args[0] === normalized.entity) &&
+    (normalized.entities === undefined || normalized.entities.includes(fact.args[0])) &&
     (normalized.predicate === undefined || fact.predicate === normalized.predicate),
   );
   const candidates = rules
