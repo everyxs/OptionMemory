@@ -5,8 +5,28 @@ import type { FactRow } from "../memory/mnesticClient";
 import { estimateMemoryTokens } from "./document-projections";
 import { readMarkdownNoteSnapshot } from "../bridge/markdown/parser";
 import { executeMemoryWrite } from "./memory-write-options";
+import { MESSAGE_CODES, message } from "../runtime/i18n";
 
-export const MEMORY_RECALL_STRATEGY_VERSION = "keyword-recall-v1";
+export const MEMORY_RECALL_STRATEGY_VERSION = "keyword-recall-v2";
+
+const BILINGUAL_TERM_GROUPS = [
+  ["hardness", "硬度"],
+  ["composition", "成分"],
+  ["phase structure", "相结构"],
+  ["package manager", "包管理器"],
+  ["decision", "决定"],
+  ["agreement", "约定"],
+  ["remember", "记住"],
+  ["revision", "修订"],
+] as const;
+
+function expandedQuery(query: string): string {
+  const lower = query.toLowerCase();
+  return BILINGUAL_TERM_GROUPS.reduce(
+    (expanded, group) => group.some((term) => lower.includes(term)) ? `${expanded} ${group.join(" ")}` : expanded,
+    query,
+  );
+}
 
 export interface MemoryRecallRequest {
   query: string;
@@ -63,7 +83,7 @@ function hash(value: string): string {
 }
 
 function queryTerms(query: string): string[] {
-  const normalized = query.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  const normalized = expandedQuery(query).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
   const terms = new Set<string>();
   for (const word of normalized.split(/\s+/)) {
     if (word.length < 2) continue;
@@ -133,13 +153,14 @@ export async function memoryRecall(request: MemoryRecallRequest): Promise<Memory
     namespace: request.namespace,
     allow_history: request.allow_history ?? false,
     include_memorycore: request.include_memorycore ?? false,
+    strategy_version: MEMORY_RECALL_STRATEGY_VERSION,
   }));
   const id = recallId(request, queryHash);
   const client = getMemoryClient();
   const existing = oneRow<MemoryRecallEventRow>(await client.getMemoryRecallEventById(id));
   if (existing) return { ...(existing.response_json as MemoryRecallResult), recall_id: id, reused: true };
   if (!request.query.trim() || !request.namespace) {
-    return { gate: "blocked", recall_id: id, items: [], reference_text: "", token_count: 0, strategy_version: MEMORY_RECALL_STRATEGY_VERSION, degraded: [], reused: false, reason: "query and namespace are required" };
+    return { gate: "blocked", recall_id: id, items: [], reference_text: "", token_count: 0, strategy_version: MEMORY_RECALL_STRATEGY_VERSION, degraded: [], reused: false, reason: message(MESSAGE_CODES.MEMORY_QUERY_NAMESPACE_REQUIRED) };
   }
   const degraded = await refreshExternalDocuments(rowsToObjects<MemoryDocumentRow>(await client.listMemoryDocuments()), request);
   const degradedIds = new Set(degraded.map((item) => item.split(":", 1)[0]));

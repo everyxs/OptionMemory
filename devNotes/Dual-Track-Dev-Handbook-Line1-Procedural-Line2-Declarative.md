@@ -132,7 +132,7 @@ The architecture in §1 is the **target**. Do not infer implementation status fr
 | Phase 3 | Closed | Conflict governance and dual-host seven-tool baseline; `docs/phase3-baseline.md` |
 | Phase 4 | **Closed and Repo-accepted** | Original baseline and P4-0–P4-6 passed on 2026-11-19, including full CSV, transient settlement, and v0.2.0 dual-host retention; `docs/phase4-acceptance.md` |
 | Phase 5–6 | Not implemented | Stage A/B work in this handbook, except for explicitly listed Phase 4 foundations |
-| Automated baseline | Last verified 2026-11-19 | `pnpm build` passed; 35 test files, 128/128 tests passed |
+| Automated baseline | Last verified 2026-11-19 | `pnpm build` passed; 37 test files, 135/135 tests passed |
 
 **Phase 4 acceptance boundary.** Phase 4 is closed by the recorded 2026-11-19 implementation and execution acceptance, not by the earlier planning assumption. The earlier Week 9–12 open items are now checked and linked to `docs/phase4-acceptance.md`. Subproject-owner administrative signatures remain separate, and R4 remains blocked.
 
@@ -198,7 +198,7 @@ pnpm build
 pnpm test
 ```
 
-The last verified result was **35 files and 128/128 tests passing**. Tests use isolated instances and do not require the production 9070 service.
+The last verified result was **37 files and 135/135 tests passing**. Tests use isolated instances and do not require the production 9070 service.
 
 For an optional manually started development instance, use a separate data directory and port, for example:
 

@@ -56,6 +56,8 @@ P4-6 起，OptionImplementationResult 可携带真实 `model_events=anticipation
 
 Phase 4 v0.2.0 的 CSV transient 结算复用 `model_event(event_type=calibration)`：`option_event` 开户，observation/outcome 记录输入、输出与真实成本，最终以 `schema_version=transient-settlement-v0.1` 的 Model 校准事件结算。payload 关联 `option_event_id/batch_id/option_type/template_id`，记录成功率、fact 接受率、闭包/J、真实耗时和未知货币成本；不把派生统计回写为第二份主表权威。缺 settlement 的重放只补事件，不重复解析。
 
+v0.2.1 双语扩展使用 `parser_version=markdown-note-v2` 与 `keyword-recall-v2`；受控实现引用仍为 `markdown-note@v1`。Recall 缓存键包含策略版本，跨语言仅承诺已测试的有限词表映射，不改变既有 document/revision ID 或证据等级。
+
 ## 门控与查询
 
 - 资产和事件引用必须存在且状态允许。

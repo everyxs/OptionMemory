@@ -7,8 +7,9 @@ import type {
   MemoryDocumentRow,
 } from "../memory/document-projections";
 import type { GateResult } from "../runtime/nuGate";
+import { MESSAGE_CODES, message } from "../runtime/i18n";
 
-export const MARKDOWN_PARSER_VERSION = "markdown-note-v1";
+export const MARKDOWN_PARSER_VERSION = "markdown-note-v2";
 
 function rowsToObjects<T>(result: { headers: string[]; rows: unknown[][] }): T[] {
   return result.rows.map((row) => Object.fromEntries(result.headers.map((header, index) => [header, row[index]])) as T);
@@ -27,7 +28,9 @@ function now(): number {
 }
 
 export function estimateMemoryTokens(text: string): number {
-  return Math.max(1, Math.ceil(text.length / 2));
+  const ascii = text.replace(/[^\x00-\x7F]/g, " ").trim();
+  const nonAscii = text.replace(/[\x00-\x7F]/g, "");
+  return Math.max(1, Math.ceil(ascii.length / 4) + Math.ceil(nonAscii.length / 2));
 }
 
 export function memoryDocumentId(namespace: string, rawRef: string): string {
@@ -35,14 +38,14 @@ export function memoryDocumentId(namespace: string, rawRef: string): string {
 }
 
 function validateNamespace(namespace: string): void {
-  if (!/^[a-zA-Z0-9][a-zA-Z0-9_.:/-]{0,127}$/.test(namespace)) throw new Error("A valid namespace is required");
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_.:/-]{0,127}$/.test(namespace)) throw new Error(message(MESSAGE_CODES.MEMORY_NAMESPACE_REQUIRED));
 }
 
 function validateText(text: string): void {
-  if (!text.trim()) throw new Error("Captured text must not be empty");
-  if (text.length > 100_000) throw new Error("Captured text exceeds the single-candidate limit");
+  if (!text.trim()) throw new Error(message(MESSAGE_CODES.MEMORY_TEXT_REQUIRED));
+  if (text.length > 100_000) throw new Error(message(MESSAGE_CODES.MEMORY_TEXT_TOO_LARGE));
   if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|(?:api[_-]?key|secret|password)\s*[:=]\s*\S+/i.test(text)) {
-    throw new Error("Sensitive content is not eligible for memory capture");
+    throw new Error(message(MESSAGE_CODES.MEMORY_SENSITIVE_CONTENT));
   }
 }
 

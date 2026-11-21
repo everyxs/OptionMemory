@@ -3,6 +3,7 @@ import { readFile, realpath, stat } from "node:fs/promises";
 import { relative, resolve, sep } from "node:path";
 import { ingestDocumentProjection, MARKDOWN_PARSER_VERSION } from "../../api/document-projections";
 import type { ChunkProjectionInput, DocumentProjectionInput } from "../../memory/document-projections";
+import { MESSAGE_CODES, message } from "../../runtime/i18n";
 
 const EXCLUDED_SEGMENTS = new Set([".git", ".data", "node_modules", "dist", "target", "backups"]);
 
@@ -12,16 +13,16 @@ function hash(text: string): string {
 
 function safeRelativePath(root: string, candidate: string): string {
   const path = relative(root, candidate);
-  if (!path || path.startsWith("..") || path.includes("\0")) throw new Error("Markdown path is outside the allowed root");
+  if (!path || path.startsWith("..") || path.includes("\0")) throw new Error(message(MESSAGE_CODES.MARKDOWN_PATH_OUTSIDE_ROOT));
   const segments = path.split(/[\\/]/);
-  if (segments.some((segment) => EXCLUDED_SEGMENTS.has(segment))) throw new Error("Markdown path is in an excluded directory");
+  if (segments.some((segment) => EXCLUDED_SEGMENTS.has(segment))) throw new Error(message(MESSAGE_CODES.MARKDOWN_PATH_EXCLUDED));
   return path;
 }
 
 export function parseMarkdownText(text: string, rawRef: string, namespace: string): DocumentProjectionInput & {
   fact_candidates: Array<{ text: string; heading_path: string }>;
 } {
-  const body = text.replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
+  const body = text.replace(/^﻿?---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
   const lines = body.split(/\r?\n/);
   const headings: string[] = [];
   const chunks: Array<ChunkProjectionInput & { text: string }> = [];
@@ -57,7 +58,7 @@ export function parseMarkdownText(text: string, rawRef: string, namespace: strin
   const candidates = chunks.flatMap((chunk) => {
     const statements = chunk.text.split(/(?<=[。！？.!?])\s+/);
     return statements
-      .filter((statement) => /(?:\d+(?:\.\d+)?\s*(?:HV|MPa|GPa|at\.%|wt\.%)|决定|约定|记住)/i.test(statement))
+      .filter((statement) => /(?:\d+(?:\.\d+)?\s*(?:HV|MPa|GPa|at\.%|wt\.%)|决定|约定|记住|\b(?:decide|decides|decided|decision|agree|agrees|agreed|agreement|remember|remembers|remembered)\b)/i.test(statement))
       .map((statement) => ({ text: statement.trim(), heading_path: chunk.heading_path }));
   });
   return {
@@ -85,7 +86,7 @@ export async function readMarkdownNoteSnapshot(input: {
   const text = await readFile(actual, "utf8");
   const after = await stat(actual);
   if (before.mtimeMs !== after.mtimeMs || before.size !== after.size) {
-    throw new Error("file_version changed while Markdown was being read; retry the snapshot");
+    throw new Error(message(MESSAGE_CODES.MARKDOWN_FILE_VERSION_CHANGED));
   }
   const projection = parseMarkdownText(text, relativePath.replaceAll(sep, "/"), input.namespace);
   projection.source_updated_at = after.mtimeMs / 1000;

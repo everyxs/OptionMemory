@@ -3,7 +3,7 @@
 - 文档日期：2026-11-19
 - 当前基线：OpenCode 2.3.0（V2）、兼容探针 OpenCode 1.19.5（V1）；v0.2.0 真实验收环境为 OpenCode 2.3.2
 - 存储：mnestic 0.17.0 + RocksDB
-- 当前回归：35 个测试文件、128/128 通过
+- 当前回归：37 个测试文件、135/135 通过
 
 ## 一、插件能做什么
 
@@ -19,7 +19,8 @@
 
 ### 当前边界
 
-- 日常记忆首版使用关键词/bigram 召回，不使用当前随机 embedding 做语义判断。
+- 日常记忆使用 `keyword-recall-v2` 的关键词/bigram、语言感知 token 估算和有限双语词表，不使用当前随机 embedding 做语义判断；跨语言召回仅承诺已测试映射。
+- `OPTIONMEMORY_LOCALE=en` / `zh-CN` 仅切换人类可读消息，机器标识与既有 document/revision ID 不变，详见 `docs/i18n.md` 与 `docs/bilingual-acceptance.md`。
 - Markdown 原文不被 Bridge 修改，召回时只裁注当前状态。
 - 不包含自动 compaction 捕获、直接读取文件的强制裁注或持续后台整理。
 - R4 仍阻塞，97 条待复核记录不会因召回而变成独立认证证据。

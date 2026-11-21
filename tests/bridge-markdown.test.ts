@@ -23,7 +23,7 @@ describe("Markdown ingestion and source mappings", () => {
     expect(projection.chunks).toHaveLength(1);
     expect(projection.fact_candidates[0].text).toContain("pnpm");
     const first = await parseMarkdownNote({ path: "project.md", root, namespace: "project:a" });
-    expect(first).toMatchObject({ reused: false, parser_version: "markdown-note-v1", chunk_count: 2 });
+    expect(first).toMatchObject({ reused: false, parser_version: "markdown-note-v2", chunk_count: 2 });
     const second = await parseMarkdownNote({ path: "project.md", root, namespace: "project:a" });
     expect(second).toMatchObject({ document_id: first.document_id, reused: true });
     const stored = await getDocumentProjection(first.document_id);

@@ -2,7 +2,7 @@
   "manifestVersion": "0.15",
   "name": "optionmemory",
   "displayName": "OptionMemory — mnestic five-layer memory",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Seven-tool OptionMemory adapter with revision, conflict governance, CSV parsing and transient settlement",
   "entry": "dist/plugins/dsh/index.js",
   "patch": "cordis.patch.yml",

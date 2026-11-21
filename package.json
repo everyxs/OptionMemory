@@ -1,6 +1,6 @@
 {
   "name": "optionmemory",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "OptionMemory five-layer memory over mnestic with DSH and OpenCode adapters",
   "type": "commonjs",

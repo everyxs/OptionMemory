@@ -1,118 +1,135 @@
+---
+lang: en
+canonical: README.md
+translation_of: README.zh-CN.md
+translation_status: reviewed
+source_commit: 7c71289
+reviewed_at: 2026-11-19
+---
+
 # OptionMemory
 
-OptionMemory 是基于 mnestic + RocksDB 的记忆与执行治理系统，支持 OpenCode 和 DSH。
+[中文说明](README.zh-CN.md) · [Bilingual documentation policy](docs/i18n.md)
 
-推荐先体验日常记忆：
+OptionMemory is a memory and execution-governance system built on mnestic + RocksDB, with native OpenCode and DSH adapters.
+
+A good first workflow is daily memory:
 
 ```text
-记住一个项目决策 → 新会话自动想起 → 修正记忆 → 再次召回新版本
+Remember a project decision → recall it automatically in a new session → revise it → recall the new version
 ```
 
-## 一、准备环境
-
-需要：
+## 1. Requirements
 
 - Node.js >= 24.9.0
 - pnpm 11.7.0
-- OpenCode 2.3.0，或 DSH 0.2.2-rc.1
-- 长期使用 RocksDB；Mem 仅用于测试
+- OpenCode 2.3.0 or DSH 0.2.2-rc.1
+- RocksDB for persistent use; Mem is for tests only
 
-## 二、三步启动
+## 2. Start in three steps
 
-### 1. 安装并构建
+### 2.1 Install and build
 
 ```bash
 pnpm install
 pnpm build
 ```
 
-### 2. 启动 MemoryCore
+### 2.2 Start MemoryCore
 
 ```bash
 scripts/mnestic_start.sh --rocks --port 9070
 ```
 
-默认地址为 `http://127.0.0.1:9070/text-query`，默认数据目录为 `.data/mnestic`。
+The default endpoint is `http://127.0.0.1:9070/text-query`, and the default data directory is `.data/mnestic`.
 
-### 3. 初始化数据库
+### 2.3 Initialize the database
 
 ```bash
 node scripts/apply_schema.ts
 ```
 
-该命令按顺序建全 13 组关系，已存在的关系和索引会跳过，可重复执行。
+This applies all 13 relation groups in order. Existing relations and indexes are skipped, so the command is safe to rerun.
 
-> 修改 TypeScript 后必须重新执行 `pnpm build`，宿主实际加载的是 `dist/` 中的文件。
+> After changing TypeScript, rerun `pnpm build`. Hosts load files from `dist/`.
 
-## 三、OpenCode：第一次使用
+## 3. OpenCode: first use
 
-先进入仓库根目录（包含 `.opencode/` 和 `package.json` 的目录）：
+Enter the repository root—the directory containing `.opencode/` and `package.json`:
 
 ```bash
 cd /path/to/optionmemory
-# 本仓库示例：cd E:\DSHprojects
+# This repository, for example: cd E:\DSHprojects
 ```
 
-仓库已包含 Planner 和日常记忆插件。在**会话 A** 中保存记忆：
+The repository already includes the Planner and daily-memory plugins. In **session A**, save a memory:
 
 ```bash
-opencode run --standalone --auto "请使用 bridge_capture 记住：本项目使用 pnpm 管理依赖。namespace=global，source_ref=session-a，idempotency_key=project-pnpm-v1。"
+opencode run --standalone --auto "Use bridge_capture to remember: this project uses pnpm for dependency management. namespace=global, source_ref=session-a, idempotency_key=project-pnpm-v1."
 ```
 
-保持同一目录、endpoint 和 namespace，在**会话 B** 中重新执行一次 `opencode run`，然后询问：
+Keep the same working directory, endpoint, and namespace. Start **session B** with another `opencode run`, then ask:
 
 ```text
-这个项目使用什么包管理器？请给出对应 memory_uri。
+Which package manager does this project use? Return the corresponding memory_uri.
 ```
 
-每次 `opencode run` 都会创建新会话，可以使用不同终端或进程，但**不要添加 `--continue`**，否则是在继续旧会话，不能证明跨会话召回。
+Every `opencode run` creates a new session. You may use different terminals or processes, but do **not** add `--continue`; continuing the old session does not prove cross-session recall.
 
-OpenCode 会自动召回之前保存的内容，并将它作为非指令参考注入。
+OpenCode automatically recalls the saved content and injects it as non-instructional reference material.
 
-修订记忆：
+To revise the memory:
 
 ```text
-请使用 bridge_revise，将刚才的记忆改为“本项目改用 yarn”。
-supersedes 使用刚才返回的 document_id，idempotency_key 使用 project-yarn-v1。
+Use bridge_revise to change the previous memory to “this project now uses yarn”.
+Use the returned document_id as supersedes and project-yarn-v1 as idempotency_key.
 ```
 
-再次询问后，应得到 **yarn** 和新 memory_uri；旧版本仍保留为 `superseded`，不会修改原始 Markdown 或 AGENTS.md。
+The next query should return **yarn** and a new memory_uri. The old version remains `superseded`; neither the original Markdown nor `AGENTS.md` is modified.
 
-### 配置
+### Configuration
 
-默认连接 9070，无需额外配置。需要修改地址时：
+The default endpoint is 9070 and needs no additional configuration. To override it:
 
 ```bash
 export OPTIONMEMORY_ENDPOINT='http://127.0.0.1:9070/text-query'
 ```
 
-需要检查插件加载时：
+Runtime messages default to their previous language. To select Simplified Chinese instead, set:
+
+```bash
+export OPTIONMEMORY_LOCALE='zh-CN'
+```
+
+Machine identifiers and statuses remain unchanged. See `docs/i18n.md` and `docs/bilingual-acceptance.md`.
+
+To inspect plugin loading:
 
 ```bash
 opencode --standalone --print-logs --log-level debug debug agents
 ```
 
-原七工具、Planner 和 Bridge 是独立工具组，详见 `docs/opencode-memory-guide.md`。
+The original seven tools, Planner, and Bridge are independent tool families. See `docs/opencode-memory-guide.md`.
 
-## 四、DSH：第一次使用
+## 4. DSH: first use
 
-先将本仓库链接到 profile（按实际路径调整）：
+Link this repository to a profile, adjusting the path for your checkout:
 
 ```bash
 dsh plugin --profile materials-agent add /absolute/path/to/optionmemory
 ```
 
-运行：
+Run:
 
 ```bash
-dsh --profile materials-agent --patch ./cordis.patch.yml "请使用 bridge_capture 记住：本项目使用 pnpm。namespace=global，source_ref=session-a，idempotency_key=project-pnpm-v1。"
+dsh --profile materials-agent --patch ./cordis.patch.yml "Use bridge_capture to remember: this project uses pnpm. namespace=global, source_ref=session-a, idempotency_key=project-pnpm-v1."
 ```
 
-后续可分别使用 `bridge_recall` 和 `bridge_revise` 查询、修订同一记忆。OpenCode 与 DSH 可以共享同一 MemoryCore 和 document/revision。
+Use `bridge_recall` and `bridge_revise` to query and revise the same memory. OpenCode and DSH can share one MemoryCore and the same document/revision history.
 
-## 五、已有数据库升级
+## 5. Upgrade an existing database
 
-已有旧版 RocksDB 时，先使用新的备份目录，再执行血缘迁移：
+For an older RocksDB instance, choose a new backup directory and run the lineage migration:
 
 ```bash
 node scripts/migrate_phase4_fields.ts \
@@ -122,67 +139,67 @@ node scripts/migrate_phase4_fields.ts \
   --yes
 ```
 
-新增的 Option 创建血缘字段在旧资产中保持 `null`，不会根据调用记录反推。迁移前后请核对 Option/Model ID、绑定、facts、J/≺ 和状态。
+New Option creation-lineage fields remain `null` for old assets; they are not inferred from invocation history. Before and after migration, verify Option/Model IDs, bindings, facts, J/≺, and statuses.
 
-回滚时使用同一命令并增加 `--rollback`。详见 `docs/phase4-field-authority.md`。
+Use the same command with `--rollback` to roll back. See `docs/phase4-field-authority.md`.
 
-## 六、验证安装
+## 6. Verify the installation
 
 ```bash
 pnpm test
 ```
 
-当前基线为 **35 个测试文件、128/128 通过**，测试使用独立实例，不需要启动生产 9070。
+The current baseline is **37 test files, 135/135 passing**, using isolated instances without a production 9070 service.
 
-Phase 4 CSV 全量、闭包/J、transient 结算与 RocksDB 重启验收：
+Run the Phase 4 full CSV, closure/J, transient-settlement, and RocksDB restart acceptance:
 
 ```bash
 node scripts/phase4_csv_acceptance.ts
 ```
 
-日常记忆完整故障与恢复验收：
+Run the daily-memory failure and recovery acceptance:
 
 ```bash
 node scripts/phase4_memory_stomp_acceptance.ts
 ```
 
-Phase 4 原基线、P4-0–P4-6、v0.2.0 真实双 host 与升级保留证据见 `docs/phase4-acceptance.md`；日常记忆专项证据见 `docs/phase4-memory-stomp-acceptance.md`。
+See `docs/phase4-acceptance.md` for the original Phase 4 baseline, P4-0–P4-6, real v0.2.0 dual-host execution, and upgrade-retention evidence. See `docs/phase4-memory-stomp-acceptance.md` for the daily-memory slice.
 
-## 七、日常 Markdown 使用案例
+## 7. Everyday Markdown examples
 
-> 以下 pnpm/yarn 仅用于演示记忆捕获、召回和修订。本仓库继续使用 pnpm 与 `pnpm-lock.yaml`，不需要执行包管理器迁移。
+> pnpm and yarn below are examples only. This repository continues to use pnpm and `pnpm-lock.yaml`; no package-manager migration is required.
 
-### 案例 1：跨会话记住项目决策
+### Example 1: remember a project decision across sessions
 
-`notes/project.md`：
+`notes/project.md`:
 
 ```markdown
-# 项目决策
+# Project decision
 
-2026-11-17：本项目使用 pnpm 管理依赖，避免混用 npm。
+2026-11-17: This project uses pnpm for dependency management; do not mix npm into the workflow.
 ```
 
-在会话 A 中说：
+In session A:
 
 ```text
-请记住这条项目决策，namespace=global，source_ref=session-a，idempotency_key=project-pnpm-v1。
+Remember this project decision with namespace=global, source_ref=session-a, and idempotency_key=project-pnpm-v1.
 ```
 
-在会话 B 中问：
+In session B:
 
 ```text
-这个项目应该使用哪个包管理器？请给出记忆来源。
+Which package manager should this project use? Include the memory source.
 ```
 
-预期回答为 **pnpm**，并附带对应 memory_uri。Agent 不需要重新打开 `notes/project.md`。
+The expected answer is **pnpm**, with the corresponding memory_uri. The agent does not need to reopen `notes/project.md`.
 
-### 案例 2：实验记录更新后使用新值
+### Example 2: use the new value after an experiment note changes
 
-Bridge 三工具（capture/revise/recall）不直接读文件。外部 Markdown 必须先经受控解析 Option `memory_parse_markdown_note` 摄入；之后每次 Recall 都会先重读文件并校验内容哈希，文件变化时自动产生新版本。完整流程如下。
+The three Bridge tools—capture, revise, and recall—do not read files directly. External Markdown must first be ingested through the controlled `memory_parse_markdown_note` Option. Every later Recall rereads the file and verifies its content hash; a changed file automatically produces a new version.
 
-#### 1. 配置 markdownRoot
+#### 2.1 Configure markdownRoot
 
-在仓库根目录的 `opencode.json` 中，把 memory-bridge 插件连同选项一起声明（`plugin` 字段支持 `["路径", 选项]` 元组）：
+In the repository-root `opencode.json`, declare the memory-bridge plugin with options. The `plugin` field supports `["path", options]` tuples:
 
 ```json
 {
@@ -195,25 +212,25 @@ Bridge 三工具（capture/revise/recall）不直接读文件。外部 Markdown 
 }
 ```
 
-- `markdownRoot`：允许读取的 Markdown 根目录。配置后 `bridge_recall` 和会话自动注入都会携带 `markdown_root`，Recall 时据此刷新已摄入的外部文档；相对路径按 opencode 启动目录（通常是仓库根）解析，也可填绝对路径。不配置则只召回已保存的投影，不刷新文件。
-- `namespace`：bridge 工具与自动注入的默认 namespace，建议按项目隔离（如 `project:s01`）。
+- `markdownRoot`: the allowed Markdown root. When configured, `bridge_recall` and automatic session injection include `markdown_root`, and Recall refreshes ingested external documents from it. Relative paths resolve from the OpenCode launch directory, normally the repository root; absolute paths are also supported. Without it, Recall returns saved projections without refreshing files.
+- `namespace`: the default namespace for Bridge tools and automatic injection. Use project-specific isolation, such as `project:s01`.
 
-#### 2. 准备实验记录
+#### 2.2 Prepare an experiment note
 
-`notes/S01.md`：
+`notes/S01.md`:
 
 ```markdown
-# S01 实验记录
+# S01 experiment note
 
-S01 的硬度为 512 HV。
+S01 hardness is 512 HV.
 ```
 
-#### 3. 首次摄入（受控 parse Option）
+#### 2.3 Initial ingestion through the controlled parse Option
 
-首次摄入不是 Bridge 工具，而是受控 atomic Option（`pi_type=parse`，`pi_ref=markdown-note@v1`），会自动注册 Option/Model 并形成真实 execute decision。仓库最小方式是保存一个临时脚本调用构建产物（默认连 9070，可用 `OPTIONMEMORY_ENDPOINT` 覆盖）：
+Initial ingestion is not a Bridge tool. It uses a controlled atomic Option (`pi_type=parse`, `pi_ref=markdown-note@v1`), registers Option/Model automatically, and creates a real execute decision. A minimal repository-local script can call the built artifact. It defaults to 9070 and honors `OPTIONMEMORY_ENDPOINT`:
 
 ```js
-// scripts/ingest_note.cjs —— 用法：node scripts/ingest_note.cjs <path> <idempotency_key>
+// scripts/ingest_note.cjs — usage: node scripts/ingest_note.cjs <path> <idempotency_key>
 const { executeMemoryWrite } = require("../dist/api/memory-write-options.js");
 const [path, idempotencyKey] = process.argv.slice(2);
 
@@ -231,113 +248,114 @@ executeMemoryWrite({
 node scripts/ingest_note.cjs S01.md s01-note-v1
 ```
 
-返回 `gate=pass` 及 `document_id`、`chunk_version_ids`、`content_hash`。解析器只读：校验根目录与符号链接，拒绝路径穿越及 `.git/.data/node_modules/dist/target/backups` 等排除目录，不写回原文。
+The result contains `gate=pass`, `document_id`, `chunk_version_ids`, and `content_hash`. The parser is read-only: it validates the root and symlinks, rejects traversal and excluded directories including `.git/.data/node_modules/dist/target/backups`, and never modifies the source.
 
-#### 4. 召回
+#### 2.4 Recall
 
-新会话中询问“S01 的硬度是多少”（自动注入），或显式调用：
+Ask “What is S01’s hardness?” in a new session for automatic injection, or call explicitly:
 
 ```json
-{ "query": "S01 硬度", "namespace": "project:s01" }
+{ "query": "S01 hardness", "namespace": "project:s01" }
 ```
 
-返回 512 HV 及对应 `md://<document_id>#<chunk_version_id>`。
+The result contains 512 HV and `md://<document_id>#<chunk_version_id>`.
 
-#### 5. 更新记录并再次召回
+#### 2.5 Update the note and recall again
 
-手动把文件改为：
+Change the file to:
 
 ```markdown
-# S01 实验记录
+# S01 experiment note
 
-S01 的硬度复核为 450 HV。
+S01 hardness was reviewed as 450 HV.
 ```
 
-下一次 Recall（自动注入或显式调用，需已配置 `markdownRoot`）会先重读文件并计算内容哈希：未变化则幂等复用既有解析；变化则经同一 parse Option 产生新执行（幂等键 `recall-refresh:<document_id>:<content_hash>`），新 chunk 生效，旧 chunk 标为 `mapping_stale`，默认 `allow_history=false` 不再返回旧值。Bridge 全程不修改你的 Markdown。
+The next Recall—automatic or explicit, with `markdownRoot` configured—rereads the file and computes its content hash. An unchanged file reuses the previous parse. A changed file creates another execution through the same parse Option with idempotency key `recall-refresh:<document_id>:<content_hash>`. New chunks become current, old chunks become `mapping_stale`, and `allow_history=false` hides the old value by default. Bridge never edits your Markdown.
 
-#### 6. 边界
+#### 2.6 Boundary
 
-如果还存在独立的 `hardness(S01, "512 HV")` declarative fact，文档更新不会自动把它改成 450 HV；事实修订仍需原 revision/retract 与证据治理，不能仅凭一段文字覆盖。
+If an independent declarative `hardness(S01, "512 HV")` fact also exists, a document update does not automatically change it to 450 HV. Fact revision still requires the original revision/retract and evidence-governance path; narrative text cannot overwrite it by itself.
 
-### 案例 3：历史实验笔记与当前规则不一致
+### Example 3: historical experiment notes conflict with the current rule
 
-#### 1. 配置
+#### 3.1 Configuration
 
-`opencode.json` 的 `markdownRoot` 与 `namespace` 配置同案例 2，保证 Recall 能同时命中多份已摄入笔记。
+Use the same `markdownRoot` and `namespace` as example 2 so Recall can match multiple ingested notes.
 
-#### 2. 准备当前规则与历史笔记
+#### 3.2 Prepare the current rule and historical note
 
-当前复核结论 `notes/S01-review.md`：
+Current review conclusion, `notes/S01-review.md`:
 
 ```markdown
-# S01 复核结论（2026-11-18）
+# S01 review conclusion (2026-11-18)
 
-S01 硬度统一按 450 HV 记录；2025 年的 512 HV 旧测值作废，仅作背景。
+Record S01 hardness uniformly as 450 HV. The 512 HV measurement from 2025 is obsolete and retained only as background.
 ```
 
-历史实验笔记 `notes/archive/2025-hardness.md`：
+Historical note, `notes/archive/2025-hardness.md`:
 
 ```markdown
-# 2025 年硬度记录
+# 2025 hardness record
 
-2025-03：S01 的硬度为 512 HV。
+2025-03: S01 hardness was 512 HV.
 ```
 
-并自行在 `AGENTS.md` 中维护当前规则（不要让模型代改），例如：
+Maintain the current rule yourself in `AGENTS.md`; do not ask the model to edit it. For example:
 
 ```markdown
-S01 硬度按 notes/S01-review.md 的复核值记录。
+Record S01 hardness using the reviewed value in notes/S01-review.md.
 ```
 
-#### 3. 分别摄入
+#### 3.3 Ingest both files
 
-两份文件各执行一次受控 parse（不同 `idempotency_key`，复用案例 2 的脚本）：
+Run the controlled parse separately with different idempotency keys, reusing the script from example 2:
 
 ```bash
 node scripts/ingest_note.cjs S01-review.md s01-review-v1
 node scripts/ingest_note.cjs archive/2025-hardness.md s01-hardness-2025-v1
 ```
 
-#### 4. 查询与预期行为
+#### 3.4 Query and expected behavior
 
-询问“S01 现在应使用什么硬度值”：
+Ask “Which hardness value should S01 use now?”:
 
-- Recall 同时命中当前复核 chunk 与历史 chunk，各自带 `memory_uri` 与状态；
-- 当前 `AGENTS.md` 与复核结论优先，历史笔记只作为非指令背景；
-- 如果历史笔记没有明确标注失效，Recall 会保留来源和冲突提示，而不是静默选择一条说法；
-- 系统不会因为召回旧笔记就改回 512 HV，也不会自动改写历史记录或 `AGENTS.md`。
+- Recall may return both the current review chunk and the historical chunk, each with a memory_uri and status.
+- Current `AGENTS.md` and the review conclusion take precedence; the historical note is non-instructional background.
+- If the historical note is not explicitly marked obsolete, Recall preserves its source and conflict information rather than silently selecting one account.
+- The system does not revert to 512 HV because an old note was recalled, and it does not rewrite the historical note or `AGENTS.md`.
 
-#### 5. 让旧值明确失效
+#### 3.5 Mark the old value obsolete
 
-- 叙述层面：像本例一样在复核记录中写明“旧测值作废”，历史原文保留不动；
-- 结构化层面：若存在 `hardness(S01, ...)` declarative fact，用原治理路径（revision/retract 与证据）修订，不靠覆盖文字。
+- Narrative layer: state explicitly in the review record that the old measurement is obsolete, while preserving the original historical text.
+- Structured layer: if a `hardness(S01, ...)` declarative fact exists, revise it through the original revision/retract and evidence-governance path, not by overwriting text.
 
-### 案例 4：OpenCode 与 DSH 协同修订
+### Example 4: revise collaboratively across OpenCode and DSH
 
-在 OpenCode 中保存：
-
-```text
-本项目使用 pnpm，namespace=global，source_ref=session-a，idempotency_key=project-pnpm-v1。
-```
-
-在 DSH 中使用 `bridge_recall` 查询，会读到同一份 pnpm 记忆和 memory_uri。确认后，在 DSH 中修订：
+Save in OpenCode:
 
 ```text
-请使用 bridge_revise，将本项目改为 yarn。
-supersedes 使用刚才的 document_id，namespace=global，idempotency_key=project-yarn-v1。
+This project uses pnpm. namespace=global, source_ref=session-a, idempotency_key=project-pnpm-v1.
 ```
 
-回到 OpenCode 新会话再次询问，应得到 **yarn** 和新 memory_uri。两个宿主共享同一 document 和 superseding 链，不会各自复制一份记忆。
+Call `bridge_recall` in DSH to read the same pnpm memory and memory_uri. After confirming it, revise in DSH:
 
-## 八、当前边界
+```text
+Use bridge_revise to change this project to yarn.
+Use the returned document_id as supersedes, namespace=global, and project-yarn-v1 as idempotency_key.
+```
 
-- Phase 4 原基线、HEA-Lens 全量解析、transient 结算、v0.2.0 双 host 升级与整体验收已关闭，见 `docs/phase4-acceptance.md`；Phase 1 的 R4 仍阻塞。
-- 当前提供最小 NativeAdapter；不承诺全类型工具、嵌套 Option 或自动 Skill 生成。
-- 外部历史轨迹可通过 Sidecar 导入，统一标记为 `mode=sidecar`，不与原生 real 证据混用，详见 `docs/sidecar-mapping-v0.1.md`。
-- SuperAgent 正式持续适配、memory_why/query_achievable/certify 和组合 DAG 尚未开放。
+Ask again in a new OpenCode session. The expected answer is **yarn** with the new memory_uri. Both hosts share one document and superseding chain rather than creating separate copies.
 
-更多文档：
+## 8. Current boundaries
 
-- `docs/opencode-memory-guide.md`：OpenCode 完整使用指南
-- `docs/mnestic-api-cheatsheet.md`：mnestic 查询与事务语法
-- `devNotes/Week9-12开发手册-多源解析与可靠调度.md`：Phase 4 实施与验收清单
+- The Phase 4 original baseline, full HEA-Lens parsing, transient settlement, v0.2.0 dual-host upgrade, and overall acceptance are closed; see `docs/phase4-acceptance.md`. Phase 1 R4 remains blocked.
+- The current NativeAdapter is minimal. Full-type tools, nested Options, and automatic Skill generation are not promised.
+- External trajectories can be imported through Sidecar with `mode=sidecar`, kept separate from native real evidence; see `docs/sidecar-mapping-v0.1.md`.
+- Production SuperAgent adaptation, `memory_why`, `query_achievable`, `certify`, and compositional DAGs are not yet available.
+
+More documentation:
+
+- `docs/i18n.md`: bilingual documentation and runtime-localization policy.
+- `docs/opencode-memory-guide.md`: complete OpenCode guide.
+- `docs/mnestic-api-cheatsheet.md`: mnestic queries and transactions.
+- `devNotes/Week9-12开发手册-多源解析与可靠调度.md`: Phase 4 implementation and acceptance checklist.

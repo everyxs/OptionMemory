@@ -225,7 +225,7 @@ describe("P4-1 OpenCode Planner contracts and vertical execution", () => {
     });
     expect(result.execution).toMatchObject({ ok: true, status: "success" });
     const trace = await getExecutionTrace(result.execution!.optionEventId);
-    expect(trace?.optionEvent.execution_json).toMatchObject({ parser_version: "markdown-note-v1", pi_ref: "markdown-note@v1" });
+    expect(trace?.optionEvent.execution_json).toMatchObject({ parser_version: "markdown-note-v2", pi_ref: "markdown-note@v1" });
     expect(trace?.outcome?.status).toBe("success");
     const output = result.execution!.output as { chunk_count: number; document_id: string };
     expect(output.chunk_count).toBe(1);

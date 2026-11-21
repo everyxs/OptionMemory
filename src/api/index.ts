@@ -17,3 +17,4 @@ export * from "./bridge-contracts";
 export * from "./scheduler";
 export * from "./sidecar";
 export * from "./memory-write-options";
+export * from "../runtime/i18n";
