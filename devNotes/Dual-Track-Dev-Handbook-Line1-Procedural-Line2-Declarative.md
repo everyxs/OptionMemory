@@ -1,15 +1,15 @@
 ---
 创建时间: 2026-11-18
-更新时间: 2026-11-21
-类型: Development handbook and developer onboarding (Dual-Track v5.5, English edition)
+更新时间: 2026-11-22
+类型: Development handbook and developer onboarding (Dual-Track v5.6, English edition)
 所属项目: "26-04 AI4Science"
-对应路线图: "S01 Minimal Product Roadmap (full edition) §3.1A / §10.4B / §11.5B / §17; Week13-14 and Week15-16 handbooks, subject to §0.2 overrides; approved self-learning refinement"
-状态: v5.5 self-learning refinement approved; Phase 4 closed and Repo-accepted; Stage A next
+对应路线图: "S01 Minimal Product Roadmap (full edition) §3.1A / §10.4B / §11.5B / §17; Week13-14 and Week15-16 handbooks, subject to §0.2 overrides; approved self-learning and declarative-preference refinement"
+状态: v5.6 declarative-preference refinement drafted; Phase 4 closed and Repo-accepted; Stage A next
 tags:
   - dev-handbook
   - developer-onboarding
   - dual-track
-  - v5.5
+  - v5.6
   - self-learning
   - semantic-evidence-adapters
   - procedural-governance
@@ -113,9 +113,9 @@ tags:
     world-state transition model: 世界状态迁移模型（前置假设、预期/实际后态、不变量与漂移）
 ---
 
-# Dual-Track Development Handbook (v5.5): Self-Learning Memory × Continuous Runtime + Semantic dataStore
+# Dual-Track Development Handbook (v5.6): Self-Learning Memory × Continuous Runtime + Semantic dataStore
 
-> **Current edition: 2026-11-21.** This approved refinement preserves the dual-track product split and adds exactly two learning-specific mechanisms: a built-in Learning Planner and a semantic dataStore adapter layer.
+> **Current edition: 2026-11-22.** This refinement preserves the dual-track product split, the built-in procedural Learning Planner, and the semantic dataStore adapter layer. It adds governed declarative-preference context through the existing S6/S7 → FactCandidate → ν-gate → facts path, without a new preference subsystem. This planning addition is not an implementation or acceptance claim.
 >
 > - **Stage A (W13–W16), joint:** a usable Markdown + Skills memory product plus a **passive self-learning MVP**, with zero SuperAgent dependency.
 > - **Stage B (W17–W21), parallel:** Line 1 delivers continuous self-learning and SuperAgent integration; Line 2 delivers semantic evidence adaptation, read-side lineage/export, and dataStore interfaces.
@@ -174,7 +174,7 @@ Status words in this handbook are deliberate:
 
 When documents disagree, use this order:
 
-1. **This v5.5 handbook:** future staging, ownership, learning/evidence contracts, acceptance gates, and schedule.
+1. **This v5.6 handbook:** future staging, ownership, learning/evidence contracts, acceptance gates, and schedule.
 2. `devNotes/S01最小产品路线图-完整版.md`: domain goals, phase baselines, and dataStore requirements.
 3. `docs/*acceptance*.md` and phase baselines: historical evidence of what was actually accepted.
 4. `README.md`: installation and everyday operation.
@@ -182,7 +182,7 @@ When documents disagree, use this order:
 
 The Week 13–14 and Week 15–16 handbooks are **not followed verbatim**. Their technical detail is reused only after the corresponding step starts and its current gate is confirmed.
 
-| Topic | Current v5.5 rule | Older text to disregard |
+| Topic | Current v5.6 rule | Older text to disregard |
 |---|---|---|
 | Phase 4 baseline | Closed and Repo-accepted on 2026-11-19; see §0.1 | Statements that Stage A cannot start because Phase 4 is still open |
 | P6-5 placement | Stage A, before generation/certification | Requirements that Phase 5 or P6-1–P6-4 close first |
@@ -190,7 +190,7 @@ The Week 13–14 and Week 15–16 handbooks are **not followed verbatim**. Their
 | Stage A contracts | S1–S4 + minimal S6/S7/S8 executable for the learning slice; S5 implementation in Stage B | Blanket S1–S6 implementation acceptance before Stage A can exit |
 | Stage A milestone | W15 release-candidate demo; W16 full exit including passive learning and lineage | Calling W14/W15a the complete exit before the self-learning MVP is proven |
 | Learning activation | Passive observation from real usage; no forced seed task | Mandatory seed bundles or treating installed Skills as execution evidence |
-| Learning unit | Full subtask + Option + Model bundle, Planner governance, declarative evidence, and state transitions where applicable | Option-only learning or a separate preference-learning subsystem |
+| Learning unit | Procedural learning uses a full subtask + Option + Model bundle, Planner governance, declarative evidence, and state transitions where applicable. Lightweight preferences use only the existing S6/S7 → FactCandidate → ν-gate → facts path and bounded Planner live read | Option-only procedural learning, or separate preference storage/lifecycle/learner/tools |
 | Capability wording | Stage A returns **settled/released**, not certified, capabilities | Calling settled + `active_release` “certified” before P6-2 |
 | Stage B ownership | Line 2 owns P5-3 read-side queries/export, P6-3 RL-ready export, and semantic evidence adaptation | Assigning every read-side mechanism to Line 1 or treating Line 2 as a bulk-mining-only track |
 | W22 | Hardening only | P6/Packaging/DS feature delivery scheduled into W22 |
@@ -398,7 +398,7 @@ A hash proves implementation identity/integrity, not safety, correctness, or cer
 
 ---
 
-## 2. Final Assignment and Schedule (v5.5)
+## 2. Final Assignment and Schedule (v5.6)
 
 ### 2.1 Delivery table
 
@@ -411,6 +411,8 @@ A hash proves implementation identity/integrity, not safety, correctness, or cer
 | S4 governed Skill execution through NativeAdapter/OptionExecutor | Line 1 | W13–14 | Author self-test + weekly experienced review |
 | Learning Planner v0.1: passive triggers, observation contexts, task signatures, full bundle proposals | Line 1 | W14–15 | Author self-test + weekly experienced review + domain review |
 | Model transition/evaluation: pre/post state, anticipation, invariants, critique, drift | Line 1 | W14–15 | Author self-test + weekly experienced review |
+| Bounded declarative-preference `planner_context`, namespace/audit hash, scheduler propagation, and PREF-P tests | Line 1 | W14–15 | Author self-test + M0/PR04 gates + real-host experienced review |
+| S7 preference-feedback payload, FactCandidate mapping, S6/ν-gate admission, live query/revision, and PREF-C/PREF-D tests | Line 2 | W13–15 | Author self-test + M0/PR04 gates + evidence review |
 | P5-5 `bridge_recall` live-read join and status annotation | Line 2 | W13–14 | Author self-test + weekly experienced review |
 | P6-5 candidate identification over Markdown/Skill projections | Line 2 | W13–14 | Author self-test + weekly experienced review |
 | Initial dataStore connectors and S7 semantic mapping: Markdown, SKILL.md, CSV/JSONL, trajectory exports | Line 2 | W14–15 | Author self-test + weekly experienced review |
@@ -477,8 +479,9 @@ All items are due at **W16**, not the W15 release-candidate demo:
 - [ ] Existing lifecycle demo succeeds: identify → approve → package/mandate gate → probation → real OptionExecutor execution → settle → `active_release` → revoke/dormant.
 - [ ] Markdown knowledge and Skill narratives return with settled/released metadata, and Markdown source links and Recall/revision chains are queryable.
 - [ ] S1–S4 and minimal S6/S7/S8 fixtures and negative suites pass; S5 implementation remains a Stage B gate.
-- [ ] Schema 14 migration and rollback pass on isolated Mem/RocksDB copies.
-- [ ] The memory-governance family remains exactly **7 tools** and no new host tool family is added.
+- [ ] Schema 14 migration and rollback pass on isolated Mem/RocksDB copies; no preference relation or schema 15 is introduced.
+- [ ] Explicit and explicitly confirmed preferences pass PREF-C/PREF-D/PREF-P/PREF-A/PREF-E scenarios through the existing declarative path into a bounded, namespace-local Planner live read. Correction/revision, opt-in/retention/erasure, audit-hash binding, restart/replay, and real OpenCode/DSH evidence pass; unconfirmed inference and raw personal payloads are never injected.
+- [ ] The memory-governance family remains exactly **7 tools**, Stage A remains at **13 total tools**, and no new host tool family or preference subsystem is added.
 - [ ] No Stage A product code imports or calls SuperAgent adapter/Ticket/Attention/deliver/stop APIs.
 - [ ] No claim of ω_certify, general multilingual semantic recall, RL readiness, arbitrary code generation, or full continuous service is made.
 
@@ -536,7 +539,7 @@ The W16 snapshot checkpoint must record one of: `DS2 approved with named capacit
 | **S7** | EvidenceEnvelope: source/snapshot refs, connector version, namespace, task signature, hashes, timestamps, evidence mode, mapping version, idempotency, raw payload/ref, validation state | Line 2 → Learning Planner | **Blocking learning fixtures** |
 | **S8** | LearningRun: candidate bundle, learning/held-out split, baseline, expected/actual transition, evaluation outcome, real/simulated/sidecar separation | Learning Planner ↔ Model/STOMP | **Blocking evaluation fixtures** |
 
-S4 closes the previous numbering gap and makes the execution boundary explicit. S7/S8 are payload contracts, not new top-level asset classes or a preference subsystem.
+S4 closes the previous numbering gap and makes the execution boundary explicit. S7/S8 are payload contracts, not new top-level asset classes. The S7 `UserPreferenceFeedback` payload and its FactCandidate/fact read projection reuse this declarative lane for lightweight Planner personalization; they do not create preference-specific storage, lifecycle, learner, tools, or an S8 evaluation requirement.
 
 For every contract, record in `docs/dual-track-contracts.md`:
 
@@ -598,17 +601,18 @@ The ADR must resolve the gap between current code and the target lifecycle and p
 
 1. **Registration path:** how candidate-gated Skills coexist with current direct `propose_option`; how a host caller cannot bypass approval for Skill-like packages.
 2. **Lifecycle API:** whether general Skill settle/revoke are new internal/public APIs or carefully separated from current hardness-conflict governance. Do not merely rename conflict-specific functions.
-3. **Learning unit:** how a complete subtask + Option + Model bundle is proposed and linked, with Planner governance and declarative premises rather than an Option-only shortcut or a separate preference subsystem.
+3. **Learning unit:** how a complete subtask + Option + Model bundle is proposed and linked for procedural learning, while lightweight preferences use only S6/S7 → FactCandidate → ν-gate → facts and the bounded Planner live read. Prohibit Option-only procedural learning and separate preference storage/lifecycle/learner/tools.
 4. **Passive activation:** valid native/STOMP triggers, observation-context states, task-signature derivation, insufficient-evidence behavior, and why no forced seed is required.
 5. **State model:** storage and transition rules for probation, settled, revoked/dormant, Model status, `active_release`, immutable versions, and rollback-by-new-version.
 6. **World-transition model:** pre-state, anticipated post-state, actual post-state, postconditions, invariants, critique, drift, and null semantics for read-only or unobserved state.
 7. **Built-ins:** perpetual-probation execution channels remain outside the capability domain and are never settled/revoked/certified as Skills.
-8. **Evidence mapping:** S6/S7 connector and source-authority rules, raw payload retention, real/simulated/sidecar separation, deduplication, and learning/held-out splitting.
-9. **Evaluation:** S8 LearningRun, independent outcomes, Model critique, expected/actual transition checks, and why generator self-scores cannot certify a candidate.
-10. **Atomicity/recovery:** candidate → approval → Option/Model → release writes, crash points, deterministic IDs, idempotency, and `reconcile_required` behavior.
-11. **Compatibility/migration:** existing assets, seven-tool behavior, RocksDB preservation, schema 14 rollback, and read projections.
-12. **Execution security and consent:** package provenance, untrusted code isolation, mandate scope, host permission mapping, opt-in observation, retention/erasure, and the distinction between hash identity and safety.
-13. **Acceptance:** exact passive-learning demo, empty-memory and insufficient-evidence fixtures, evidence rows, and the separation of settled/released from later certification.
+8. **Evidence mapping:** S6/S7 connector and source-authority rules, raw payload retention, real/simulated/sidecar separation, deduplication, learning/held-out splitting, and preference actor/opt-in/influence provenance.
+9. **Evaluation:** S8 LearningRun, independent outcomes, Model critique, expected/actual transition checks, why generator self-scores cannot certify a candidate, and why preference evidence is not held-out Skill evaluation.
+10. **Atomicity/recovery:** candidate → approval → Option/Model → release writes and preference retirement/replacement, crash points, deterministic IDs, idempotency, and `reconcile_required` behavior.
+11. **Compatibility/migration:** existing assets, seven-tool/13-total-tool behavior, RocksDB preservation, schema 14 rollback, read projections, and no preference relation or schema 15.
+12. **Execution security and consent:** package provenance, untrusted code isolation, mandate scope, host permission mapping, opt-in observation, retention/erasure, preference namespace/privacy, and the distinction between hash identity and safety.
+13. **Acceptance:** exact passive-learning and declarative-preference demos, empty-memory and insufficient-evidence fixtures, evidence rows, real-host preference behavior, and the separation of settled/released from later certification.
+14. **Declarative preference authority:** PREF-ADR-01–06, confirmed-only inference, current-instruction/mandate precedence, `subtasks.context.namespace`, fact/version hash binding, deterministic bounded injection, and the M0/PR04/W14/W16 checkpoints in `devNotes/stage-a/review.md`.
 
 The ADR produces the bottom-up Stage A estimate. It is a blocking M0 deliverable, not optional documentation.
 
@@ -751,7 +755,12 @@ Cover candidate idempotency; `package_hash=null` before gate; unapproved/mismatc
 - Learning and held-out examples must not leak duplicate trajectories or tasks.
 - Unknown confidence, state, rationale, and metrics remain null/uncalibrated. Generator self-scores never certify a candidate.
 - Personal-memory observation requires opt-in, namespace isolation, inspection, correction, disablement, and a defined retention/erasure policy. Governance evidence retention does not justify retaining personal content indefinitely.
-- Native real, simulated, and sidecar evidence never mix silently; imported success does not become native real success.
+- Preferences use only host events/S7 → FactCandidate → S6/ν-gate → ordinary facts + J/≺ and a bounded live Planner read. No preference relation, status vocabulary, shadow profile, learner, tool, Option/Model bundle, or S8 evaluation is introduced.
+- Only explicit preferences and explicitly confirmed inference may be injected. Agent output/actions cannot confirm themselves; influenced feedback cannot independently strengthen the same preference. Unconfirmed candidates and `out`, `archived`, `contested`, superseded, unrelated, or out-of-scope facts are excluded.
+- Preference selection uses validated `subtasks.context.namespace`; missing or ambiguous namespace yields an empty projection. Raw host/S7 payloads, secrets, arbitrary claims, and cross-namespace content are never injected.
+- Mandate, explicit project/safety rules, and Decision Gate remain hard constraints. Preferences cannot create Options, expand budgets/effects/mandates, authorize execution, modify `AGENTS.md`, or suppress a required decision.
+- The preference-context hash covers the exact injected fact/version references and policy/namespace inputs; stale context blocks before decision/execution side effects. It is not a claim of complete Planner-state reproducibility.
+- Native real, simulated, and sidecar evidence never mix silently; imported success or feedback does not become native real success or native user confirmation.
 
 ### 6.5 Governance layer and closed loop
 
@@ -895,6 +904,7 @@ No forced seed workflow, auto-registration, auto-publish, automatic `AGENTS.md` 
 - **v5.3:** defined Stage A as Markdown + Skills with full procedural management and no SuperAgent; moved Markdown lineage into Stage A.
 - **v5.4 (2026-11-19):** added standalone onboarding; reconciled Stage A tool counts/gates; defined S4; separated contract drafts from implementation gates; moved read-side P5-3/P6-3 to Line 2; reserved W20 for hardening; made DS2 post-window by default; required the lifecycle compatibility ADR and experienced initial review. Phase 4 was subsequently completed and Repo-accepted on the same date, superseding the earlier planning assumption.
 - **v5.5 (2026-11-21):** approved self-learning refinement. Added the built-in Learning Planner, passive activation from real usage, full subtask + Option + Model learning bundles, Model world-state transitions, S7/S8 evidence and learning contracts, and dataStore as a pluggable semantic evidence adapter for local/remote sources. Stage A now includes a self-learning MVP; Stage B adds continuous self-learning while preserving SuperAgent ownership and Line 2's evidence/read-side role. Extended the target to W22 with W22 reserved for hardening. Review uses author self-tests, weekly/biweekly experienced-review checkpoints, and independent experienced-reviewer PR approval rather than cross-review or a separate third-reviewer role.
+- **v5.6 (2026-11-22):** drafted required declarative-preference personalization within the existing S6/S7 → FactCandidate → ν-gate → facts lane and bounded Planner live read. Integrated contracts/tests/acceptance into PR01A/B, PR04A/B, and PR05A/B with PREF scenarios and M0/PR04/W14/W16 checkpoints. Explicit and explicitly confirmed preferences only; no preference-specific storage, lifecycle, learner, tools, automatic inference promotion, or held-out Skill evaluation. This is a planning addition, not an implementation or acceptance claim.
 
 The old Phase 5–6 order was technically sensible for continuous execution but delayed a usable memory product behind SuperAgent. The current plan keeps the useful dependency order inside Stage B while delivering the independent memory product first. Self-learning is built into the existing subtask–Option–Model–Planner and STOMP governance chains rather than creating a separate preference-learning system.
 

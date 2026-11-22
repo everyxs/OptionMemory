@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr01-contracts.md
 translation_status: reviewed
 owner: Line 1 (ADR/schema/migration) and Line 2 (S6/S7/S8 evidence contracts)
-spec_version: 0.1.0
+spec_version: 0.2.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -188,9 +188,67 @@ Do not default to production 9070.
 9. On rollback, restore from the untouched backup and verify IDs, bindings, facts, J/≺, R4, and the 97-record quality boundary.
 10. Return JSON with `status`, `reused`, `optionCount`, `modelCount`, `candidateCount`, `backupDir`, and `rollbackStatus` where applicable. Never print raw payloads or secrets.
 
+## Declarative preference context contract
+
+Lightweight personalized Planner context is part of the existing declarative-evidence lane, not a new learning subsystem. Use host events or S7 trajectory envelopes, source-specific FactCandidate mapping, S6 controlled ingestion, the existing ν-gate, ordinary facts, and J/≺. Do not add a preference relation, status vocabulary, learner, host tool, Option, Model, decision type, or schema 15.
+
+### ADR requirements
+
+The lifecycle/learning ADR must resolve these review cases before PR04:
+
+- **PREF-ADR-01 — authority:** mandates, explicit project/safety rules, and Decision Gate are non-overridable. Current user instructions and preferences operate only within them.
+- **PREF-ADR-02 — storage:** no preference-specific relation, materialized shadow profile, or new asset family. Preference facts use existing fact provenance, status, and revision semantics.
+- **PREF-ADR-03 — inference:** repeated user corrections may produce or annotate FactCandidates. Unconfirmed inference is never promoted or injected; explicit user confirmation uses the same S6/ν-gate path.
+- **PREF-ADR-04 — privacy:** observation requires opt-in and supports inspection, correction, disablement, retention, and personal-data erasure. Governance retention does not justify retaining personal payloads indefinitely.
+- **PREF-ADR-05 — audit:** a preference-context hash covers the exact injected fact/version references and policy/namespace inputs. It does not claim to snapshot all Planner state.
+- **PREF-ADR-06 — compatibility:** existing tool counts, OptionExecutor, Decision Gate, procedural Learning Planner, LearningRun, and held-out evaluation semantics remain unchanged.
+
+The precedence is:
+
+```text
+Decision Gate, mandate, and explicit project/safety rules are hard constraints.
+Within them: current user instruction > explicit durable preference
+> user-confirmed inferred preference > historical non-instructional observations.
+```
+
+### S7 preference-feedback payload
+
+Add a source-specific payload contract in `src/datastore/evidence-envelope.ts` without changing the generic EvidenceEnvelope or creating a top-level asset:
+
+```ts
+export interface UserPreferenceFeedback {
+  feedback_kind: "explicit" | "correction" | "confirmation" | "rejection";
+  actor: "user" | "agent" | "external";
+  source_event_id: string;
+  preference_key: string;
+  kind: "response_style" | "workflow_choice";
+  scope: string;
+  value: string;
+  influenced_by_fact_ids: string[];
+  opt_in: boolean;
+}
+```
+
+The S7 envelope supplies namespace, evidence mode, observed timestamp, and idempotency. `preference_key` remains stable across corrections; `source_event_id` is unique per genuine event. Values are allowlisted and canonical, not arbitrary personal-profile text. Unknown fields remain raw/null and are reported as unmapped. Agent-authored evidence cannot confirm itself.
+
+### Fact and read semantics
+
+Represent admitted preferences with the existing `facts` shape and an allowlisted predicate such as `user_preference`. Canonical arguments identify namespace, preference key/kind, scope, and value. Use existing `layer`, `lin_*`, `eps_*`, verification, and revision fields; do not invent calibrated confidence or treat ε metadata as execution authority.
+
+Only ordinary `status="in"` facts are eligible. FactCandidates and `out`, `archived`, `contested`, superseded, unrelated, or out-of-scope entries are excluded. Corrections use existing revision APIs and fail closed: a partial correction returns `reconcile_required` and never leaves two active values after reconciliation.
+
+Line 1 resolves a validated namespace from `subtasks.context` and consumes Line 2's live preference-fact query. Missing or ambiguous namespace produces an empty projection. The query and `getPlannerContext()` are read-only live reads, not a materialized profile.
+
+### Planner audit contract
+
+`planner_context` may add a bounded `declarative_context` containing policy version, resolved namespace, deterministically ordered structured preferences, and `context_hash`. Raw host/S7 payloads, source text, secrets, and arbitrary free-form claims are excluded.
+
+The hash canonically covers policy version, namespace, and sorted injected fact IDs, lineage versions, and update/revision tokens. Extend the existing Planner decision contract additively to carry this hash when preferences are present. `submitPlannerDecision()` rejects stale or mismatched preference context before creating decision/execution side effects; the scheduler forwards the hash from its context read. Record the hash and exact injected references in `planner_event.context_json`.
+
 ## Stop conditions
 
 - Do not implement PR02 lifecycle execution or PR03 connectors.
+- Do not implement PR04 preference mappers, ingestion, or Planner context in PR01.
 - Do not use production data or delete an unknown `_next` relation.
 - Do not mark later acceptance scripts as passing.
 - Stop and request domain review if registration or evidence models must change.
@@ -198,3 +256,4 @@ Do not default to production 9070.
 ## Change log
 
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
+- **0.2.0 (2026-11-22):** Added governed declarative-preference contracts, S7 feedback payload, Planner read/audit semantics, and PREF-ADR review cases. This is a backward-compatible planning addition and no implementation or acceptance claim.

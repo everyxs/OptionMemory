@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr01-tests.md
 translation_status: reviewed
 owner: Line 1 (migration) and Line 2 (evidence fixtures)
-spec_version: 0.1.0
+spec_version: 0.2.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -63,6 +63,22 @@ Round-trip a valid EvidenceEnvelope. Unknown fields remain raw/null and do not c
 
 Reject a LearningRun whose held-out refs duplicate learning refs.
 
+## Declarative preference contract tests
+
+PR01A keeps MIG-01–04 and S1-01–02 unchanged and adds an assertion that migration creates only the approved schema 14 procedural-candidate relation, never a preference relation.
+
+PR01B owns `tests/stage-a-preference-contracts.test.ts` and preference fixtures under `tests/fixtures/stage-a/`. Write expected-failure tests before implementation where practical:
+
+- **PREF-C01 — explicit instruction round-trip:** preserve actor, namespace, source event, idempotency key, evidence mode, stable preference key, scope, and allowlisted value.
+- **PREF-C02 — correction and confirmation identity:** a correction has a new source event ID and the same preference key; replay retains deterministic identity; confirmation remains distinguishable from inference.
+- **PREF-C03 — invalid authority:** missing/invalid namespace, non-user actor, missing opt-in, or unverified source is rejected or unmapped without fabricating a valid FactCandidate.
+- **PREF-C04 — self-confirmation provenance:** preserve `influenced_by_fact_ids` and source-action references so agent-influenced feedback cannot independently confirm a preference.
+- **PREF-C05 — unsafe or unsupported values:** arbitrary profiles, secrets, unsupported kinds, and non-canonical values are blocked or unmapped.
+- **PREF-C06 — evidence isolation:** real, simulated, and sidecar fixtures retain their modes, and different namespaces cannot share candidate identity.
+- **PREF-C07 — unknown fields:** unknown data remains raw/null with `unmapped` entries; no confidence, rationale, scope, or task signature is invented.
+
+PR01B supplies fixtures and contract validation only. It does not implement the PR04 mapper, S6 ingestion, or Planner integration.
+
 ## Commands
 
 ```bash
@@ -73,6 +89,16 @@ node scripts/migrate_stage_a_candidates.ts --data .data/stage-a-w13-14 --backup 
 
 Record commands, exact results, isolated evidence, relevant row/event IDs, and limitations in the PR description. Do not mark later acceptance scripts as passing.
 
+## M0 / end-of-W13 preference checkpoint
+
+Before PR04 preference work begins, the experienced reviewer and domain owner must:
+
+1. Approve PREF-ADR-01–06, the cross-line S7/FactCandidate/live-query contract, the additive Planner hash contract, and privacy/retention behavior.
+2. Verify PREF-C01–07 have explicit expected results and recorded test iterations.
+3. Confirm no new relation, tool family, or automatic inference-promotion path was introduced.
+4. Independently run PR01 tests and the full baseline. Any red or unclassified test blocks PR04.
+5. Record the approved preference policy version and a sample envelope → FactCandidate → fact/read-query shape in `docs/stage-a-contracts.md`.
+
 ## Merge blockers
 
 - Any missing or red test.
@@ -80,7 +106,9 @@ Record commands, exact results, isolated evidence, relevant row/event IDs, and l
 - Missing backup or rollback evidence.
 - Changed historical IDs, bindings, R4, tool counts, or the 97-record boundary.
 - Any contract requirement that remains an unrecorded open question.
+- An unresolved preference authority, privacy, namespace, or cross-line contract decision.
 
 ## Change log
 
 - **0.1.0 (2026-11-21):** Initial test plan. Test iteration 0; no acceptance claim. Add discovered scenarios using the template in `iterative-testing.md`.
+- **0.2.0 (2026-11-22):** Added PREF-C01–07, the no-preference-relation migration assertion, and the M0/W13 contract checkpoint. Test iteration 0; no implementation or acceptance claim.

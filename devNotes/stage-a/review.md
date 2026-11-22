@@ -82,15 +82,54 @@ The reviewer rejects any PR whose evidence is only generated prose, lacks indepe
 |---|---|
 | Build and regression | `pnpm build` and `pnpm test`; existing 37 files / 135 tests plus all new tests pass |
 | Lifecycle | `node scripts/stage_a_lifecycle_acceptance.ts` returns `STAGE_A_LIFECYCLE_PASS` |
-| Passive learning | `node scripts/stage_a_learning_acceptance.ts` returns `STAGE_A_LEARNING_PASS` |
-| Migration | Isolated Mem and RocksDB migrate, rerun, and roll back without changing historical IDs/evidence |
+| Passive learning | `node scripts/stage_a_learning_acceptance.ts` returns `STAGE_A_LEARNING_PASS` with every procedural and declarative-preference check true |
+| Migration | Isolated Mem and RocksDB migrate, rerun, and roll back without changing historical IDs/evidence or adding a preference relation |
 | State transition | Expected and actual post-state compared; invariants and unauthorized side effects checked |
-| Evidence mapping | Every initial source type has an S7 envelope and source-specific mapped output |
-| Evaluation | S8 contains real held-out evidence and a no-generator-self-score check |
-| Recovery | Crash/retry/restart produces no duplicate memory, candidate, or execution; partial state returns `reconcile_required` |
-| Security | Unauthorized writes, cross-namespace leaks, sensitive-path indexing, and automatic `AGENTS.md` edits are all zero |
-| Host behavior | Real OpenCode/DSH sessions for model-visible changes; mocks alone are insufficient |
-| Compatibility | Seven memory-governance tools, R4 boundary, historical IDs, J/≺, and existing bilingual workflows remain unchanged |
+| Evidence mapping | Every initial source type has an S7 envelope and source-specific mapped output; preference feedback preserves actor, namespace, opt-in, and influence provenance |
+| Declarative preferences | PREF-C01–07, PREF-P01–10, PREF-D01–10, PREF-A01–08, and PREF-E01–05 pass with actual fact/revision/Planner-event/hash evidence |
+| Evaluation | S8 contains real held-out evidence and a no-generator-self-score check; preference evidence does not contaminate held-out Skill evaluation |
+| Recovery | Crash/retry/restart produces no duplicate memory, candidate, preference, revision, or execution; partial state returns `reconcile_required` |
+| Security | Unauthorized writes, cross-namespace leaks, sensitive-path/content indexing or injection, unconfirmed-preference promotion, and automatic `AGENTS.md` edits are all zero |
+| Host behavior | Real OpenCode/DSH sessions for model-visible changes, including preference capture/correction/isolation; mocks alone are insufficient |
+| Compatibility | Seven memory-governance tools, 13 total Stage A tools, R4 boundary, historical IDs, J/≺, and existing bilingual workflows remain unchanged |
+
+## Preference review checkpoints
+
+### M0 / end of W13 — contract gate
+
+Before PR04 preference work:
+
+1. The domain owner approves the required Stage A preference scope; the experienced reviewer approves authority, privacy/retention, public Planner-contract, and cross-line S7/FactCandidate/live-query semantics.
+2. PREF-ADR-01–06 resolve authority, existing-only storage, confirmed inference, privacy, audit, and compatibility. PREF-C01–07 have explicit expected results and recorded iterations.
+3. Verify no schema 15, preference relation, new tool family, or automatic inference-promotion path exists.
+4. Independently run PR01 tests and the full baseline. Record the approved policy version and sample envelope → FactCandidate → fact/read-query shape.
+5. Any red or unclassified test, or unresolved authority/privacy/namespace decision, blocks PR04.
+
+### PR04 — integration gate
+
+Before PR05:
+
+1. Line 1 and Line 2 attach independent author self-test packages; neither reviews the other.
+2. Run PREF-P01–10 and PREF-D01–10 on isolated Mem and required RocksDB scenarios, then the full build/test suite.
+3. Reproduce explicit feedback → candidate → fact → Planner context → hash-bound decision → correction → revision.
+4. Inspect actual rows for no new relations, Options, Models, decision types, direct writes, shadow profiles, or replay duplicates.
+5. A red/unclassified test blocks PR05; a contract change returns to the specification-change gate.
+
+### End of W14 — acceptance gate
+
+In addition to the existing biweekly review:
+
+1. Independently rerun all preference acceptance on clean isolated RocksDB and repeat real OpenCode/DSH capture, correction, namespace isolation, and hash binding.
+2. Inspect fact/J/revision/Planner/Option rows and host logs. Generated prose is not evidence.
+3. Verify zero cross-namespace leaks, unauthorized writes/executions, sensitive injections, automatic `AGENTS.md` edits, new tool families, and unconfirmed-preference injections.
+4. Confirm preference evidence remains outside procedural learning/held-out datasets and all PREF-A/PREF-E checks and acceptance result fields are recorded.
+5. Any failed gate blocks merge; rerun the full suite and both acceptance scripts after eligible merges.
+
+### Post-merge and full Stage A exit
+
+Post-merge, record `main` build/tests, both acceptance pass tokens, actual preference fact/revision/Planner-event/hash IDs, and remaining limitations. The W15 release candidate is not the W16 exit.
+
+At the full W16 gate, re-run preference correction, restart, retention/erasure, and lineage acceptance after Markdown-lineage and remote-connector work. Imported remote evidence must preserve source authority and evidence mode and cannot silently become native user confirmation.
 
 ## Sprint acceptance sign-off template
 
@@ -113,10 +152,12 @@ Line 1 self-test package: <commands, results, evidence links>
 Line 2 self-test package: <commands, results, evidence links>
 W13 experienced review: <findings, merges, follow-ups>
 W14 experienced review: <findings, merges, follow-ups>
+Preference M0/PR04 checkpoints: <approvals, commands, evidence links>
 
 Build/tests: <result and test counts>
 Lifecycle acceptance: <evidence link>
 Passive-learning acceptance: <evidence link>
+Declarative-preference acceptance: <PREF-A/PREF-E evidence, fact/revision/event/hash IDs>
 Migration/rollback: <evidence link>
 Real-host evidence: <OpenCode/DSH links>
 Negative/security checks: <result>
@@ -126,4 +167,4 @@ Experienced reviewer approval: <name, signature, date>
 Domain-owner follow-ups: <open items, owners, due stage>
 ```
 
-The reviewer must not mark the W16 full Stage A exit complete. That gate additionally requires Markdown lineage completion, the remote read-only connector, and full Stage A revalidation.
+The reviewer must not mark the W16 full Stage A exit complete. That gate additionally requires Markdown lineage completion, the remote read-only connector, preference revalidation, and full Stage A revalidation.

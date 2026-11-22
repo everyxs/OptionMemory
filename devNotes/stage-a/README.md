@@ -18,47 +18,48 @@ Ownership means implementation and self-test responsibility, not cross-review. E
 
 Owns:
 
-- `docs/lifecycle-learning-adr.md`, including S1–S5 lifecycle/execution decisions.
-- `schema/14_procedural_candidates.cozo` and `scripts/migrate_stage_a_candidates.ts`.
+- `docs/lifecycle-learning-adr.md`, including S1–S5 lifecycle/execution and declarative-preference authority/privacy decisions.
+- `schema/14_procedural_candidates.cozo` and `scripts/migrate_stage_a_candidates.ts`. No preference relation or schema 15 is added.
 - `src/api/procedural-candidates.ts`, `src/api/capability-read.ts`, and lifecycle/telemetry changes.
 - `src/runtime/learning-planner.ts`, `src/runtime/learning-run.ts`, and Model transition/evaluation implementation.
 - `src/runtime/learning-contracts.ts` if a separate home is needed for `StateTransition`, `LearningBundle`, and `LearningRun`; do not put these in Line 2's EvidenceEnvelope file.
+- Preference-only Planner changes in `src/runtime/planner.ts`, `src/runtime/scheduler.ts`, and the additive hash field in `src/api/planner-contracts.ts`, consuming Line 2's live query rather than parsing evidence or issuing CozoScript.
 - `scripts/stage_a_lifecycle_acceptance.ts` and `scripts/stage_a_learning_acceptance.ts`.
-- Tests: `stage-a-migration.test.ts`, `procedural-lifecycle.test.ts`, `procedural-recall.test.ts`, `learning-planner.test.ts`, `learning-state-transition.test.ts`, and `learning-recovery.test.ts`.
+- Tests: `stage-a-migration.test.ts`, `procedural-lifecycle.test.ts`, `procedural-recall.test.ts`, `learning-planner.test.ts`, `learning-state-transition.test.ts`, `learning-recovery.test.ts`, and `stage-a-preference-planner.test.ts`.
 
 ### Line 2 — dataStore, evidence semantics, and recall/lineage
 
 Owns:
 
-- `docs/stage-a-contracts.md`, including S6/S7/S8 evidence and change-control sections.
-- `src/datastore/evidence-envelope.ts`, including S7 and `TaskSignature`.
-- `src/datastore/connectors/` and `src/datastore/mappers/`.
-- `src/api/evidence-ingestion.ts` and evidence-specific read-side integration.
+- `docs/stage-a-contracts.md`, including S6/S7/S8 evidence, declarative-preference payload/read contracts, and change-control sections.
+- `src/datastore/evidence-envelope.ts`, including S7, `TaskSignature`, and the source-specific `UserPreferenceFeedback` payload.
+- `src/datastore/connectors/` and `src/datastore/mappers/`, including preference-feedback → FactCandidate mapping in PR04B.
+- `src/api/evidence-ingestion.ts` and evidence-specific read-side integration, including the live preference-fact query.
 - `src/api/memory-recall.ts` for procedural recall join and annotation changes only.
-- `tests/datastore-evidence.test.ts` and evidence fixture definitions under `tests/fixtures/stage-a/`.
+- `tests/datastore-evidence.test.ts`, `stage-a-preference-contracts.test.ts`, `stage-a-preference-evidence.test.ts`, and evidence fixture definitions under `tests/fixtures/stage-a/`.
 - Evidence-related contract documentation and bilingual companion documents.
 
 ### Shared files and merge order
 
-- `src/memory/mnesticClient.ts`: Line 1 owns Option/Model/event methods; Line 2 owns projection/evidence query methods. Merge changes sequentially by PR order, rebase before each merge, and never edit the same method in parallel.
-- `src/api/telemetry.ts`: Line 1 only.
+- `src/memory/mnesticClient.ts`: Line 1 owns Option/Model/event methods; Line 2 owns projection/evidence and preference-fact query methods. Merge changes sequentially by PR order, rebase before each merge, and never edit the same method in parallel.
+- `src/api/telemetry.ts` and `src/api/planner-contracts.ts`: Line 1 only.
 - `src/api/memory-recall.ts`: Line 2 only for recall/evidence-join behavior; execution semantics require the S2 contract rather than direct edits by the other line.
-- `docs/stage-a-w13-14-acceptance.md`: Line 1 writes lifecycle/LearningRun/runtime sections; Line 2 writes evidence/source/regression sections. Do not edit the same section in parallel.
-- `docs/lifecycle-learning-adr.md` and `docs/stage-a-contracts.md`: section ownership follows S1–S5 versus S6–S8, so both lines need not edit the same contract section.
+- `docs/stage-a-w13-14-acceptance.md`: Line 1 writes lifecycle/LearningRun/Planner-preference runtime sections; Line 2 writes preference evidence/source/regression sections. Do not edit the same section in parallel.
+- `docs/lifecycle-learning-adr.md` and `docs/stage-a-contracts.md`: section ownership follows S1–S5 versus S6–S8, with preference ADR decisions owned by Line 1 and preference evidence contracts owned by Line 2.
 
-If a needed change falls outside an owner's files, implement it through the owning line's existing S-contract rather than creating an unowned parallel abstraction.
+If a needed change falls outside an owner's files, implement it through the owning line's existing S-contract rather than creating an unowned parallel abstraction. Declarative preferences reuse host events/S7, FactCandidates, S6/ν-gate, facts, and J/≺; no preference-specific storage, lifecycle, learner, tool family, or procedural learning bundle is allowed.
 
 ## PR ownership
 
 | PR | Line 1 deliverables | Line 2 deliverables |
 |---|---|---|
-| **PR01A/B** | ADR, schema 14, migration implementation and migration tests | S6/S7/S8 evidence contracts, EvidenceEnvelope, and evidence fixtures |
+| **PR01A/B** | ADR, schema 14, migration/tests, preference authority/privacy/audit decisions | S6/S7/S8 contracts, EvidenceEnvelope, preference-feedback payload and PREF-C fixtures |
 | **PR02A/B** | Candidate registration, lifecycle execution, release/revoke, procedural recall semantics | S2 fixtures and recall/lineage annotations consumed by the lifecycle |
 | **PR03A/B** | S4 execution and STOMP linkage used by evidence mappers | dataStore connectors, semantic mappers, S6 ingestion, and evidence regression |
-| **PR04A/B** | Learning Planner, task-signature consumption, full bundle, Model transition, LearningRun evaluation | Learning/held-out evidence packages and source mappings used by evaluation |
-| **PR05A/B** | Lifecycle and learning acceptance scripts, runtime evidence, recovery verification | Evidence/contract documentation, source/regression verification, bilingual companion updates |
+| **PR04A/B** | Learning Planner/full bundle/Model transition plus bounded Planner preference context and PREF-P tests | Learning/held-out packages plus preference mapping/live query/revision and PREF-D tests |
+| **PR05A/B** | Lifecycle/learning/preference acceptance, real-host runtime evidence, and recovery | Evidence/source/preference lineage regression, PREF-E checks, and bilingual documentation |
 
-PR02/PR03 and PR04/PR05 may proceed in parallel only when they do not touch the same file or contract section. Rebase before every merge.
+PR02/PR03 and PR04/PR05 may proceed in parallel only when they do not touch the same file or contract section. Rebase before every merge. PR04 preference work additionally requires the M0 contract gate; PR05 preference acceptance requires the PR04 integration gate in `review.md`.
 
 ## Reading order
 
@@ -105,7 +106,7 @@ The starting regression baseline is **37 files / 135 tests**. Add tests to this 
 2. Keep core modules independent of OpenCode/DSH imports. Host-specific code belongs under `src/plugins/`.
 3. Use deterministic IDs derived from namespace + idempotency key. Replaying the same request returns `reused=true` without repeating a side effect.
 4. Use the existing `GateResult` shape. New result reasons use stable codes or stable English messages, not generated explanations.
-5. Keep all existing public tool contracts and seven memory-governance tools unchanged.
+5. Keep all existing public tool names, families, and seven memory-governance tools unchanged. The only permitted contract shape addition is the reviewed preference-context hash on the existing `planner_decision` input when preferences are present; it adds no tool or decision type.
 6. Use `real` only for native execution evidence. Imported or replayed trajectories remain `sidecar` unless independently re-executed.
 7. Never write `0` for unknown confidence, success, state, or cost. Use `null` or `uncalibrated`.
 8. Every new acceptance script creates and cleans its own isolated RocksDB/Markdown roots and stops its server in `finally`.
