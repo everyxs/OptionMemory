@@ -194,6 +194,8 @@ Phase 4 原基线、P4-0–P4-6、v0.2.0 真实双 host 与升级保留证据见
 
 预期回答为 **pnpm**，并附带对应 memory_uri。Agent 不需要重新打开 `notes/project.md`。
 
+**自学习扩展（规划中）：** 当多个真实任务复用同一项目决策时，dataStore 可以把任务签名与证据映射为观察上下文，Learning Planner 随后提出 subtask + Option + Model 候选束，并在后续任务中评估。该决策仍只是非指令性证据，不会自动成为用户偏好或 `AGENTS.md` 指令。
+
 ### 案例 2：实验记录更新后使用新值
 
 Bridge 三工具（capture/revise/recall）不直接读文件。外部 Markdown 必须先经受控解析 Option `memory_parse_markdown_note` 摄入；之后每次 Recall 都会先重读文件并校验内容哈希，文件变化时自动产生新版本。完整流程如下。
@@ -277,6 +279,8 @@ S01 的硬度复核为 450 HV。
 
 如果还存在独立的 `hardness(S01, "512 HV")` declarative fact，文档更新不会自动把它改成 450 HV；事实修订仍需原 revision/retract 与证据治理，不能仅凭一段文字覆盖。
 
+**自学习扩展（规划中）：** 512→450 的变化可形成 Model 的状态迁移证据，包括 pre_state、预期/实际 post_state 和不变量（解析器不写回源文件、不得静默改写事实）。来源变化可触发已学习 Option 的重新评估或 drift 处理，但独立 declarative facts 仍必须走原 revision/ν 门路径。
+
 ### 案例 3：历史实验笔记与当前规则不一致
 
 #### 1. 配置
@@ -330,6 +334,8 @@ node scripts/ingest_note.cjs archive/2025-hardness.md s01-hardness-2025-v1
 - 叙述层面：像本例一样在复核记录中写明“旧测值作废”，历史原文保留不动；
 - 结构化层面：若存在 `hardness(S01, ...)` declarative fact，用原治理路径（revision/retract 与证据）修订，不靠覆盖文字。
 
+**自学习扩展（规划中）：** 矛盾证据应触发候选束的重新评估、修订或撤销，而不是强化原结论。历史笔记继续作为权威原文，Model 使用新的留出证据判断当前 active_release 是否仍适用。
+
 ### 案例 4：OpenCode 与 DSH 协同修订
 
 在 OpenCode 中保存：
@@ -346,6 +352,23 @@ supersedes 使用刚才的 document_id，namespace=global，idempotency_key=proj
 ```
 
 回到 OpenCode 新会话再次询问，应得到 **yarn** 和新 memory_uri。两个宿主共享同一 document 和 superseding 链，不会各自复制一份记忆。
+
+**自学习扩展（规划中）：** 跨宿主学习只能通过原生 real STOMP 证据和稳定的来源/修订 ID 继续。DSH 的修订可作为 OpenCode 后续评估的留出证据，不复制记忆，也不改变证据模式。Sidecar 历史始终独立，不能单独用于认证候选束。
+
+### 案例 5（规划中）：从现有 Skill 走向被动自学习
+
+> 这是未来扩展，不是已验收的当前能力。上述案例 1–4 是已验收工作流；本案例展示如何在无种子任务的情况下，让现有 `pdf-to-latex` Skill 成为自学习 MVP。
+
+从普通使用开始，而不是安排特殊训练任务：
+
+1. **正常使用 Skill。** 通过现有 `pdf-to-latex` Skill 转换 `alpha.pdf`，不创建人造种子任务。STOMP 记录真实的 subtask/plan_run/execute decision、实现版本、观察结果、结果与前后状态。
+2. **映射证据。** dataStore 将 PDF 与 Skill 包的哈希、任务签名、namespace、pre_state 和证据模式映射为 S7 EvidenceEnvelope。这里只建立观察上下文；安装 Skill 或一次成功转换不等于已经学会该能力。
+3. **积累兼容证据。** 按同一正常流程转换 `beta.pdf` 等其他文档，比较结构与不变量：唯一输出、原始 PDF 不变、预期编码、没有越权写入。不从单次观察泛化，也不补造缺失状态。
+4. **证据充分后才提出候选束。** 两个兼容的原生 real 观察之后，Learning Planner 才可提出完整 subtask + Option + Model 候选束。Option 使用有边界的实现模板；Model 包含预期后置条件、不变量与评估要求，`approval_ref` 保持 `null`。
+5. **独立评估。** 将后续自然出现的 `gamma.pdf` 或经批准的隔离运行作为留出证据，记录 S8 LearningRun，包含预期/实际 post_state、独立证据和 `generator_score=null`。
+6. **治理结果。** 只有经过审批与合规的 real 评估，注册门才可接纳候选束，后续 Planner 决策才能选择已发布 Option。来源结构变化或矛盾结果触发重新评估、修订或撤销，而不是强化原结论。
+
+规划边界：不任意生成实现、不自动修改 `AGENTS.md`、不直接写入 mnestic、不把 sidecar 当作 real 证据，也不因 Skill 已存在就声称它已学习或已认证。
 
 ## 八、当前边界
 

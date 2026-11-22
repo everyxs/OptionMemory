@@ -193,6 +193,8 @@ Which package manager should this project use? Include the memory source.
 
 The expected answer is **pnpm**, with the corresponding memory_uri. The agent does not need to reopen `notes/project.md`.
 
+**Self-learning extension (planned):** If several real tasks reuse the same decision, dataStore can map their task signatures and evidence into an observation context. The Learning Planner may then propose a subtask + Option + Model bundle and evaluate it on a later task. The decision remains non-instructional evidence, not an automatically learned preference or an `AGENTS.md` instruction.
+
 ### Example 2: use the new value after an experiment note changes
 
 The three Bridge tools—capture, revise, and recall—do not read files directly. External Markdown must first be ingested through the controlled `memory_parse_markdown_note` Option. Every later Recall rereads the file and verifies its content hash; a changed file automatically produces a new version.
@@ -276,6 +278,8 @@ The next Recall—automatic or explicit, with `markdownRoot` configured—reread
 
 If an independent declarative `hardness(S01, "512 HV")` fact also exists, a document update does not automatically change it to 450 HV. Fact revision still requires the original revision/retract and evidence-governance path; narrative text cannot overwrite it by itself.
 
+**Self-learning extension (planned):** The 512→450 transition can become Model evidence with `pre_state`, anticipated post-state, actual post-state, and invariants such as “parser leaves source file unchanged” and “no silent fact rewrite.” A changed source can trigger re-evaluation or drift handling for a learned Option, but independent declarative facts still require their own revision/ν-gate path.
+
 ### Example 3: historical experiment notes conflict with the current rule
 
 #### 3.1 Configuration
@@ -329,6 +333,8 @@ Ask “Which hardness value should S01 use now?”:
 - Narrative layer: state explicitly in the review record that the old measurement is obsolete, while preserving the original historical text.
 - Structured layer: if a `hardness(S01, ...)` declarative fact exists, revise it through the original revision/retract and evidence-governance path, not by overwriting text.
 
+**Self-learning extension (planned):** Contradictory evidence should trigger re-evaluation, revision, or revocation of a learned bundle rather than reinforcement. Historical notes remain authoritative source text, while Model evaluation uses new held-out evidence to decide whether a current release is still applicable.
+
 ### Example 4: revise collaboratively across OpenCode and DSH
 
 Save in OpenCode:
@@ -345,6 +351,23 @@ Use the returned document_id as supersedes, namespace=global, and project-yarn-v
 ```
 
 Ask again in a new OpenCode session. The expected answer is **yarn** with the new memory_uri. Both hosts share one document and superseding chain rather than creating separate copies.
+
+**Self-learning extension (planned):** Continue learning across hosts only through native real STOMP evidence and stable source/revision IDs. A DSH revision can become held-out evidence for an OpenCode evaluation without duplicating memory or changing evidence mode. Sidecar histories remain separate and cannot independently certify the learned bundle.
+
+### Example 5 (planned): from an existing Skill to passive self-learning
+
+> This is a future extension, not an accepted current capability. Examples 1–4 above are accepted workflows; this example shows how an existing `pdf-to-latex` Skill could become a self-learning MVP without seed tasks.
+
+Start with ordinary use, not a special training task:
+
+1. **Use the Skill normally.** Convert `alpha.pdf` through the existing `pdf-to-latex` Skill. Do not create a synthetic seed task. STOMP records the real subtask/plan_run/execute decision, implementation version, observations, outcome, and pre/post state.
+2. **Map the evidence.** dataStore maps the PDF and Skill package hashes, task signature, namespace, pre-state, and evidence mode into an S7 EvidenceEnvelope. This creates an observation context only; an installed Skill or one successful conversion is not a learned capability.
+3. **Accumulate compatible evidence.** Convert other documents such as `beta.pdf` through the same normal workflow. Compare structure and invariants—unique output, original PDF unchanged, expected encoding, and no unauthorized writes. Do not generalize from one observation or fabricate missing state.
+4. **Propose a bundle only after evidence is sufficient.** After two compatible native real observations, the Learning Planner may propose a full subtask + Option + Model bundle. The Option uses a bounded implementation template; the Model contains expected postconditions/invariants and evaluation requirements. `approval_ref` remains null.
+5. **Evaluate independently.** Use a subsequent natural document such as `gamma.pdf` or an approved isolated run as held-out evidence. Record an S8 LearningRun with expected and actual post-state, independent evidence, and `generator_score=null`.
+6. **Govern the result.** Only after approval and compliant real evaluation does the registration gate admit the bundle. A later Planner decision may select the released Option. Changed source structure or contradictory results trigger re-evaluation, revision, or revocation rather than reinforcement.
+
+Planned boundaries: no arbitrary implementation generation, no automatic `AGENTS.md` edit, no direct mnestic writes, no sidecar-as-real evidence, and no claim that an existing Skill is learned or certified merely because it exists.
 
 ## 8. Current boundaries
 
