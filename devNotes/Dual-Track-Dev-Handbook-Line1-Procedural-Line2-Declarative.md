@@ -1,15 +1,17 @@
 ---
 创建时间: 2026-11-18
-更新时间: 2026-11-19
-类型: Development handbook and developer onboarding (Dual-Track v5.4, English edition)
+更新时间: 2026-11-21
+类型: Development handbook and developer onboarding (Dual-Track v5.5, English edition)
 所属项目: "26-04 AI4Science"
-对应路线图: "S01 Minimal Product Roadmap (full edition) §3.1A / §10.4B / §11.5B / §17; Week13-14 and Week15-16 handbooks, subject to §0.2 overrides"
-状态: v5.4 onboarding and gate-reconciled edition; Phase 4 closed and Repo-accepted; Stage A next
+对应路线图: "S01 Minimal Product Roadmap (full edition) §3.1A / §10.4B / §11.5B / §17; Week13-14 and Week15-16 handbooks, subject to §0.2 overrides; approved self-learning refinement"
+状态: v5.5 self-learning refinement approved; Phase 4 closed and Repo-accepted; Stage A next
 tags:
   - dev-handbook
   - developer-onboarding
   - dual-track
-  - v5.4
+  - v5.5
+  - self-learning
+  - semantic-evidence-adapters
   - procedural-governance
   - declarative-ingestion
   - dataStore
@@ -102,19 +104,27 @@ tags:
     Ticket / Assignment / Attention / deliver / stop: SuperAgent 原生概念（沿用原文）
     OptionExecutor / planner_options / planner_decision: 原生工具名（沿用原文）
     STOMP: P4-6 原生记忆写入链的项目标签；见 §0.1 和既有 P4-6 验收，不另建数据库或队列
+    Learning Planner: 内置学习 Planner（被动观察、提出完整学习候选束，不递归生成 Planner 资产）
+    observation context: 观察上下文（证据积累状态，不是已学习能力）
+    task signature: 任务签名（目标、输入输出、适用范围与约束的可比较标识）
+    evidence envelope: 证据封装（来源、范围、版本、状态与质量的映射契约）
+    LearningRun: 学习运行（候选束、学习/留出划分、预期/实际状态迁移与评价证据）
+    semantic evidence adapter: 语义证据适配层（本地/远程数据源到学习循环的 dataStore 映射层）
+    world-state transition model: 世界状态迁移模型（前置假设、预期/实际后态、不变量与漂移）
 ---
 
-# Dual-Track Development Handbook (v5.4): Stage A Memory Product × Stage B Runtime + dataStore
+# Dual-Track Development Handbook (v5.5): Self-Learning Memory × Continuous Runtime + Semantic dataStore
 
-> **Current edition: 2026-11-19.** This is the onboarding and delivery reference for two developers joining OptionMemory. It preserves the v5.3 product-first arrangement while reconciling acceptance gates, ownership, contracts, and recovery time.
+> **Current edition: 2026-11-21.** This approved refinement preserves the dual-track product split and adds exactly two learning-specific mechanisms: a built-in Learning Planner and a semantic dataStore adapter layer.
 >
-> - **Stage A (W13–W15a), joint:** a usable Markdown + Skills memory product with complete procedural lifecycle management and **zero SuperAgent dependency**.
-> - **Stage B (W15b–W19), parallel:** Line 1 delivers the continuous runtime, SuperAgent integration, generation/certification, and host releases; Line 2 delivers read-side lineage/export, governance-data work, and dataStore interfaces.
-> - **W20 is reserved for hardening only:** regression, upgrade rehearsal, recovery drills, documentation, and dual sign-off. No new feature is scheduled there.
-> - **Phase 4 is closed and Repo-accepted** as of 2026-11-19. See §0.1 and `docs/phase4-acceptance.md`; the earlier planning assumption has been replaced by recorded implementation and execution evidence.
-> - The 16-week MVP becomes a **20-week target**, not a guaranteed date. Required work that is unfinished at the W19 release candidate moves sign-off; it does not silently consume W20.
+> - **Stage A (W13–W16), joint:** a usable Markdown + Skills memory product plus a **passive self-learning MVP**, with zero SuperAgent dependency.
+> - **Stage B (W17–W21), parallel:** Line 1 delivers continuous self-learning and SuperAgent integration; Line 2 delivers semantic evidence adaptation, read-side lineage/export, and dataStore interfaces.
+> - **W22 is reserved for hardening only:** longitudinal learning/revision/rollback, migration, recovery, privacy, and dual sign-off. No new feature is scheduled there.
+> - **Phase 4 is closed and Repo-accepted** as of 2026-11-19. See §0.1 and `docs/phase4-acceptance.md`.
+> - The roadmap is a **22-week target**, not a guaranteed date. The original 20-week target is possible only with one small connector and one learned bundle. Required work unfinished at the W21 release candidate moves sign-off; it does not silently consume W22.
+> - Learning starts from **real usage, not forced seed tasks**. Installed Skills, raw files, or model claims alone do not constitute learning evidence.
 
-**Tag legend:** `MM-L1` / `MM-L2` = MD-Memory work owned by Line 1 / Line 2; `SuperAgent` = requires the SuperAgent runtime and therefore belongs to Stage B; `planned` = not currently implemented.
+**Tag legend:** `MM-L1` / `MM-L2` = MD-Memory work owned by Line 1 / Line 2; `LearningPlanner` = built-in control-plane learner; `S7/S8` = evidence-envelope and LearningRun contracts; `SuperAgent` = Stage B only; `planned` = not currently implemented.
 
 ---
 
@@ -143,11 +153,14 @@ The architecture in §1 is the **target**. Do not infer implementation status fr
 | NativeSkillAdapter | Minimal registration/execution boundary only; not a general Skill lifecycle or full-type adapter |
 | SuperAgent | Isolated compatibility probe only; no production adapter or continuous service |
 | Sidecar | Mapping contract with `mode=sidecar` evidence isolation; not native real execution evidence |
+| Bilingual extraction, localized messages, and scoped cross-language recall | Implemented and real-host accepted; `docs/bilingual-acceptance.md` |
 | Procedural candidate schema, registration gate, `active_release`, procedural recall join | **Planned Stage A** |
+| Learning Planner, observation contexts, full learning bundles, LearningRun evaluations | **Planned Stage A** |
+| dataStore semantic evidence adapters and S7/S8 contracts | **Planned Stage A** |
 | `memory_why`, generation, ω_certify, `query_achievable`, `certify`, RL-ready export | **Planned Stage B** |
-| dataStore | Design only; required raw snapshots are absent |
+| Large-scale raw snapshots | Required only for corresponding dataStore workloads; not required to begin local connectors |
 
-Current package version is `0.1.0`. The current host session exposes **13 tools**: seven memory-governance + three Bridge + three Planner tools. The package and capability versions are separate from DSH/OpenCode dependency versions.
+Current package version is `0.2.1`. The current host session exposes **13 tools**: seven memory-governance + three Bridge + three Planner tools. The package and capability versions are separate from DSH/OpenCode dependency versions.
 
 Status words in this handbook are deliberate:
 
@@ -161,7 +174,7 @@ Status words in this handbook are deliberate:
 
 When documents disagree, use this order:
 
-1. **This v5.4 handbook:** future staging, ownership, contracts, acceptance gates, and schedule.
+1. **This v5.5 handbook:** future staging, ownership, learning/evidence contracts, acceptance gates, and schedule.
 2. `devNotes/S01最小产品路线图-完整版.md`: domain goals, phase baselines, and dataStore requirements.
 3. `docs/*acceptance*.md` and phase baselines: historical evidence of what was actually accepted.
 4. `README.md`: installation and everyday operation.
@@ -169,17 +182,19 @@ When documents disagree, use this order:
 
 The Week 13–14 and Week 15–16 handbooks are **not followed verbatim**. Their technical detail is reused only after the corresponding step starts and its current gate is confirmed.
 
-| Topic | Current v5.4 rule | Older text to disregard |
+| Topic | Current v5.5 rule | Older text to disregard |
 |---|---|---|
 | Phase 4 baseline | Closed and Repo-accepted on 2026-11-19; see §0.1 | Statements that Stage A cannot start because Phase 4 is still open |
 | P6-5 placement | Stage A, before generation/certification | Requirements that Phase 5 or P6-1–P6-4 close first |
 | Stage A memory-governance tools | Exactly **7**, unchanged | P5-5/P6-5 checks requiring 8 or 10 during Stage A |
-| Stage A contracts | S1–S4 executable and blocking; S5/S6 design drafts non-blocking | Blanket S1–S6 implementation acceptance before Stage A can exit |
-| Stage A milestone | W14 release-candidate demo; W15a full exit after lineage | Calling W14 the complete exit with lineage still unfinished |
+| Stage A contracts | S1–S4 + minimal S6/S7/S8 executable for the learning slice; S5 implementation in Stage B | Blanket S1–S6 implementation acceptance before Stage A can exit |
+| Stage A milestone | W15 release-candidate demo; W16 full exit including passive learning and lineage | Calling W14/W15a the complete exit before the self-learning MVP is proven |
+| Learning activation | Passive observation from real usage; no forced seed task | Mandatory seed bundles or treating installed Skills as execution evidence |
+| Learning unit | Full subtask + Option + Model bundle, Planner governance, declarative evidence, and state transitions where applicable | Option-only learning or a separate preference-learning subsystem |
 | Capability wording | Stage A returns **settled/released**, not certified, capabilities | Calling settled + `active_release` “certified” before P6-2 |
-| Stage B ownership | Line 2 owns P5-3 read-side queries/export and P6-3 RL-ready export | Assigning every read-side mechanism to Line 1 |
-| W20 | Hardening only | P6/Packaging/DS feature delivery scheduled into W20 |
-| dataStore DS2/DS3 | First slide-rule items; DS2 is post-window by default unless capacity is explicitly approved | Treating either as an unconditional MVP dependency |
+| Stage B ownership | Line 2 owns P5-3 read-side queries/export, P6-3 RL-ready export, and semantic evidence adaptation | Assigning every read-side mechanism to Line 1 or treating Line 2 as a bulk-mining-only track |
+| W22 | Hardening only | P6/Packaging/DS feature delivery scheduled into W22 |
+| dataStore DS2/DS3 | First slide-rule items; DS2 is post-W22 by default unless capacity is explicitly approved | Treating either as an unconditional MVP dependency |
 
 ### 0.3 Setup, verification, and safety
 
@@ -273,27 +288,39 @@ Onboarding is complete when each developer can independently:
 |---|---|---|
 | Line 1 owner | assign before start | Runtime/lifecycle delivery and first execution walkthrough |
 | Line 2 owner | assign before start | Projection/recall/dataStore delivery and first recall walkthrough |
-| Experienced maintainer/domain reviewer | assign before start | Initial S1–S6 semantics, first migration/rollback, first gate/execution PR, Stage A exit |
+| Experienced maintainer/domain reviewer | assign before start | Initial S1–S8 semantics, first migration/rollback, first gate/execution PR, first learning bundle, Stage A exit |
 | Sub-project 1 lead | assign before start | Host integration, upgrades, and data-retention escalation |
 | Sub-project 2 lead | assign before start | J/≺, governance semantics, and schema co-sign |
 
-Two newcomers reviewing each other provides second eyes, not inherited-domain expertise. The experienced reviewer is mandatory for the initial contracts, first migration/rollback, first registration-gate/execution PR, and Stage A exit.
+Each newcomer self-tests their own work; the experienced reviewer provides independent second eyes. Cross-review between the two newcomers is not required. The experienced reviewer is mandatory for initial contracts, weekly checkpoints, first migration/rollback, first registration-gate/execution PR, first learning bundle, and Stage A exit. The same experienced reviewer independently approves and merges PRs during weekly/biweekly reviews after author self-tests and independent reproduction pass.
 
 ---
 
 ## 1. Architecture and Mental Model
 
 ```text
-raw data layer      SKILL.md / notes/*.md / CSV — the file is the authority
-      │  unified ingestion (parse_*, read-only projection)
-      ▼
-data-layer candidates    DocumentProjection + fact/procedural candidates — NO execution entitlement
-      ├─ declarative track: → ν-gate (epistemic gate: is it true?) → facts
-      │       → Recall (non-instructional injection)
-      └─ procedural track: → registration gate (authorization gate:
-              package_hash + human approval + mandate binding)
-              → Option/Model assets (probation → settled/revoked) → OptionExecutor
+Native host activity
+  → STOMP: subtask_event → plan_run → execute decision
+  → option_event + observations + outcome + Model events
+
+Local/remote sources
+  → dataStore connectors → S7 evidence envelopes → semantic mappers
+  → DocumentProjection / fact candidates / S1 candidates / evaluation packages
+                                      │
+                                      ▼
+                         Learning Planner (built-in)
+                    observation context → task signature
+                    → subtask + Option + Model bundle
+                    → approval / registration gate
+                    → held-out STOMP evaluation
+                    → settle / active_release / revise / revoke
+
+Declarative evidence: fact candidates → ν-gate → facts + J/≺
+Procedural evidence: S1 candidates → registration gate → Option/Model assets
+State evidence: pre_state → anticipation → post_state → critique/drift
 ```
+
+dataStore is the semantic adapter into and out of STOMP; it does not replace STOMP or write around it. Native activity goes directly through STOMP without a mandatory dataStore round trip. External sources retain their evidence mode and authority.
 
 ### 1.1 Plain-English concepts and authority
 
@@ -303,9 +330,15 @@ data-layer candidates    DocumentProjection + fact/procedural candidates — NO 
 | DocumentProjection / chunk | Rebuildable data-layer representation of source text; not automatically a true fact |
 | Fact | A governed declarative assertion with status, evidence, and revision semantics |
 | Candidate | A proposal before promotion. It has no execution or authoritative-fact entitlement |
-| Option | A versioned executable capability contract and implementation binding; not synonymous with a host tool |
-| Model | Option-level world/evidence/evaluation/calibration state; not necessarily an LLM |
+| Subtask | Task family, input/output requirements, applicable scope, and mandate; the unit that prevents inappropriate generalization |
+| Option | A versioned executable implementation within the subtask bundle; not synonymous with a host tool |
+| Model | Option-level anticipation, evidence, evaluation, applicability, calibration, and state-transition model; not necessarily an LLM or a second fact store |
 | Planner | The control plane that proposes structured decisions; it does not directly change the external world |
+| Learning Planner | Built-in learner that passively observes evidence and proposes complete bundles; it never self-certifies or recursively generates Planner assets |
+| Observation context | Evidence-accumulation state after a valid trigger; not yet a learned capability |
+| Task signature | Comparable goal, input/output shape, scope, and constraints used to decide whether observations belong together |
+| Evidence envelope / S7 | Source, scope, task signature, versions, evidence quality, state references, and idempotency supplied by Line 2 |
+| LearningRun / S8 | Candidate bundle, learning/held-out split, baseline, expected/actual transition, and evaluation outcome |
 | OptionExecutor | The governed execution surface for Options |
 | plan_run | Internal execution context for Planner decisions and Option attempts; not a SuperAgent Ticket |
 | J / ≺ | Justification/derivation edges and governance/revision lineage; not interchangeable with event links |
@@ -315,7 +348,7 @@ data-layer candidates    DocumentProjection + fact/procedural candidates — NO 
 | Probation / settled / `active_release` | Lifecycle states for a capability and its currently released version; none alone means ω_certify certification |
 | NativeAdapter | Minimal bridge to a real host tool/Skill handler; projection loading is not execution success |
 | STOMP | The repository's P4-6 label for native governed memory writes through Planner/Option/Model/projection chains; not a second database or task queue |
-| dataStore | Separate bulk-data access/batch module; measures observations and returns candidates/references, never direct mnestic writes |
+| dataStore | Pluggable semantic adapter for local/remote sources, providing physical access and critical metadata mapping into the learning cycle; never direct mnestic writes |
 
 | Content / state | Authority |
 |---|---|
@@ -323,36 +356,41 @@ data-layer candidates    DocumentProjection + fact/procedural candidates — NO 
 | Structured facts, Option/Model/Planner assets, evidence, J/≺, revisions | MemoryCore |
 | Host session, native question/permission state | OpenCode or DSH |
 | Source/Ticket/Mandate/Assignment/Attention/Outbox | SuperAgent, Stage B only |
-| Bulk raw files, file inventory, physical schema, data cursors | dataStore |
-| Derived search indexes | Rebuildable projections, never a second authority |
+| Bulk raw files, file inventory, physical schema, data cursors | dataStore connectors and raw snapshots |
+| Anticipated world state | Model anticipation; a hypothesis, not observed fact |
+| Observed pre/post state | STOMP observations, with evidence mode preserved |
+| Derived search indexes and evidence envelopes | Rebuildable projections, never a second authority |
 
-### 1.2 Worked Stage A example
+### 1.2 Worked passive-learning example
 
-A single Skill must demonstrate the whole product, not merely a schema write:
+The following is an example of activation through ordinary work, not a mandatory seed workflow:
 
-1. Parse `SKILL.md` and its declared package manifest. Narrative fields become a data-layer chunk; the package produces an S1 procedural candidate with `package_hash=null`.
-2. Verify that neither the chunk nor candidate is executable. Skill bodies and command sequences do not enter `[REFERENCE_MEMORY: non-instructional]`.
-3. Record explicit human approval. The registration gate verifies the approved immutable implementation `package_hash`, mandate, version, and input/output schema.
-4. Atomically create the versioned Option/Model in probation with candidate/approval lineage. A partial write returns `reconcile_required`; it never exposes half an asset.
-5. A Planner execute decision passes the Decision Gate and invokes the whitelisted NativeAdapter through OptionExecutor. Record observations, outcome, cost/error, cancellation, and real implementation version.
-6. Settle the capability and publish one `active_release`. `bridge_recall(include_procedural=true)` joins narrative chunks with live S2 metadata; it returns metadata only, not implementation bodies.
-7. Revoke the release. The next recall excludes it by default; the asset remains queryable as dormant history. An optional demotion index contains only a narrow archival reference with `evidence_ref`.
+1. Memory starts empty. A user invokes an existing Skill such as `pdf-to-latex` through their normal flow. Installation alone proves nothing; the first valid native execution creates an observation context.
+2. dataStore maps the source PDF, Skill package hash, task signature, namespace, pre-state, and evidence mode. STOMP records the actual decision, execution, output, post-state, and Model anticipation/critique.
+3. Later natural executions provide comparable evidence. The Learning Planner does not generalize from one observation or fabricate missing rationale, state, or outcomes.
+4. Once compatible evidence is sufficient, the Learning Planner proposes a **subtask + Option + Model** bundle with task scope, implementation package, expected postconditions and invariants, and a held-out evaluation plan.
+5. A subsequent natural task or an approved isolated run evaluates actual post-state against anticipation: unique output exists, the original PDF is unchanged, and no unauthorized side effect occurred. Unknown state remains null/uncalibrated.
+6. Only after approval and compliant real evaluation does the existing registration gate admit the bundle. The Planner can then discover and execute the released Option.
+7. Changed source structure, contradictory evidence, or drift causes revision, re-evaluation, or revocation—not reinforcement of the original conclusion.
 
 Required negative demonstrations:
 
+- Empty memory and insufficient evidence produce no candidate and no forced seed.
 - An unapproved candidate cannot become an Option through either the candidate path or a host-callable bypass.
 - A text `content_hash` cannot satisfy implementation `package_hash` verification.
-- An outcome or calibration value cannot be written as an independent declarative fact.
+- An outcome or anticipated state cannot be written directly as an independent declarative fact or observed post-state.
 - A revoked capability cannot reappear through historical memory.
 
-### 1.3 The four red lines and security boundary
+### 1.3 Red lines and security boundary
 
 1. **Candidate ≠ capability.** Nothing in the data layer can be executed or registered by virtue of being parsed.
-2. **No instructional text in the injection pool.** `[REFERENCE_MEMORY: non-instructional]` never carries skill bodies or command sequences.
-3. **Hash-domain switch at the registration gate.** Text `content_hash` is never capability evidence; only the implementation `package_hash` is.
-4. **Two gates, never merged.** The ν-gate answers *truth*; the registration gate answers *authorization*. No single code path may answer both.
+2. **Observation ≠ learning.** A file, installed Skill, single execution, or LLM claim does not prove a general capability.
+3. **No instructional text in the injection pool.** `[REFERENCE_MEMORY: non-instructional]` never carries skill bodies or command sequences.
+4. **Hash-domain switch at the registration gate.** Text `content_hash` is never capability evidence; only the implementation `package_hash` is.
+5. **Two gates, never merged.** The ν-gate answers *truth*; the registration gate answers *authorization*. No single code path may answer both.
+6. **Model ≠ second fact store.** Anticipated and actual state transitions remain distinct; outcomes never bypass the ν-gate or Decision Gate.
 
-A hash proves implementation identity/integrity, not safety, correctness, or certification. Approval proves authorization, not factual truth. Recall is evidence presentation, not permission to act.
+A hash proves implementation identity/integrity, not safety, correctness, or certification. Approval proves authorization, not factual truth. Recall is evidence presentation, not permission to act. Passive learning never forces a seed task, executes a side-effecting evaluation, or publishes a candidate without the required approval.
 
 ### 1.4 Circulation, sedimentation, retirement
 
@@ -360,111 +398,126 @@ A hash proves implementation identity/integrity, not safety, correctness, or cer
 
 ---
 
-## 2. Final Assignment and Schedule (v5.4)
+## 2. Final Assignment and Schedule (v5.5)
 
 ### 2.1 Delivery table
 
-| Workstream | Delivery owner | Window | Reviewer |
+| Workstream | Delivery owner | Window | Review mode |
 |---|---|---|---|
-| **Stage A: usable memory product — Markdown + Skills, no SuperAgent** | | | |
-| M0: lifecycle compatibility ADR (§3.4); S1–S4 fixtures; S5/S6 design drafts; schema 14 reversible migration plan | both + experienced reviewer | W13 | domain owner |
-| S2 asset-chain read contract + fixtures | Line 1 | W13 | Line 2 |
-| P6-5 registration gate, probation → settle/`active_release`, revoke → dormant, trichotomy guard | Line 1 | W13–14 | Line 2 + experienced reviewer for first PR |
-| S4 governed Skill execution through NativeAdapter/OptionExecutor | Line 1 | W13–14 | Line 2 |
-| P5-5 `bridge_recall` live-read join and status annotation | Line 2 | W13–14 | Line 1 |
-| P6-5 candidate identification over Markdown/Skill projections | Line 2 | W13–14 | Line 1 |
-| P6-5 demotion index facts and narrative-side trichotomy tests | Line 2 | W14 | Line 1 |
-| P5-3 **Markdown lineage only**: chunk↔fact source links and Recall/revision-chain queries | Line 2 | W14–W15a | Line 1 + domain reviewer |
-| MD-Memory maintenance base and contract documentation | Line 2 | W13–14 | Line 1 |
-| **W14 release-candidate demo** | both | W14 | experienced reviewer |
-| **W15a full Stage A exit**, including lineage | both | W15a | domain owner |
-| **Stage B: runtime + SuperAgent ∥ read-side/dataStore** | | | |
-| P5-1 shared planner-runtime, recovery, lease, handoff | Line 1 | W15b–W16 | Line 2 |
-| P5-2 `superagent-adapter v0.1` | Line 1 | W16–17 | experienced host reviewer |
-| P5-3 event-writer semantics and decision-chain association IDs | Line 1 | W17 | Line 2 |
-| P5-3 `memory_why`, six-tuple queries, decision-chain reads, event export | **Line 2** | W17–18 | Line 1 |
-| P5-4 SuperAgent persistent memory adaptation `SuperAgent · MM-L1` | Line 1 | W18 | Line 2 |
-| Dual-host v0.3.0 release candidate, 7→8 memory tools | Line 1 | W18 | both |
-| P6-1 active planning + generation | Line 1 | W19 | Line 2 |
-| P6-2 certification evidence unification | Line 1 | W19 | domain reviewer |
-| P6-3 RL-ready read-only export | **Line 2** | W19 | Line 1 |
-| P6-4 SuperAgent active memory governance — runtime side `SuperAgent · MM-L1` | Line 1 | W19 | Line 2 |
-| P6-4 governance-data side `SuperAgent · MM-L2` | Line 2 | W18–19 | Line 1 |
-| P6 Horn-rule validation baseline | Line 2 | W18–19 | Line 1 |
-| Dual-host v0.4.0 release candidate, 8→10 memory tools | Line 1 | W19 | both |
-| MD-Memory continuing maintenance `MM-L2` | Line 2 | W15–19 rolling | Line 1 |
-| dataStore DS0 contracts + external snapshot restore | Line 2 | W13–15 background | Line 1 |
-| dataStore DS1 read-only interfaces, synthetic fixtures first | Line 2 | W15–17 if capacity allows | Line 1 |
-| dataStore DS2 real-data governance | Line 2 | **post-W20 by default** | Line 1 |
-| DS3 contract preview | Line 2 | post-W20 | Line 1 |
-| **W20 hardening only** | both | W20 | domain owners |
+| **Stage A: memory product + passive self-learning MVP, no SuperAgent** | | | |
+| M0: lifecycle and learning ADR; S1–S4 fixtures; minimal S6/S7/S8 evidence contracts; S5 draft; schema 14 migration plan | both + experienced reviewer | W13 | Joint self-tests + weekly experienced review |
+| S2 asset-chain read contract + fixtures | Line 1 | W13 | Author self-test + weekly experienced review |
+| P6-5 registration gate, probation → settle/`active_release`, revoke → dormant, trichotomy guard | Line 1 | W13–14 | Author self-test + weekly experienced review + experienced PR review |
+| S4 governed Skill execution through NativeAdapter/OptionExecutor | Line 1 | W13–14 | Author self-test + weekly experienced review |
+| Learning Planner v0.1: passive triggers, observation contexts, task signatures, full bundle proposals | Line 1 | W14–15 | Author self-test + weekly experienced review + domain review |
+| Model transition/evaluation: pre/post state, anticipation, invariants, critique, drift | Line 1 | W14–15 | Author self-test + weekly experienced review |
+| P5-5 `bridge_recall` live-read join and status annotation | Line 2 | W13–14 | Author self-test + weekly experienced review |
+| P6-5 candidate identification over Markdown/Skill projections | Line 2 | W13–14 | Author self-test + weekly experienced review |
+| Initial dataStore connectors and S7 semantic mapping: Markdown, SKILL.md, CSV/JSONL, trajectory exports | Line 2 | W14–15 | Author self-test + weekly experienced review |
+| S8 learning/held-out evaluation packages and STOMP feedback mapping | Line 2 | W14–15 | Author self-test + weekly experienced review |
+| P6-5 demotion index facts and narrative-side trichotomy tests | Line 2 | W14 | Author self-test + weekly experienced review |
+| P5-3 **Markdown lineage only**: chunk↔fact source links and Recall/revision-chain queries | Line 2 | W14–W16 | Author self-test + weekly experienced review + domain review |
+| One read-only remote snapshot or HTTP evidence connector | Line 2 | W15–W16 | Author self-test + weekly experienced review |
+| **W15 release-candidate demo** | both | W15 | Joint self-tests + experienced PR review |
+| **W16 full Stage A exit**, including passive learning and lineage | both | W16 | Joint self-tests + domain owner |
+| **Stage B: continuous self-learning + SuperAgent ∥ semantic dataStore/read side** | | | |
+| P5-1 shared planner-runtime, recovery, lease, handoff | Line 1 | W17–18 | Author self-test + weekly experienced review |
+| Continuous Learning Planner: scheduled re-evaluation, new versions, release/rollback | Line 1 | W18–20 | Author self-test + weekly experienced review |
+| P5-2 `superagent-adapter v0.1` | Line 1 | W18–19 | Author self-test + experienced PR reviewer |
+| P5-3 event-writer semantics and decision-chain association IDs | Line 1 | W18 | Author self-test + weekly experienced review |
+| P5-3 `memory_why`, six-tuple queries, decision-chain reads, event export | **Line 2** | W18–19 | Author self-test + weekly experienced review |
+| P5-4 SuperAgent persistent memory adaptation and learning approval/stop `SuperAgent · MM-L1` | Line 1 | W19–20 | Author self-test + weekly experienced review |
+| Dual-host v0.3.0 release candidate, 7→8 memory tools | Line 1 | W19 | Joint self-tests + experienced PR review |
+| P6-1 active planning + generation | Line 1 | W20–21 | Author self-test + weekly experienced review |
+| P6-2 certification evidence unification from compliant real evaluations | Line 1 | W20–21 | Author self-test + domain review |
+| P6-3 RL-ready read-only export | **Line 2** | W20–21 | Author self-test + weekly experienced review |
+| P6-4 SuperAgent active memory governance — runtime and continuous learning side `SuperAgent · MM-L1` | Line 1 | W20–21 | Author self-test + weekly experienced review |
+| P6-4 governance-data and STOMP-to-evaluation mapping `SuperAgent · MM-L2` | Line 2 | W19–21 | Author self-test + weekly experienced review |
+| P6 Horn-rule validation baseline | Line 2 | W19–20 | Author self-test + weekly experienced review |
+| Dual-host v0.4.0 release candidate, 8→10 memory tools | Line 1 | W21 | Joint self-tests + experienced PR review |
+| MD-Memory continuing maintenance `MM-L2` | Line 2 | W17–21 rolling | Author self-test + weekly experienced review |
+| dataStore DS0 contracts + external snapshot restore | Line 2 | W13–W16 background | Author self-test + weekly experienced review |
+| dataStore DS1 read-only interfaces and one remote evidence source | Line 2 | W17–W19 if capacity allows | Author self-test + weekly experienced review |
+| dataStore DS2 real-data governance and additional source adapters | Line 2 | **post-W22 by default** | Author self-test + weekly experienced review |
+| DS3 contract preview | Line 2 | post-W22 | Author self-test + weekly experienced review |
+| **W22 hardening only** | both | W22 | Joint self-tests + domain owners |
 
-**Capacity rule.** The previous v5.3 person-week totals are withdrawn: they assumed a small Stage A registration task and scheduled new features into W20. M0 must produce bottom-up estimates from the ADR, fixtures, migration, and demo scope. No “spare capacity” is assumed before that estimate. Read-side P5-3/P6-3 work belongs to Line 2 to reduce Line 1's single-owner concentration.
+**Capacity rule.** The previous v5.3 person-week totals remain withdrawn. M0 must produce bottom-up estimates from the lifecycle ADR, learning fixtures, migrations, connectors, and demo scope. No “spare capacity” is assumed. Read-side P5-3/P6-3 and evidence adaptation belong to Line 2 to reduce Line 1's concentration. Production SuperAgent work cannot delay the Stage A passive-learning demonstration.
 
 ### 2.2 Master schedule
 
 ```text
-Stage A — product first, no SuperAgent
-W13     M0 ADR + S1–S4 fixtures + schema 14 plan; S5/S6 drafts only
-W14     candidate→gate→execute→settle/release→revoke vertical slice
-        + procedural recall + negative suite + release-candidate demo
-W15a    Markdown lineage complete → full Stage A gate
+Stage A — memory product + passive self-learning, no SuperAgent
+W13     M0 lifecycle/learning ADR + S1–S4 fixtures + S6/S7/S8 contracts
+W14     governed lifecycle + initial connectors + observation contexts
+W15     full bundle proposal + Model transition + held-out evaluation + RC demo
+W16     Markdown lineage + remote read-only connector + full Stage A gate
 
-Stage B — preserve the technical dependency order
-W15b–16 P5-1 runtime → P5-2 adapter starts; DS1 synthetic-first
-W17     P5-2 finishes → P5-3 event IDs/read-side implementation
-W18     P5-3 export + P5-4 + v0.3.0 RC; P6-4 data side + Horn validation
-W19     P6-1/P6-2/P6-3 + P6-4 runtime + v0.4.0 RC
-W20     hardening only: full regression, real-host evidence, failure recovery,
-        migration/upgrade rehearsal, documentation, dual sign-off
+Stage B — continuous learning and semantic evidence adaptation
+W17–18  P5-1 runtime + continuous Learning Planner + additional mapping
+W18–19  P5-2 adapter + P5-3 memory_why/read export + v0.3.0 RC
+W19–20  P5-4 learning approval/stop + P6-4 data side + Horn validation
+W20–21  P6-1/P6-2/P6-3 + P6-4 runtime + v0.4.0 RC
+W22     hardening only: longitudinal learning/revision/rollback, real-host evidence,
+        migration/recovery, privacy, source-authority checks, dual sign-off
 ```
 
-If required MVP work misses W19, move the sign-off date. Do not relabel new feature completion as hardening.
+If required work misses W21, move sign-off. Do not relabel new feature completion as hardening.
 
 ### 2.3 Stage A exit criteria
 
-All items are due at **W15a**, not the W14 release-candidate demo:
+All items are due at **W16**, not the W15 release-candidate demo:
 
-- [ ] Isolated RocksDB demo returns Markdown knowledge with revision/status annotation and Skill narratives joined with settled/released capability metadata.
-- [ ] One Skill completes identify → human approval → package/mandate gate → probation → real OptionExecutor execution → settle → `active_release`.
-- [ ] Revoke → dormant → optional demotion index with `evidence_ref`; the next default recall excludes the revoked capability.
-- [ ] Markdown source links and Recall/revision chains are queryable.
-- [ ] S1–S4 contract fixtures and negative suites pass; S5/S6 design drafts are recorded but are not Stage A implementation gates.
+- [ ] Memory starts empty with no forced seed. Installed Skills or raw files alone create no learning claim; insufficient evidence creates no candidate.
+- [ ] Real activity creates an observation context only with a valid evidence chain, and compatible evidence produces a full subtask + Option + Model candidate bundle.
+- [ ] Task scope and declarative premises are validated. No missing rationale, state, outcome, or confidence is fabricated.
+- [ ] Where state changes apply, the Model distinguishes anticipated and actual post-state and checks postconditions/invariants. Read-only cases remain null rather than inventing transitions.
+- [ ] Evaluation uses a subsequent natural task or an approved isolated real run; the candidate is not scored solely by its own generator.
+- [ ] The existing registration gate admits the bundle and the Planner later uses it; contradictory evidence or drift causes revision or revocation.
+- [ ] Existing lifecycle demo succeeds: identify → approve → package/mandate gate → probation → real OptionExecutor execution → settle → `active_release` → revoke/dormant.
+- [ ] Markdown knowledge and Skill narratives return with settled/released metadata, and Markdown source links and Recall/revision chains are queryable.
+- [ ] S1–S4 and minimal S6/S7/S8 fixtures and negative suites pass; S5 implementation remains a Stage B gate.
 - [ ] Schema 14 migration and rollback pass on isolated Mem/RocksDB copies.
-- [ ] The memory-governance family remains exactly **7 tools**; Bridge and Planner families remain independently contracted.
-- [ ] No Stage A product code imports or calls SuperAgent adapter/Ticket/Attention/deliver/stop APIs. The existing isolated probe remains historical Phase 4 code, not a product dependency.
-- [ ] No claim of ω_certify, generation, RL readiness, or full continuous service is made.
+- [ ] The memory-governance family remains exactly **7 tools** and no new host tool family is added.
+- [ ] No Stage A product code imports or calls SuperAgent adapter/Ticket/Attention/deliver/stop APIs.
+- [ ] No claim of ω_certify, general multilingual semantic recall, RL readiness, arbitrary code generation, or full continuous service is made.
 
-### 2A. MD-Memory Track
+### 2A. MD-Memory and evidence tracks
 
-Markdown daily memory is neither pure runtime nor pure dataStore. Its work is split by lane even though delivery is organized by stage:
+Markdown daily memory is neither pure runtime nor pure dataStore. Work is split by lane even though delivery is organized by stage:
 
 | Split criterion | Owner | Inventory |
 |---|---|---|
-| Runtime / adapter / approval execution `MM-L1` | Line 1 | P5-4 Source/Ticket/Assignment mapping, deliver→Recall observations, Attention approvals, handoff/idempotency reconciliation, human-stop enforcement, Report references; P6-4 proactive discovery→mandated execution, lease/recovery, approval execution and stop; Bridge V1/V2 compatibility and release regression |
-| Data / ingestion / recall / governance-data `MM-L2` | Line 2 | P5-5 live recall join; Stage A Markdown lineage; P6-5 candidate identification and demotion index; P6-4 source re-read, FactCandidate/superseding candidates and re-Recall; P5-3/P6-3 read-side queries/export; markdownRoot refresh, contract docs, and rolling regression |
+| Runtime / adapter / approval execution `MM-L1` | Line 1 | Learning Planner; P5-4 Source/Ticket/Assignment mapping, deliver→Recall observations, Attention approvals, handoff/idempotency reconciliation, human-stop enforcement, Report references; P6-4 proactive discovery→mandated execution, lease/recovery, approval execution and stop; Bridge V1/V2 compatibility and release regression |
+| Data / ingestion / recall / governance-data `MM-L2` | Line 2 | P5-5 live recall join; Stage A Markdown lineage; P6-5 candidate identification and demotion index; P6-4 source re-read, FactCandidate/superseding candidates and re-Recall; P5-3/P6-3 read-side queries/export; S7/S8 evidence and evaluation mapping; markdownRoot refresh, contract docs, and rolling regression |
 
-The Stage A in-track interfaces are S1, S2, S3, and S4. S5 joins the MD-Memory track when decision-chain/read export starts in Stage B. S6 remains the dataStore boundary.
+Stage A in-track interfaces are S1, S2, S3, S4, and minimal S6/S7/S8. S5 joins the MD-Memory track when decision-chain/read export starts in Stage B. dataStore connectors supply evidence to Learning Planner; STOMP remains the native execution authority.
 
-### 2.4 Reviewer arrangement
+### 2.4 Self-test and independent review arrangement
 
-Record cross-line review in `docs/dual-track-contracts.md` (planned M0 artifact):
+Line 1 and Line 2 are not assigned cross-review. Each author self-tests their own workstream and attaches commands, results, isolated evidence, and limitations before requesting PR review:
 
-- Line 2 reviews S1 candidate identification, S2 annotation/non-instructional semantics, S3 narrative exits, and S5/S6 read shapes.
-- Line 1 reviews S1 gate-consumer behavior, S2 implementation feasibility, S4 execution outcomes, and dataStore candidate-flow integration.
-- The experienced reviewer approves initial contracts, first migration/rollback, first registration/execution PR, and Stage A exit.
-- Review does not transfer delivery ownership. Escalate a blocked review within two working days.
+- Line 1 self-tests S1 gate-consumer behavior, S2 implementation feasibility, S4 execution outcomes, Learning Planner governance, Model transitions, and dataStore execution integration.
+- Line 2 self-tests S1 candidate identification, S2 annotation/non-instructional semantics, S3 narrative exits, and S5/S6/S7/S8 evidence and read shapes.
+- Both independently run integration acceptance on their own environment; neither certifies the other developer's code.
+
+The **experienced reviewer** holds a checkpoint at the end of each implementation week, covering contract semantics, evidence quality, delivery risks, and follow-ups. Initial contracts, first migration/rollback, first registration/execution PR, first learning bundle, and Stage A exit require this experienced review.
+
+The same **experienced reviewer** performs independent PR review during the weekly and biweekly checkpoints, reproduces acceptance evidence, approves or requests changes, and merges after all gates pass. Author self-tests do not replace independent review, and there is no separate third-reviewer role or ad-hoc approval channel.
+
+Record author self-tests, weekly checkpoints, and PR review results in `docs/dual-track-contracts.md` (planned M0 artifact). Review does not transfer delivery ownership. Send an initial review response within one business day, and escalate a blocked review within two working days.
 
 ### 2.5 Risks and pre-authorized slide rules
 
 1. **Phase 4 baseline regression:** run the shared regression before Stage A; any newly reopened storage/governance failure pauses affected work and triggers a fresh baseline review.
-2. **Line 1 single point of failure:** Line 2 owns read-side P5-3/P6-3; experienced review covers runtime/SA; W20 remains protected.
+2. **Line 1 single point of failure:** Line 2 owns read-side P5-3/P6-3 and evidence adaptation; experienced review covers runtime/SA and the first learning bundle; W22 remains protected.
 3. **New-developer semantic risk:** initial domain review is mandatory, not optional peer convention.
-4. **Lifecycle compatibility risk:** no registration coding before §3.4 ADR approval.
-5. **Missing dataStore snapshot:** DS0 contract/index work may continue; real-data DS2 does not start without restore + SHA256 verification.
-6. **Capacity slip:** slide DS2 first, DS3 next, then optional interoperability such as PROV-O. Required MVP scope moves the date rather than silently dropping acceptance or consuming W20.
+4. **Lifecycle compatibility risk:** no registration coding before the lifecycle/learning ADR is approved.
+5. **Cold-start/evidence risk:** no forced seed and no candidate from insufficient, sidecar-only, or unverifiable evidence. Ask for real evaluation only when required rather than inventing experience.
+6. **Missing dataStore snapshot:** local connectors may continue; real-data DS2 does not start without restore + SHA256 verification.
+7. **Capacity slip:** slide DS2 first, DS3 next, then optional interoperability and additional connectors. Required MVP scope moves the date rather than silently dropping acceptance or consuming W22.
 
-The W16 snapshot checkpoint must record one of: `DS2 approved with named capacity`, or `DS2 post-W20`. The default is post-W20.
+The W16 snapshot checkpoint must record one of: `DS2 approved with named capacity`, or `DS2 post-W22`. The default is post-W22.
 
 ---
 
@@ -479,29 +532,46 @@ The W16 snapshot checkpoint must record one of: `DS2 approved with named capacit
 | **S3** | Settlement trichotomy and the two narrow declarative exits | both | **Blocking guard fixtures** |
 | **S4** | Governed native Skill execution: approved package/version + mandate + Planner execute → NativeAdapter; typed success/failure/denied/cancelled/reconcile outcomes; `projection_loaded ≠ outcome` | Line 1 → both | **Blocking execution fixture** |
 | **S5** | Governance event-chain read contract linking planner/option/model events, J/≺, memory_uri, host/run/external IDs, and evidence modes | Line 1 event semantics → Line 2 reads/export | **Design draft only; Stage B implementation** |
-| **S6** | dataStore IngestionBridge | Line 2 → MemoryCore; Line 1 boundary review | **Design draft only; independent dataStore gate** |
+| **S6** | dataStore IngestionBridge and source-authority rules | Line 2 → MemoryCore; Line 1 boundary review | **Blocking minimal implementation for initial connectors** |
+| **S7** | EvidenceEnvelope: source/snapshot refs, connector version, namespace, task signature, hashes, timestamps, evidence mode, mapping version, idempotency, raw payload/ref, validation state | Line 2 → Learning Planner | **Blocking learning fixtures** |
+| **S8** | LearningRun: candidate bundle, learning/held-out split, baseline, expected/actual transition, evaluation outcome, real/simulated/sidecar separation | Learning Planner ↔ Model/STOMP | **Blocking evaluation fixtures** |
 
-S4 closes the previous numbering gap and makes the execution boundary explicit. It does not create a new host tool family.
+S4 closes the previous numbering gap and makes the execution boundary explicit. S7/S8 are payload contracts, not new top-level asset classes or a preference subsystem.
 
 For every contract, record in `docs/dual-track-contracts.md`:
 
 - Owner, producer, consumer, canonical type/schema location, and version.
-- Compatibility and change policy, including required cross-line review and consumer notification.
-- One happy-path fixture and one negative fixture for S1–S4 before implementation.
-- Standard result semantics: `gate`, `reason`, `reused`, `blocked`, `failure`, and `reconcile_required`.
+- Compatibility and change policy, including producer self-test evidence, consumer-facing change notification, and independent PR review when the contract changes.
+- One happy-path fixture and one negative fixture for S1–S4 and minimal S6/S7/S8 before implementation.
+- Standard result semantics: `gate`, `reason`, `reused`, `blocked`, `failure`, `need_more_evidence`, and `reconcile_required`.
 - Migration/rollback and evidence expectations.
 
 ### 3.2 S6 — dataStore IngestionBridge
 
 ```text
-dataStore → MemoryCore (controlled; no direct mnestic writes):
-  FactCandidate[] · quality_observation · raw_ref / snapshot_ref / sample_set_ref
-  + idempotent ingestion events (source_cursor, file hash)
+dataStore connectors → S7 evidence envelopes → source-specific semantic mappers
+  → DocumentProjection / FactCandidate[] / S1 candidates / evaluation packages
+  → S6 controlled ingestion
 MemoryCore → dataStore:
   governance verdicts (usable / revise / certified) by reference only
 ```
 
-dataStore measures what was observed; MemoryCore governs whether and how it may be used. Raw HTML/images/large JSONL/full inventory stay in dataStore. S6 declarative FactCandidates enter the ν-gate, not the S1 procedural registration gate.
+dataStore measures what was observed; MemoryCore governs whether and how it may be used. Raw HTML/images/large JSONL/full inventory stay in dataStore. S6 declarative FactCandidates enter the ν-gate, not the S1 procedural registration gate. Credentials remain references, remote content remains non-instructional, and no source is read through login/PoW bypass or imported wholesale into MemoryCore.
+
+### 3.2A S7/S8 — evidence and learning contracts
+
+**S7 EvidenceEnvelope** is the common transport/projection for local and remote evidence. It carries source and snapshot references, connector and mapping versions, namespace/task signature, content and implementation hashes, observed timestamps, evidence mode, validation status, idempotency, and raw payload or payload reference. It does not create a fact, Option, or execution entitlement.
+
+Source-specific mappers decide what the evidence becomes:
+
+- Markdown → DocumentProjection/chunks.
+- Assertions → fact candidates for the ν-gate.
+- SKILL.md → S1 procedural candidates and immutable package references.
+- Trajectories → subtask/Planner/Option/Model event mappings.
+- State-changing runs → pre/post state, anticipation, critique, and drift mappings.
+- Learning datasets → task signatures, baselines, and held-out evaluation packages.
+
+**S8 LearningRun** links a complete candidate bundle to its evaluation. It records the learning/held-out split, baseline, task scope, expected and actual transitions, independent outcome, and evidence mode. Native activity goes directly through STOMP; external sources use dataStore. S8 maps STOMP evidence back into learning without replacing or duplicating STOMP events.
 
 ### 3.3 Host tool families
 
@@ -522,18 +592,23 @@ Rules:
 - v0.4.0 has **16 total** without `plan_task`, or **17** if `plan_task` is separately approved.
 - Adding a tool without a family, or introducing a fourth family, requires a roadmap amendment.
 
-### 3.4 M0 lifecycle compatibility ADR — required before coding
+### 3.4 M0 lifecycle and learning compatibility ADR — required before coding
 
-The ADR must resolve the gap between current code and the target lifecycle:
+The ADR must resolve the gap between current code and the target lifecycle and passive-learning model:
 
 1. **Registration path:** how candidate-gated Skills coexist with current direct `propose_option`; how a host caller cannot bypass approval for Skill-like packages.
 2. **Lifecycle API:** whether general Skill settle/revoke are new internal/public APIs or carefully separated from current hardness-conflict governance. Do not merely rename conflict-specific functions.
-3. **State model:** storage and transition rules for probation, settled, revoked/dormant, Model status, `active_release`, immutable versions, and rollback-by-new-version.
-4. **Built-ins:** perpetual-probation execution channels remain outside the capability domain and are never settled/revoked/certified as Skills.
-5. **Atomicity/recovery:** candidate → approval → Option/Model → release writes, crash points, deterministic IDs, idempotency, and `reconcile_required` behavior.
-6. **Compatibility/migration:** existing assets, seven-tool behavior, RocksDB preservation, schema 14 rollback, and read projections.
-7. **Execution security:** package provenance, untrusted code isolation, mandate scope, host permission mapping, and the distinction between hash identity and safety.
-8. **Acceptance:** exact Stage A demo, negative fixtures, evidence rows, and the separation of settled/released from later certification.
+3. **Learning unit:** how a complete subtask + Option + Model bundle is proposed and linked, with Planner governance and declarative premises rather than an Option-only shortcut or a separate preference subsystem.
+4. **Passive activation:** valid native/STOMP triggers, observation-context states, task-signature derivation, insufficient-evidence behavior, and why no forced seed is required.
+5. **State model:** storage and transition rules for probation, settled, revoked/dormant, Model status, `active_release`, immutable versions, and rollback-by-new-version.
+6. **World-transition model:** pre-state, anticipated post-state, actual post-state, postconditions, invariants, critique, drift, and null semantics for read-only or unobserved state.
+7. **Built-ins:** perpetual-probation execution channels remain outside the capability domain and are never settled/revoked/certified as Skills.
+8. **Evidence mapping:** S6/S7 connector and source-authority rules, raw payload retention, real/simulated/sidecar separation, deduplication, and learning/held-out splitting.
+9. **Evaluation:** S8 LearningRun, independent outcomes, Model critique, expected/actual transition checks, and why generator self-scores cannot certify a candidate.
+10. **Atomicity/recovery:** candidate → approval → Option/Model → release writes, crash points, deterministic IDs, idempotency, and `reconcile_required` behavior.
+11. **Compatibility/migration:** existing assets, seven-tool behavior, RocksDB preservation, schema 14 rollback, and read projections.
+12. **Execution security and consent:** package provenance, untrusted code isolation, mandate scope, host permission mapping, opt-in observation, retention/erasure, and the distinction between hash identity and safety.
+13. **Acceptance:** exact passive-learning demo, empty-memory and insufficient-evidence fixtures, evidence rows, and the separation of settled/released from later certification.
 
 The ADR produces the bottom-up Stage A estimate. It is a blocking M0 deliverable, not optional documentation.
 
@@ -568,7 +643,22 @@ Stage A acceptance: unapproved/bypass registration blocked; text hash rejected; 
 
 Stage B separately revalidates the same pipeline under real execution evidence, generation/certification, and the 8→10 tool releases.
 
-### 4.3 Stage B remaining steps
+### 4.3 Learning Planner v0.1 — passive self-learning (Stage A)
+
+The Learning Planner is a built-in control-plane service, not a host tool or a new asset family. It starts in `dormant`, enters `observing` only after a valid native evidence chain exists, and returns `need_more_evidence` when the task signature or evaluation basis is insufficient.
+
+Required behavior:
+
+1. Consume native STOMP evidence and S7 envelopes without inventing missing subtask, Model, rationale, state, or outcomes.
+2. Derive task signatures from goal, input/output schema, applicable scope, mandate, and declarative premises.
+3. Propose complete subtask + Option + Model bundles using bounded templates, with immutable implementation packages, J/≺, and idempotency.
+4. Include a world-transition model when applicable: pre-state, anticipated post-state, postconditions, invariants, actual post-state, critique, and drift.
+5. Produce an S8 LearningRun with learning/held-out separation, baseline, and real evaluation through a natural subsequent task or an approved isolated run.
+6. Promote only through the existing registration gate and lifecycle. No direct asset creation, self-certification, automatic `AGENTS.md` edit, or arbitrary implementation generation.
+
+Observation states are `dormant → observing → candidate_ready → evaluating → probation/active_release or dormant_watch`. These are learning-run states, not new capability-asset states.
+
+### 4.4 Stage B remaining steps
 
 Use the Week 13–14 and Week 15–16 handbooks as technical guidance subject to §0.2 and the ownership table—not verbatim. Preserve this technical dependency order:
 
@@ -585,16 +675,39 @@ Overlapping implementation is allowed only after the preceding interface is froz
 
 ---
 
-## 5. dataStore Track (Line 2)
+## 5. dataStore Semantic Evidence Adapter (Line 2)
 
-The full roadmap §17 is the domain specification, subject to this handbook's capacity and gate overrides. Proposed stack: fsspec / PyArrow / Parquet; DuckDB only after a measured need.
+dataStore is a pluggable semantic adapter between local/remote sources and the governed learning cycle. It supplies physical access and critical metadata mapping without becoming a second MemoryCore, Planner, STOMP runtime, or generic crawler. The full roadmap §17 remains the bulk-data domain specification, subject to this handbook's learning and capacity overrides. Proposed bulk-access stack: fsspec / PyArrow / Parquet; DuckDB only after a measured need.
 
-- **DS0 (W13–15 background):** StorageBackend / QueryEngine / SnapshotAccess / S6 contracts; snapshot restore + SHA256 verification; Data Package description; DG-01 inventory reconciliation. Before restore, only contracts and read-only index probes are allowed.
-- **DS1 (W15–17 if capacity allows):** bounded-memory streaming, reproducible filter/aggregate/join, on-demand Parquet, idempotent reruns. Synthetic fixtures precede real data.
-- **DS2 (post-W20 by default):** corrdata 11,181 reports with page/field/image lineage; matbd read-only scale tests; mged authorization refusals without login/PoW; broken-link/null/duplicate quality reports.
-- **DS3 (post-W20 preview):** plan_run integration contract only. Implementation is outside this window.
+### 5.1 Connector and mapping model
 
-The current backup contains scripts, reports, dictionaries, and indexes, but not the required raw `matbd` / `corrdata` / `mged` data or the 10.6 GB volumes. No raw bulk data enters mnestic; dataStore never writes mnestic directly; count discrepancies retain snapshot and caliber distinctions.
+```text
+local/remote connectors
+  → S7 evidence envelopes
+  → source-specific semantic mappers
+  → DocumentProjection / fact candidates / S1 candidates / evaluation packages
+  → S6 controlled ingestion → MemoryCore and Learning Planner
+```
+
+Initial connectors:
+
+1. Markdown and SKILL.md.
+2. CSV and JSONL datasets.
+3. OpenCode/DSH trajectory exports.
+4. One read-only remote snapshot or HTTP source.
+
+Connectors handle paths, snapshots, cursors, offsets, hashes, authentication references, rate limits, and source-specific read constraints. Source-specific mappers preserve meaning; there is no universal lossy schema. Unknown or unmapped fields remain raw/null.
+
+Native host activity goes directly through STOMP without a mandatory dataStore round trip. External evidence uses dataStore and retains its evidence mode and source authority. Raw HTML/images/large JSONL/full inventory stay in dataStore; dataStore never writes mnestic directly.
+
+### 5.2 Delivery phases
+
+- **DS0 (W13–W16 background):** StorageBackend / QueryEngine / SnapshotAccess / S6/S7 contracts; snapshot restore + SHA256 verification for sources that require it; Data Package description; DG-01 inventory reconciliation. Before a required restore, only contracts and read-only index probes are allowed for that source.
+- **DS1 (W17–W19 if capacity allows):** bounded-memory streaming, reproducible filter/aggregate/join, on-demand Parquet, idempotent reruns, one read-only remote evidence source, and S8 evaluation packaging. Synthetic fixtures precede real data.
+- **DS2 (post-W22 by default):** additional source adapters; corrdata 11,181 reports with page/field/image lineage; matbd read-only scale tests; mged authorization refusals without login/PoW; broken-link/null/duplicate quality reports.
+- **DS3 (post-W22 preview):** plan_run integration contract only. Implementation is outside this window.
+
+The current backup contains scripts, reports, dictionaries, and indexes, but not the raw `matbd` / `corrdata` / `mged` data or 10.6 GB volumes required for those later workloads. Their absence does not block initial local connectors. No raw bulk data enters mnestic; count discrepancies retain snapshot and caliber distinctions.
 
 ---
 
@@ -618,7 +731,7 @@ tier 2  asset retirement   governed revoke             → dormant, queryable, c
 tier 3  ticket termination SuperAgent human stop        → external task lifecycle, Stage B only
 ```
 
-No physical deletion. These tiers never impersonate one another.
+No physical deletion of governed assets at any tier. Personal-content retention and erasure follow a separate privacy policy and are not Option retirement operations. These tiers never impersonate one another.
 
 ### 6.3 Recall semantics ladder
 
@@ -627,6 +740,18 @@ No physical deletion. These tiers never impersonate one another.
 ### 6.4 Merge-blocking red-line suite
 
 Cover candidate idempotency; `package_hash=null` before gate; unapproved/mismatched/mandate-missing registration; host-callable bypass; instructional injection; materialized asset-state shadows; outcome/calibration→facts; dormant non-deletion; revoked non-reload; runtime-demotion asset invariance; crash recovery; namespace/sensitive-path isolation. Use isolated RocksDB and Markdown roots.
+
+### 6.4A Learning and state-transition invariants
+
+- Empty memory produces observation only after a valid real trigger; insufficient evidence returns `need_more_evidence` rather than a candidate.
+- Observation context is not an Option, fact, preference, or active release.
+- A learning candidate must include its subtask scope and Model evaluation/transition semantics; Option-only learning is incomplete.
+- Model anticipation is a hypothesis, observed pre/post state is evidence, and declarative facts require the ν-gate. These never overwrite one another.
+- Candidate generation is separate from candidate execution and publication. Side-effecting evaluation or release requires the applicable approval.
+- Learning and held-out examples must not leak duplicate trajectories or tasks.
+- Unknown confidence, state, rationale, and metrics remain null/uncalibrated. Generator self-scores never certify a candidate.
+- Personal-memory observation requires opt-in, namespace isolation, inspection, correction, disablement, and a defined retention/erasure policy. Governance evidence retention does not justify retaining personal content indefinitely.
+- Native real, simulated, and sidecar evidence never mix silently; imported success does not become native real success.
 
 ### 6.5 Governance layer and closed loop
 
@@ -718,6 +843,13 @@ Dual-track-specific cases:
 - Recall join during asset-chain restart: consistent, no event fabrication.
 - `projection_loaded` vs actual execution outcome; denial/cancellation not reported as success.
 - Runtime demotion leaves asset rows byte-identical; revoke affects the next recall.
+- Empty memory and insufficient evidence return `need_more_evidence` without a candidate or forced seed.
+- Passive native usage creates an observation context; installed Skills alone do not create learning.
+- Full bundle proposal includes subtask, Option, Model, task scope, declarative premises, and transition semantics where applicable.
+- Expected versus actual post-state and invariants; read-only tasks do not invent transitions.
+- Learning/held-out leakage and duplicate-trajectory consolidation are rejected.
+- Natural or approved isolated evaluation produces an S8 LearningRun; generator self-score cannot settle a bundle.
+- Local/remote connectors preserve source authority, evidence mode, hashes, and access controls; no direct mnestic writes.
 - Stage A: Phase 0–4 regression and 7-tool compatibility.
 - Stage B: Phase 0–5 regression, real/simulated/sidecar separation, and 7→8→10 transitions.
 - dataStore: DG-01–DG-06 only when the relevant snapshot/stage is active.
@@ -728,22 +860,22 @@ Record evidence in the step's acceptance document; do not paste transient logs i
 
 ## 8. Repo Acceptance Checklist
 
-- [ ] **W14:** Stage A release-candidate demo; registration/execution/recall/retirement vertical slice and negative suite.
-- [ ] **W15a:** full Stage A exit; Markdown lineage, S1–S4, schema 14 rollback, seven tools, zero SuperAgent dependency, experienced/domain sign-off.
-- [ ] **W16:** snapshot checkpoint explicitly selects DS2 capacity or the default post-W20 slide.
-- [ ] **W18:** Phase 5 runtime/read-side baseline closes; `memory_why`/decision chain/export + P5-4 + v0.3.0 eight tools green.
-- [ ] **W19:** P6-1/2/3, P6-4, Horn validation, and v0.4.0 ten-tool release candidate green; Stage A pipeline revalidated.
-- [ ] **W20:** only hardening evidence remains: full regression, real-host checks, upgrade/recovery rehearsal, reviewer log, limitations, and dual sign-off.
+- [ ] **W15:** Stage A release-candidate demo; governed lifecycle, observation context, full bundle proposal, Model transition, and negative suite.
+- [ ] **W16:** full Stage A exit; passive learning, held-out evaluation, Markdown lineage, S1–S4/minimal S6/S7/S8, schema 14 rollback, seven tools, zero SuperAgent dependency, experienced/domain sign-off; snapshot checkpoint selects DS2 capacity or the default post-W22 slide.
+- [ ] **W18–19:** continuous runtime and SuperAgent integration milestones; `memory_why`/decision chain/export + P5-4 + v0.3.0 eight tools green.
+- [ ] **W20–21:** P6-1/2/3, P6-4 continuous learning, Horn validation, and v0.4.0 ten-tool release candidate green; Stage A learning bundle revalidated with new evidence and rollback.
+- [ ] **W22:** only hardening evidence remains: longitudinal learning/revision/rollback, real-host checks, migration/recovery, source-authority and privacy checks, reviewer log, limitations, and dual sign-off.
+- [ ] **Learning Planner:** passive activation, full bundle, Model transition/evaluation, S8 LearningRun, release/rollback, and no self-certification evidence archived.
 - [ ] **MD-Memory:** P5-4/P6-4 approvals, recall join, lineage, demotion index, and regression evidence archived.
-- [ ] **dataStore:** DS0/DS1 accepted if scheduled; DS2 is accepted separately or explicitly post-W20 with zero MVP impact.
+- [ ] **dataStore:** initial connectors and S6/S7/S8 accepted; DS0/DS1 accepted if scheduled; DS2 is accepted separately or explicitly post-W22 with zero MVP impact.
 
 ### Sign-off
 
 | Role | Item | Date | Signature |
 |---|---|---|---|
-| Line 1 owner | P6-5 gate + S4; P5-1/2/4; P6-1/2; P6-4 runtime; v0.3/v0.4 packaging | | pending |
-| Line 2 owner | Stage A identification/join/lineage/demotion; P5-3 read side; P6-3; P6-4 data side; DS0–DS1/S6 | | pending |
-| Experienced maintainer/domain reviewer | Initial contracts, first migration/execution, governance semantics, Stage A exit | | pending |
+| Line 1 owner | P6-5 gate + S4; Learning Planner and Model transition/evaluation; P5-1/2/4; P6-1/2; P6-4 runtime; v0.3/v0.4 packaging | | pending |
+| Line 2 owner | Stage A identification/join/lineage/demotion; dataStore connectors and S6/S7/S8; P5-3 read side; P6-3; P6-4 data side; DS0–DS1 | | pending |
+| Experienced maintainer/domain reviewer | Initial contracts, first migration/execution, first learning bundle, governance semantics, Stage A exit | | pending |
 | Sub-project 1 lead | Host integration, upgrades, data retention | | pending |
 | Sub-project 2 lead | Governance semantics and schema co-sign | | pending |
 
@@ -751,7 +883,7 @@ Record evidence in the step's acceptance document; do not paste transient logs i
 
 ## 9. Non-Goals
 
-No auto-registration, auto-publish, automatic `AGENTS.md` edit, materialized declarative shadow, combined truth/authorization gate, physical deletion, or outcome-as-fact path. No Stage A certification claim, production SuperAgent claim, bulk raw-data import, automatic Skill generation, compositional DAG, RL training, or full-type NativeAdapter. DS2/DS3 implementation, DS4, and DuckDB adoption are outside the guaranteed MVP window unless separately approved.
+No forced seed workflow, auto-registration, auto-publish, automatic `AGENTS.md` edit, materialized declarative shadow, combined truth/authorization gate, indiscriminate deletion of governance evidence, or outcome-as-fact path. Personal-memory retention and erasure follow an explicit policy rather than an unlimited-retention claim. No Stage A certification claim, production SuperAgent claim, bulk raw-data import, arbitrary implementation generation, compositional DAG, RL training, general multilingual semantic claim, or full-type NativeAdapter. **Bounded template-based candidate synthesis is allowed through the existing registration gate; unreviewed Skill publication is not.** DS2/DS3 implementation, DS4, and DuckDB adoption are outside the guaranteed MVP window unless separately approved.
 
 ---
 
@@ -762,14 +894,17 @@ No auto-registration, auto-publish, automatic `AGENTS.md` edit, materialized dec
 - **v5.2:** chose integration first, then parallel runtime/dataStore work; DS0 became a background external dependency.
 - **v5.3:** defined Stage A as Markdown + Skills with full procedural management and no SuperAgent; moved Markdown lineage into Stage A.
 - **v5.4 (2026-11-19):** added standalone onboarding; reconciled Stage A tool counts/gates; defined S4; separated contract drafts from implementation gates; moved read-side P5-3/P6-3 to Line 2; reserved W20 for hardening; made DS2 post-window by default; required the lifecycle compatibility ADR and experienced initial review. Phase 4 was subsequently completed and Repo-accepted on the same date, superseding the earlier planning assumption.
+- **v5.5 (2026-11-21):** approved self-learning refinement. Added the built-in Learning Planner, passive activation from real usage, full subtask + Option + Model learning bundles, Model world-state transitions, S7/S8 evidence and learning contracts, and dataStore as a pluggable semantic evidence adapter for local/remote sources. Stage A now includes a self-learning MVP; Stage B adds continuous self-learning while preserving SuperAgent ownership and Line 2's evidence/read-side role. Extended the target to W22 with W22 reserved for hardening. Review uses author self-tests, weekly/biweekly experienced-review checkpoints, and independent experienced-reviewer PR approval rather than cross-review or a separate third-reviewer role.
 
-The old Phase 5–6 order was technically sensible for continuous execution but delayed a usable memory product behind SuperAgent. The current plan keeps the useful dependency order inside Stage B while delivering the independent memory product first.
+The old Phase 5–6 order was technically sensible for continuous execution but delayed a usable memory product behind SuperAgent. The current plan keeps the useful dependency order inside Stage B while delivering the independent memory product first. Self-learning is built into the existing subtask–Option–Model–Planner and STOMP governance chains rather than creating a separate preference-learning system.
 
 ## Appendix B. Primary References
 
+- First biweekly implementation guide: `devNotes/Week13-14-Self-Learning-MVP-and-Semantic-Evidence.md`.
 - Setup and current user workflows: `README.md`.
 - Domain and phase roadmap: `devNotes/S01最小产品路线图-完整版.md`.
 - Existing memory behavior: `devNotes/MemoryBridge开发方案.md` and `docs/phase4-memory-stomp-acceptance.md`.
+- Bilingual extraction and real-host cross-language recall: `docs/bilingual-acceptance.md`.
 - Required shared regression: `docs/memory-regression-acceptance.md`.
 - Existing event contract: `docs/planner-event-schema-v0.2.md`.
 - Continuous host boundary: `docs/continuous-host-contract.md`.
