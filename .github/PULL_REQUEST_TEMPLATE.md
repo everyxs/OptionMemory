@@ -17,7 +17,7 @@ Test iteration: <iteration and Change Log link>
 
 - [ ] `pnpm build`
 - [ ] `pnpm test`
-- [ ] `cargo build --manifest-path server/Cargo.toml --locked`
+- [ ] `CARGO_TARGET_DIR="$PWD/target" cargo build --manifest-path server/Cargo.toml --locked`
 - [ ] Required focused, isolated Mem/RocksDB, acceptance, recovery, and real-host scenarios for this increment
 
 Commands and results:

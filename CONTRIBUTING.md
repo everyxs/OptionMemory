@@ -9,7 +9,7 @@ Install Node.js >=24.9.0, pnpm 11.7.0, Rust, and the C/C++ dependencies required
 ```bash
 pnpm install --frozen-lockfile
 pnpm build
-cargo build --manifest-path server/Cargo.toml --locked
+CARGO_TARGET_DIR="$PWD/target" cargo build --manifest-path server/Cargo.toml --locked
 pnpm test
 ```
 

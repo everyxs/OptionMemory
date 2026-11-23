@@ -46,6 +46,7 @@ jobs:
       - name: Build memory adapter
         run: cargo build --manifest-path server/Cargo.toml --locked
         env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target
           CXXFLAGS: -include cstdint
 
       - name: Run tests
