@@ -8,7 +8,7 @@
  */
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync } from "node:fs";
-import { readdir, readFile } from "node:fs/promises";
+import { mkdir, readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { TEST_PORT } from "./testServer";
 
@@ -63,6 +63,7 @@ async function applySchema(): Promise<void> {
 }
 
 export default async function setup(): Promise<() => Promise<void>> {
+  await mkdir(resolve(".data"), { recursive: true });
   const exe = resolve(
     process.platform === "win32"
       ? "target/debug/mnestic-mem-adapter.exe"

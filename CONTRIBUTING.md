@@ -32,7 +32,7 @@ Line 1 and Line 2 do not cross-review. Once all three collaborators are active, 
 
 The repository remains a personal repository with three collaborators; no organization migration, formal teams, or ownership matrix is needed. Give the two implementation developers Write access and the experienced reviewer only the additional Maintain access their duties require.
 
-While `everyxs` is the only collaborator, branch protection requires pull requests and the `build-and-test` CI check but does not require an unavailable independent approval. When all three collaborators are active, require one independent approval for implementation PRs. Keep up-to-date branches, resolved conversations, and force-push/deletion blocks enabled. `CODEOWNERS` is optional and is not required for this three-person setup.
+CI runs on pushes and pull requests. Branch protection is **not currently enabled**. If it is enabled while `everyxs` is the only collaborator, require pull requests and the `build-and-test` check without an unavailable independent approval. When all three collaborators are active, require one independent approval for implementation PRs. Up-to-date branches, resolved conversations, and force-push/deletion blocks are recommended when protection is enabled. `CODEOWNERS` is optional and is not required for this three-person setup.
 
 ## Specification and evidence changes
 
