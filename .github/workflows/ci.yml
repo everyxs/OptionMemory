@@ -45,6 +45,8 @@ jobs:
 
       - name: Build memory adapter
         run: cargo build --manifest-path server/Cargo.toml --locked
+        env:
+          CXXFLAGS: -include cstdint
 
       - name: Run tests
         run: pnpm test
