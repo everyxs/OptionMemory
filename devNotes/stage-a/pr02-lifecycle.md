@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr02-lifecycle.md
 translation_status: reviewed
 owner: Line 1
-spec_version: 0.3.0
+spec_version: 0.4.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -124,10 +124,24 @@ Additional invariants:
 - **LIFE-12:** partial mixed-candidate admission returns `reconcile_required`; declarative and procedural components cannot share authority or half-register each other.
 - **LIFE-13:** recall/read annotations do not present candidates as active declarative memories or released capabilities, and source links remain distinct from J/≺.
 
+## Concrete trajectory lifecycle
+
+Reuse concrete verified trajectories and existing implementations whenever possible. A concrete procedural candidate references the observed `pi_ref`, implementation version, arguments, pre/post state, outcome, and verification lineage. It must not be converted into an abstract skill in Stage A.
+
+Reuse an existing Option/Model when compatible. If a new version is required, preserve lineage through `parent_option_id`, `parent_version`, and `origin_event_id`; never duplicate an implementation merely because a new task signature was inferred. Registration still computes/verifies `package_hash`, enforces mandate and approval, and requires independent evaluation before release.
+
+Additional author self-tests:
+
+- **LIFE-14:** a concrete trajectory reuses the observed implementation or creates a lineage-preserving version with no duplicate Option/Model.
+- **LIFE-15:** implementation/package mismatch, rejected verification, or sidecar-only evidence cannot produce release; revoked/dormant assets never reload from history.
+
+`devNotes/stage-a/concrete-learning-tests.md` defines the concrete fixture, reuse, mismatch, duplicate, and rejected-verification scenarios. Abstract procedural generation is deferred to Stage B.
+
 ## Stop conditions
 
 - Do not implement PR03 connectors or PR04 Learning Planner.
 - Do not let proactive prompts bypass lifecycle, evaluation, or Decision Gate checks.
+- Do not generate abstract skills in Stage A.
 - Do not accept generated prose as lifecycle evidence.
 - Do not merge before migration/rollback, negative suite, and lifecycle acceptance pass.
 
@@ -135,3 +149,4 @@ Additional invariants:
 
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
 - **0.3.0 (2026-11-23):** Added LIFE-09–13 for unified observation prompts, mixed candidates, prompt-safe approval/registration, and read-side status boundaries. Existing lifecycle requirements are unchanged.
+- **0.4.0 (2026-11-24):** Added LIFE-14–15 for concrete implementation reuse, lineage preservation, mismatch/rejection handling, and no duplicate-asset behavior. Abstract procedural generation moved to Stage B.

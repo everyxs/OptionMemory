@@ -80,9 +80,11 @@ The reviewer rejects any PR whose evidence is only generated prose, lacks indepe
 
 | Area | Required proof |
 |---|---|
-| Build and regression | `pnpm build` and `pnpm test`; existing 37 files / 135 tests plus all new tests pass |
+| Build and regression | `pnpm build` and `pnpm test`; the current recorded 38 files / 137 tests plus all new tests pass |
 | Lifecycle | `node scripts/stage_a_lifecycle_acceptance.ts` returns `STAGE_A_LIFECYCLE_PASS` |
 | Passive learning | `node scripts/stage_a_learning_acceptance.ts` returns `STAGE_A_LEARNING_PASS` with every procedural and unified-observation check true |
+| Concrete trajectory reuse | `devNotes/stage-a/concrete-learning-tests.md` passes with actual implementation/version lineage and no duplicate assets or abstract-skill generation |
+| Independent native evaluation | Non-source episodes produce actual native outcomes and expected-effect comparisons; sidecar-only evidence cannot release an Option |
 | Migration | Isolated Mem and RocksDB migrate, rerun, and roll back without changing historical IDs/evidence or adding an observation/preference relation |
 | State transition | Expected and actual post-state compared; invariants and unauthorized side effects checked |
 | Observation mapping | Every supported real observation can enter validation; actor, namespace, principal/consent, evidence mode, classifier version, and influence provenance are preserved |
@@ -113,15 +115,15 @@ Before PR05:
 
 1. Line 1 and Line 2 attach independent author self-test packages; neither reviews the other.
 2. Run OBS-P01–12 and OBS-D01–12 on isolated Mem and required RocksDB scenarios, then the full build/test suite.
-3. Reproduce authorized non-personal, personal-consent, declarative non-preference, procedural, mixed, unknown, and prompt-replay scenarios through one shared intake.
-4. Inspect actual rows for no new relations, combined admission gates, new tools/decision types, direct writes, shadow profiles, or replay duplicates.
+3. Reproduce the primary concrete verified-trajectory reuse scenario plus authorized non-personal, personal-consent, declarative non-preference, mixed, unknown, insufficient, and prompt-replay scenarios through one shared intake.
+4. Inspect actual rows for no new relations, combined admission gates, new tools/decision types, direct writes, shadow profiles, replay duplicates, duplicate assets, or abstract-skill generation.
 5. A red/unclassified test blocks PR05; a contract change returns to the specification-change gate.
 
 ### End of W14 — acceptance gate
 
 In addition to the existing biweekly review:
 
-1. Independently rerun all unified-observation acceptance on clean isolated RocksDB and repeat real OpenCode/DSH observation, consent, prompt, correction, namespace/principal isolation, and hash binding.
+1. Independently rerun all unified-observation and concrete-trajectory acceptance on clean isolated RocksDB and repeat real OpenCode/DSH observation, consent, prompt, correction, namespace/principal isolation, concrete implementation reuse, and hash binding.
 2. Inspect fact/J/revision/Planner/Option rows and host logs. Generated prose is not evidence.
 3. Verify zero cross-namespace/principal leaks, unauthorized writes/executions, personal evidence persisted without consent, sensitive injections, automatic `AGENTS.md` edits, new tool families, unconfirmed injections, and prompt-derived authority.
 4. Confirm declarative evidence remains outside procedural learning/held-out datasets and all OBS-A/OBS-E checks and acceptance result fields are recorded.
@@ -129,7 +131,7 @@ In addition to the existing biweekly review:
 
 ### Post-merge and full Stage A exit
 
-Post-merge, record `main` build/tests, both acceptance pass tokens, actual observation envelope, declarative fact, procedural candidate, prompt event, and learning context hash IDs, and remaining limitations. The W15 release candidate is not the W16 exit.
+Post-merge, record `main` build/tests, both acceptance pass tokens, actual observation envelope, declarative fact, procedural candidate, prompt event, native evaluation Option event, and learning context hash IDs, and remaining limitations. For concrete reuse, record gamma's `nativeEvaluationOptionEventId`, delta's native Option event in evaluation evidence references, both disjoint episode IDs, and implementation/version lineage. The W15 release candidate is not the W16 exit.
 
 At the full W16 gate, re-run observation correction, restart, retention/erasure, and lineage acceptance after Markdown-lineage and remote-connector work. Imported remote evidence must preserve source authority and evidence mode and cannot silently become native user confirmation.
 

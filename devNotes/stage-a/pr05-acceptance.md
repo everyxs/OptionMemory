@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr05-acceptance.md
 translation_status: reviewed
 owner: Line 1 (runtime acceptance) and Line 2 (evidence/regression/docs)
-spec_version: 0.3.0
+spec_version: 0.4.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -125,15 +125,46 @@ Record actual `observationEnvelopeId`, `declarativeFactId`, `proceduralCandidate
 - **OBS-E05 — prompt and limitation evidence:** actual prompt IDs/responses are idempotent and linked to gate outcomes, and documentation never claims prompts grant truth, approval, execution, or certification.
 - **OBS-E06 — bilingual parity:** English/Chinese companions describe the same observation, consent, classification, prompt, correction, and acceptance behavior.
 
+## Concrete trajectory acceptance
+
+The primary acceptance scenario uses concrete verified trajectories with a known implementation and outcome chain. It must demonstrate:
+
+```text
+Concrete verified trajectories
+→ existing implementation and outcome chain confirmed
+→ candidate with actual pi_ref/version/arguments
+→ independent native evaluation on disjoint non-source episodes
+→ approved Option reuse or lineage-preserving version
+→ verified Planner guidance
+→ demotion on contradictory evidence
+```
+
+Use `devNotes/stage-a/concrete-learning-tests.md` for the complete fixture and test matrix. Alpha and beta are source sidecar trajectories; gamma and delta are disjoint native evaluation episodes satisfying the proposed two-supporting-episode evidence heuristic. An abstract-skill case is not a Stage A scenario. Missing implementation evidence produces no procedural candidate; it must not trigger abstract generation.
+
+The acceptance result must additionally require:
+
+```json
+{
+  "concrete_trajectory_reuse": true,
+  "native_independent_evaluation": true,
+  "source_episode_exclusion": true,
+  "no_duplicate_assets": true,
+  "no_abstract_generation": true
+}
+```
+
+Record actual `nativeEvaluationOptionEventId` for gamma, implementation/version lineage, and evaluation evidence references including delta's native Option event. Sidecar-only evidence cannot satisfy the independent native evaluation check; one episode cannot supply two verdicts.
+
 ## Stop conditions
 
 - Do not mark the W16 full Stage A exit complete.
 - Do not accept generated prose as evidence or hide failing checks.
 - Do not run against production 9070 or production Markdown roots.
-- Do not pass with personal evidence persisted without consent, forced classification, prompt-derived authority, cross-namespace/principal leakage, or missing real-host evidence.
+- Do not pass with personal evidence persisted without consent, forced classification, prompt-derived authority, cross-namespace/principal leakage, missing real-host evidence, duplicate assets, or abstract-skill generation.
 
 ## Change log
 
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
 - **0.2.0 (2026-11-22):** Added PREF-A01–08 and PREF-E01–05, mandatory preference result fields and evidence IDs, and real-host/privacy/recovery acceptance. No acceptance claim.
 - **0.3.0 (2026-11-23):** Added OBS-A01–10 and OBS-E01–06 for unified observation classification, general declarative memories, consent/identity, proactive prompts, mixed candidates, and gate-separated acceptance. No acceptance claim.
+- **0.4.0 (2026-11-24):** Made concrete verified-trajectory reuse the primary acceptance scenario, added native independent evaluation/source-exclusion/no-duplicate/no-abstract checks, and moved abstract procedural generation to Stage B.

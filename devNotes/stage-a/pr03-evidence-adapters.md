@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr03-evidence-adapters.md
 translation_status: reviewed
 owner: Line 2
-spec_version: 0.3.0
+spec_version: 0.4.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -129,14 +129,32 @@ Declarative memories extend beyond preferences to assertions, corrections, recur
 - **DS-13:** identical input and classifier version produce deterministic envelope/candidate IDs after restart; replay creates no duplicates.
 - **DS-14:** sensitive fields and prompt-injection text remain non-instructional and excluded, with no direct mnestic writes or combined declarative/procedural admission gate.
 
+## Concrete trajectory mapping and sidecar unification
+
+Use one shared ingestion pipeline and one trajectory-specific sidecar adapter rather than independent sidecar and semantic-mapper implementations:
+
+```text
+Raw source → connector → authority/privacy/namespace/evidence-mode validation
+→ S7 envelope → deterministic source-specific mapping
+→ raw trajectory projections and/or declarative/concrete procedural candidates
+```
+
+Sidecar remains the trajectory compatibility implementation: it preserves raw payloads, deterministic IDs, STOMP references, unknown fields, and `SidecarMappingResult` compatibility. The shared semantic mapper handles S7 validation, idempotency, classification, candidate construction, and source/evaluation lineage. One source event must produce one envelope, one classification result, and one projection set—never duplicate ingestion or duplicate STOMP projections.
+
+A concrete procedural candidate retains the observed `pi_ref`, implementation version, arguments, outcome, and verification verdict. If those are missing, return `unknown` or `insufficient`; do not create an abstract skill. `proposed_subtask` remains a proposal until approval, and `mode=sidecar` never becomes native real through mapping.
+
+`devNotes/stage-a/concrete-learning-tests.md` defines the shared fixtures and duplicate-ingestion, concrete-reuse, unknown/insufficient, and native-evaluation requirements.
+
 ## Stop conditions
 
 - Do not implement PR04 Learning Planner or PR05 acceptance.
 - Do not turn parsed files or real observations directly into facts or Options.
 - Do not persist personal evidence without opt-in or force every observation into declarative/procedural classification.
+- Do not create duplicate sidecar and semantic-mapper ingestion paths or abstract skills in Stage A.
 - Do not import raw HTML/images/large JSONL into MemoryCore or invent missing metadata.
 
 ## Change log
 
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
 - **0.3.0 (2026-11-23):** Added unified observation validation, consent/identity requirements, deterministic declarative/procedural/mixed/unknown classification, and DS-09–14. No implementation or acceptance claim.
+- **0.4.0 (2026-11-24):** Required one shared sidecar/semantic ingestion pipeline, concrete implementation evidence, no duplicate projections, and no Stage A abstract-skill generation.

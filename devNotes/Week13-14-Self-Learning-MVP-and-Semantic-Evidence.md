@@ -125,11 +125,11 @@ The canonical contracts are:
 
 S7/S8 are payload contracts, not new top-level asset families.
 
-Use `devNotes/stage-a/README.md` for the exact isolated setup, shared implementation rules, and shared result types. The starting regression is **37 files / 135 tests**. Never use production 9070 or production Markdown roots for migration, crash, cancellation, or failure tests.
+Use `devNotes/stage-a/README.md` for the exact isolated setup, shared implementation rules, and shared result types. The current recorded regression is **38 files / 137 tests** (the original Stage A planning baseline was 37 files / 135 tests). Never use production 9070 or production Markdown roots for migration, crash, cancellation, or failure tests.
 
 ## 5. Copy-paste PR instructions
 
-Each prompt is intentionally short. Give one prompt to a coding agent and require it to read the linked spec and test plan before implementing. Authors run their own tests; there is no cross-review. Every PR also includes its assigned unified-observation deliverables, tests, and checkpoints in §5A and the 0.3.0 specifications.
+Each prompt is intentionally short. Give one prompt to a coding agent and require it to read the linked spec and test plan before implementing. Authors run their own tests; there is no cross-review. Every PR also includes its assigned unified-observation deliverables, tests, and checkpoints in §5A and the 0.4.0 specifications.
 
 ### PR01A — Line 1: lifecycle ADR, schema, and migration (Days 1–2)
 
@@ -379,18 +379,18 @@ PR01A–PR03A are complete. Read and follow exactly:
 Deliver:
 - src/runtime/learning-planner.ts and src/runtime/learning-run.ts.
 - Observation states: dormant → observing → candidate_ready → evaluating → probation/active_release or dormant_watch.
-- Task-signature consumption and bounded template-based bundle synthesis.
+- Task-signature consumption and concrete-trajectory bundle synthesis using observed implementations and version lineage; no Stage A abstract generation.
 - Model transition support with anticipated/actual post-state, invariants, critique, and drift.
-- S8 LearningRun with learning/held-out separation, baseline, and real evaluation.
+- S8 LearningRun with learning/held-out separation, source-episode exclusion, baseline, and independent native evaluation.
 - tests/learning-planner.test.ts, tests/learning-state-transition.test.ts, and tests/learning-recovery.test.ts.
 
-Use the local read-only fixture sequence in the spec and write expected-failure tests first.
+Use the concrete fixture sequence in devNotes/stage-a/concrete-learning-tests.md and write expected-failure tests first.
 
 Non-negotiables:
 - Empty memory and insufficient evidence return need_more_evidence with no candidate or forced seed.
-- Propose only full subtask + Option + Model bundles from compatible real evidence.
+- Propose only full subtask + Option + Model bundles from compatible validated trajectories with concrete implementations; preserve evidence modes and reuse/version lineage.
 - Expected and actual post-state remain distinct; read-only tasks fabricate no transition.
-- Held-out evaluation is independent and generator self-score cannot settle.
+- Held-out evaluation is independent and native, excludes source episodes, and generator self-score cannot settle.
 - Candidate generation, execution, and publication remain separate.
 - Do not implement PR05 acceptance or generate arbitrary implementation code.
 
@@ -567,7 +567,57 @@ Extend `scripts/stage_a_learning_acceptance.ts` and its existing result schema/p
 - **W14 gate:** the experienced reviewer independently reruns RocksDB and real-host scenarios, inspects actual rows/logs, verifies zero cross-namespace/principal leaks, unauthorized effects, personal evidence persisted without consent, sensitive injections, unconfirmed injections, or prompt-derived authority. Any failed gate blocks merge.
 - **Post-merge/W16:** rerun build/tests and both acceptance scripts on `main`. At the full W16 gate, revalidate observation correction, restart, retention/erasure, lineage, and remote-evidence authority after the remaining W16 work. Remote imported evidence cannot silently become native user confirmation.
 
-The canonical details are in `devNotes/stage-a/pr01-contracts.md`, `pr01-tests.md`, `pr02-lifecycle.md`, `pr03-evidence-adapters.md`, `pr04-learning-planner.md`, `pr05-acceptance.md`, and `review.md` at specification version **0.3.0**. All observation scenarios follow `iterative-testing.md`: record fixtures, expected failures, iterations, classifications, actual evidence, and limitations; no planned test or pass token is an acceptance claim before execution.
+The canonical details are in `devNotes/stage-a/pr01-contracts.md`, `pr01-tests.md`, `pr02-lifecycle.md`, `pr03-evidence-adapters.md`, `pr04-learning-planner.md`, `pr05-acceptance.md`, and `review.md` at specification version **0.4.0**. All observation scenarios follow `iterative-testing.md`: record fixtures, expected failures, iterations, classifications, actual evidence, and limitations; no planned test or pass token is an acceptance claim before execution.
+
+## 5B. Concrete evidence and implementation-reuse refinement (all PRs)
+
+Stage A's primary learning path is **concrete verified trajectories**, not abstract-skill generation. Use an existing implementation and outcome chain whenever available. Abstract procedural generation is deferred to Stage B.
+
+```text
+Concrete verified trajectory
+→ existing implementation and outcome chain confirmed
+→ candidate with actual pi_ref/version/arguments
+→ independent evaluation on a non-source episode
+→ approved Option reuse or lineage-preserving version
+→ verified Planner guidance
+→ demotion on contradictory evidence
+```
+
+A concrete procedural candidate retains `option_id`, `model_id`, `pi_ref`, implementation version, arguments, pre/post state, outcome, and verification provenance. Reuse the existing Option/Model or preserve lineage through `parent_option_id`, `parent_version`, and `origin_event_id`; never duplicate an implementation merely because a new task signature was inferred.
+
+Runtime hypotheses remain non-instructional projections. Expected effects are frozen before subsequent evaluation, not retroactively invented for historical outcomes. Source episodes are excluded from independent validation, with at most one conclusive verdict per candidate per episode. Sidecar evidence can propose but cannot release; independent native evaluation is required. Missing implementation evidence returns `unknown` or `insufficient` and never generates an abstract skill.
+
+`devNotes/stage-a/concrete-learning-tests.md` is the canonical fixture and test matrix. It covers concrete reuse, duplicate assets, rejected verification, source exclusion, precision evaluation, sidecar/native separation, shared sidecar/semantic ingestion, no duplicate projections, and the Stage A abstract-generation prohibition.
+
+### PR01A/B — concrete contracts
+
+- Keep unified observation ADR and OBS-C fixtures, adding implementation/version lineage, concrete candidate authority, source-episode exclusion, and the no-abstract-generation invariant.
+- Schema 14 remains the only new relation; runtime hypotheses remain projections, not a new memory table.
+
+### PR02A/B — concrete lifecycle and recall
+
+- Reuse existing Option/Model implementations or create lineage-preserving versions through `parent_option_id`, `parent_version`, and `origin_event_id`.
+- LIFE-14–15 prove no duplicate assets, implementation/package mismatch and rejected verification cannot release, and revoked/dormant assets never reload from history.
+- Recall distinguishes runtime observations, candidates, active memories, and released assets without shadowing.
+
+### PR03A/B — shared ingestion
+
+- Use one sidecar/semantic ingestion pipeline: one envelope, one classification result, and one projection set per source event.
+- Sidecar is the trajectory-specific compatibility implementation, not a second observation authority or a duplicate implementation of the semantic mapper.
+- DS-09–14 include concrete implementation reuse, unknown/insufficient outcomes, deterministic replay, and no duplicate ingestion.
+
+### PR04A/B — concrete learning and evaluation
+
+- Prefer concrete implementation reuse before any abstract generation. Missing implementation returns `unknown` or `insufficient` and never creates an abstract skill.
+- Expected effects are frozen before subsequent evaluation and compared with actual post-state. Source episodes are excluded and each candidate has at most one conclusive verdict per episode.
+- Sidecar-only evidence cannot release; independent native evaluation is required. Preserve implementation lineage, prompt idempotency, and `reconcile_required` behavior.
+
+### PR05A/B — concrete acceptance and evidence
+
+- Make concrete verified-trajectory reuse the primary acceptance scenario, plus declarative, mixed, unknown, insufficient, consent, prompt, privacy, replay, and recovery cases.
+- Require `concrete_trajectory_reuse`, `native_independent_evaluation`, `source_episode_exclusion`, `no_duplicate_assets`, and `no_abstract_generation` in the acceptance result.
+- Record actual native evaluation Option event, implementation/version lineage, and evidence references; do not accept sidecar-only release or duplicate assets.
+- Extend the sanitized evidence package with concrete trajectory and evaluation lineage without raw logs or absolute local paths.
 
 ## 6. Review and acceptance
 

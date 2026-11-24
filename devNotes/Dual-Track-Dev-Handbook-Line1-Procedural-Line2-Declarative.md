@@ -1,15 +1,15 @@
 ---
 创建时间: 2026-11-18
 更新时间: 2026-11-24
-类型: Development handbook and developer onboarding (Dual-Track v5.8, English edition)
+类型: Development handbook and developer onboarding (Dual-Track v5.9, English edition)
 所属项目: "26-04 AI4Science"
-对应路线图: "S01 Minimal Product Roadmap (full edition) §3.1A / §10.4B / §11.5B / §17; Week13-14 and Week15-16 handbooks, subject to §0.2 overrides; approved self-learning, unified-observation, and Stage B personalization refinement"
-状态: v5.8 unified-observation and Stage B personalization refinement drafted; Phase 4 closed and Repo-accepted; Stage A next
+对应路线图: "S01 Minimal Product Roadmap (full edition) §3.1A / §10.4B / §11.5B / §17; Week13-14 and Week15-16 handbooks, subject to §0.2 overrides; approved self-learning, unified-observation, concrete-trajectory, and Stage B personalization refinement"
+状态: v5.9 unified-observation and concrete-trajectory refinement drafted; Phase 4 closed and Repo-accepted; Stage A next
 tags:
   - dev-handbook
   - developer-onboarding
   - dual-track
-  - v5.8
+  - v5.9
   - self-learning
   - semantic-evidence-adapters
   - procedural-governance
@@ -113,9 +113,9 @@ tags:
     world-state transition model: 世界状态迁移模型（前置假设、预期/实际后态、不变量与漂移）
 ---
 
-# Dual-Track Development Handbook (v5.8): Self-Learning Memory × Continuous Runtime + Semantic dataStore
+# Dual-Track Development Handbook (v5.9): Self-Learning Memory × Continuous Runtime + Semantic dataStore
 
-> **Current edition: 2026-11-24.** This refinement preserves the dual-track product split, the built-in procedural Learning Planner, and the semantic dataStore adapter layer. Stage A adds unified observation validation and deterministic declarative/procedural/mixed/unknown/insufficient classification with bounded proactive prompts and distinct admission gates. Stage B adds stable individual identity, explicit profile scopes, and broader structured memory through the same governance model. Authorized non-personal evidence may be passive; personal evidence requires opt-in before persistence. These are planning additions, not implementation or acceptance claims.
+> **Current edition: 2026-11-24.** This refinement preserves the dual-track product split, the built-in procedural Learning Planner, and the semantic dataStore adapter layer. Stage A adds unified observation validation and deterministic declarative/procedural/mixed/unknown/insufficient classification with bounded proactive prompts and distinct admission gates, with concrete verified trajectories and implementation reuse as the primary learning path. Stage B adds stable individual identity, explicit profile scopes, broader structured memory, and abstract procedural generation through the same governance model. Authorized non-personal evidence may be passive; personal evidence requires opt-in before persistence. These are planning additions, not implementation or acceptance claims.
 >
 > - **Stage A (W13–W16), joint:** a usable Markdown + Skills memory product plus a **passive self-learning MVP**, with zero SuperAgent dependency.
 > - **Stage B (W17–W21), parallel:** Line 1 delivers continuous self-learning and SuperAgent integration; Line 2 delivers semantic evidence adaptation, read-side lineage/export, and dataStore interfaces.
@@ -174,7 +174,7 @@ Status words in this handbook are deliberate:
 
 When documents disagree, use this order:
 
-1. **This v5.8 handbook:** future staging, ownership, learning/evidence contracts, acceptance gates, and schedule.
+1. **This v5.9 handbook:** future staging, ownership, learning/evidence contracts, acceptance gates, and schedule.
 2. `devNotes/S01最小产品路线图-完整版.md`: domain goals, phase baselines, and dataStore requirements.
 3. `docs/*acceptance*.md` and phase baselines: historical evidence of what was actually accepted.
 4. `README.md`: installation and everyday operation.
@@ -182,7 +182,7 @@ When documents disagree, use this order:
 
 The Week 13–14 and Week 15–16 handbooks are **not followed verbatim**. Their technical detail is reused only after the corresponding step starts and its current gate is confirmed.
 
-| Topic | Current v5.8 rule | Older text to disregard |
+| Topic | Current v5.9 rule | Older text to disregard |
 |---|---|---|
 | Phase 4 baseline | Closed and Repo-accepted on 2026-11-19; see §0.1 | Statements that Stage A cannot start because Phase 4 is still open |
 | P6-5 placement | Stage A, before generation/certification | Requirements that Phase 5 or P6-1–P6-4 close first |
@@ -398,7 +398,7 @@ A hash proves implementation identity/integrity, not safety, correctness, or cer
 
 ---
 
-## 2. Final Assignment and Schedule (v5.8)
+## 2. Final Assignment and Schedule (v5.9)
 
 ### 2.1 Delivery table
 
@@ -411,8 +411,8 @@ A hash proves implementation identity/integrity, not safety, correctness, or cer
 | S4 governed Skill execution through NativeAdapter/OptionExecutor | Line 1 | W13–14 | Author self-test + weekly experienced review |
 | Learning Planner v0.1: passive triggers, observation contexts, task signatures, full bundle proposals | Line 1 | W14–15 | Author self-test + weekly experienced review + domain review |
 | Model transition/evaluation: pre/post state, anticipation, invariants, critique, drift | Line 1 | W14–15 | Author self-test + weekly experienced review |
-| Bounded proactive `ask`/`wait`/`replan` prompts, declarative `planner_context`, namespace/principal/audit hash, scheduler propagation, and OBS-P tests | Line 1 | W14–15 | Author self-test + M0/PR04 gates + real-host experienced review |
-| S7 ObservationPattern payload, deterministic observation classification, candidate/prompt lineage, live query/revision, and OBS-C/OBS-D/DS-09–14 tests | Line 2 | W13–15 | Author self-test + M0/PR04 gates + evidence review |
+| Bounded proactive `ask`/`wait`/`replan` prompts, concrete trajectory learning, declarative `planner_context`, namespace/principal/audit hash, scheduler propagation, and OBS-P tests | Line 1 | W14–15 | Author self-test + M0/PR04 gates + real-host experienced review |
+| S7 ObservationPattern payload, deterministic observation classification, shared sidecar/semantic ingestion, concrete implementation lineage, candidate/prompt lineage, live query/revision, and OBS-C/OBS-D/DS-09–14 tests | Line 2 | W13–15 | Author self-test + M0/PR04 gates + evidence review |
 | P5-5 `bridge_recall` live-read join and status annotation | Line 2 | W13–14 | Author self-test + weekly experienced review |
 | P6-5 candidate identification over Markdown/Skill projections | Line 2 | W13–14 | Author self-test + weekly experienced review |
 | Initial dataStore connectors and S7 semantic mapping: Markdown, SKILL.md, CSV/JSONL, trajectory exports | Line 2 | W14–15 | Author self-test + weekly experienced review |
@@ -483,7 +483,7 @@ All items are due at **W16**, not the W15 release-candidate demo:
 - [ ] Markdown knowledge and Skill narratives return with settled/released metadata, and Markdown source links and Recall/revision chains are queryable.
 - [ ] S1–S4 and minimal S6/S7/S8 fixtures and negative suites pass; S5 implementation remains a Stage B gate.
 - [ ] Schema 14 migration and rollback pass on isolated Mem/RocksDB copies; no observation/preference relation or schema 15 is introduced.
-- [ ] OBS-C/OBS-D/OBS-P/OBS-A/OBS-E and DS-09–14 scenarios prove unified observation validation, deterministic declarative/procedural/mixed/unknown/insufficient classification, general declarative memories, prompt idempotency, and gate-separated authority. Authorized non-personal evidence may be passive; personal evidence requires opt-in and stable principal identity before persistence. Correction/revision, retention/erasure, audit-hash binding, restart/replay, and real OpenCode/DSH evidence pass.
+- [ ] OBS-C/OBS-D/OBS-P/OBS-A/OBS-E and DS-09–14 scenarios prove unified observation validation, deterministic declarative/procedural/mixed/unknown/insufficient classification, general declarative memories, prompt idempotency, and gate-separated authority. The primary scenario reuses a concrete verified trajectory and its implementation/version lineage with no duplicate asset and no abstract-skill generation. Authorized non-personal evidence may be passive; personal evidence requires opt-in and stable principal identity before persistence. Correction/revision, retention/erasure, source-episode exclusion, independent native evaluation, audit-hash binding, restart/replay, and real OpenCode/DSH evidence pass.
 - [ ] The memory-governance family remains exactly **7 tools**, Stage A remains at **13 total tools**, and no new host tool family, observation subsystem, or combined admission gate is added.
 - [ ] No Stage A product code imports or calls SuperAgent adapter/Ticket/Attention/deliver/stop APIs.
 - [ ] No claim of ω_certify, general multilingual semantic recall, RL readiness, arbitrary code generation, or full continuous service is made.
@@ -510,7 +510,13 @@ These are future Stage B capabilities, not additional Stage A acceptance claims.
 - **MEM-02:** unknown or sensitive fields remain unmapped/excluded and never reach Planner context or logs.
 - **MEM-03:** scope/correction/restart/replay preserves fact/version lineage and deterministic read behavior without duplicates or cross-scope leakage.
 
-These follow-ups require identity, privacy, public-contract, and cross-line experienced review before implementation. Existing Stage A OBS and DS tests remain their prerequisite; future ID/SCOPE/MEM tests are added only when the corresponding Stage B issue is opened.
+**Abstract procedural generation — Stage B.** Abstract skills remain procedural candidates, not declarative memories. Generate them only after concrete trajectory reuse is exhausted, using bounded curated implementations or plan templates with explicit `proposed_subtask`, immutable packages, approval, and independent native evaluation. Stage A must not generate abstract skills.
+
+- **GEN-01:** missing implementation evidence produces `unknown`/`insufficient` in Stage A and never creates an abstract candidate; Stage B evaluates a bounded abstract candidate through the full procedural lifecycle.
+- **GEN-02:** abstract generation never duplicates an existing implementation and always preserves `parent_option_id`, `parent_version`, and `origin_event_id` lineage when a version is created.
+- **GEN-03:** generated packages remain untrusted until package hash, approval, mandate, registration, and independent native evaluation pass; sidecar-only evidence cannot release them.
+
+These follow-ups require identity, privacy, public-contract, and cross-line experienced review before implementation. Existing Stage A OBS and DS tests plus `devNotes/stage-a/concrete-learning-tests.md` remain their prerequisite; future ID/SCOPE/MEM/GEN tests are added only when the corresponding Stage B issue is opened.
 
 ### 2A. MD-Memory and evidence tracks
 
@@ -676,16 +682,16 @@ Stage B separately revalidates the same pipeline under real execution evidence, 
 
 ### 4.3 Learning Planner v0.1 — passive self-learning (Stage A)
 
-The Learning Planner is a built-in control-plane service, not a host tool or a new asset family. It starts in `dormant`, enters `observing` only after a valid native evidence chain exists, and returns `need_more_evidence` when the task signature or evaluation basis is insufficient.
+The Learning Planner is a built-in control-plane service, not a host tool or a new asset family. It starts in `dormant`, enters `observing` only after a validated evidence chain exists, and returns `need_more_evidence` when the task signature, implementation, or evaluation basis is insufficient. Imported trajectories remain `sidecar` and cannot establish native real execution.
 
 Required behavior:
 
-1. Consume native STOMP evidence and S7 envelopes without inventing missing subtask, Model, rationale, state, or outcomes.
-2. Derive task signatures from goal, input/output schema, applicable scope, mandate, and declarative premises.
-3. Propose complete subtask + Option + Model bundles using bounded templates, with immutable implementation packages, J/≺, and idempotency.
+1. Consume native STOMP evidence and shared S7/sidecar mappings without inventing missing subtask, Model, rationale, state, or outcomes.
+2. Derive task signatures from goal, input/output schema, applicable scope, mandate, and declarative premises; map them to `proposed_subtask` until approval.
+3. Propose complete subtask + Option + Model bundles from concrete verified trajectories, reusing the observed implementation or preserving version lineage, with immutable packages, J/≺, and idempotency. Do not generate abstract skills in Stage A.
 4. Include a world-transition model when applicable: pre-state, anticipated post-state, postconditions, invariants, actual post-state, critique, and drift.
-5. Produce an S8 LearningRun with learning/held-out separation, baseline, and real evaluation through a natural subsequent task or an approved isolated run.
-6. Promote only through the existing registration gate and lifecycle. No direct asset creation, self-certification, automatic `AGENTS.md` edit, or arbitrary implementation generation.
+5. Produce an S8 LearningRun with source-episode exclusion, learning/held-out separation, baseline, and independent native evaluation through a natural subsequent task or an approved isolated run.
+6. Promote only through the existing registration gate and lifecycle. No direct asset creation, duplicate implementation, self-certification, automatic `AGENTS.md` edit, or arbitrary implementation generation.
 
 Observation states are `dormant → observing → candidate_ready → evaluating → probation/active_release or dormant_watch`. These are learning-run states, not new capability-asset states.
 
@@ -922,7 +928,7 @@ Record evidence in the step's acceptance document; do not paste transient logs i
 
 ## 9. Non-Goals
 
-No forced seed workflow, auto-registration, auto-publish, automatic `AGENTS.md` edit, materialized declarative shadow, combined truth/authorization gate, indiscriminate deletion of governance evidence, or outcome-as-fact path. Personal-memory retention and erasure follow an explicit policy rather than an unlimited-retention claim. No Stage A certification claim, production SuperAgent claim, bulk raw-data import, arbitrary implementation generation, compositional DAG, RL training, general multilingual semantic claim, or full-type NativeAdapter. **Bounded template-based candidate synthesis is allowed through the existing registration gate; unreviewed Skill publication is not.** DS2/DS3 implementation, DS4, and DuckDB adoption are outside the guaranteed MVP window unless separately approved.
+No forced seed workflow, auto-registration, auto-publish, automatic `AGENTS.md` edit, materialized declarative shadow, combined truth/authorization gate, indiscriminate deletion of governance evidence, or outcome-as-fact path. Personal-memory retention and erasure follow an explicit policy rather than an unlimited-retention claim. No Stage A certification claim, production SuperAgent claim, bulk raw-data import, abstract-skill or arbitrary implementation generation, compositional DAG, RL training, general multilingual semantic claim, or full-type NativeAdapter. **Stage A candidate synthesis reuses concrete observed implementations and preserves version lineage through the existing registration gate; bounded abstract procedural generation is deferred to Stage B. Unreviewed Skill publication is never allowed.** DS2/DS3 implementation, DS4, and DuckDB adoption are outside the guaranteed MVP window unless separately approved.
 
 ---
 
@@ -937,6 +943,7 @@ No forced seed workflow, auto-registration, auto-publish, automatic `AGENTS.md` 
 - **v5.6 (2026-11-22):** drafted required declarative-preference personalization within the existing S6/S7 → FactCandidate → ν-gate → facts lane and bounded Planner live read. Integrated contracts/tests/acceptance into PR01A/B, PR04A/B, and PR05A/B with PREF scenarios and M0/PR04/W14/W16 checkpoints. Explicit and explicitly confirmed preferences only; no preference-specific storage, lifecycle, learner, tools, automatic inference promotion, or held-out Skill evaluation. This is a planning addition, not an implementation or acceptance claim.
 - **v5.7 (2026-11-23):** generalized preference-specific work into unified observation-driven learning across all PRs. All real observations enter authority/privacy/namespace/evidence-mode validation; deterministic declarative/procedural/mixed/unknown/insufficient classification feeds distinct FactCandidate and S1 paths. General declarative memories, authorized non-personal passive evidence, personal opt-in/principal identity, mixed candidates, and bounded proactive prompts are specified with OBS-C/OBS-P/OBS-D/OBS-A/OBS-E and DS-09–14 tests and M0/PR04/W14/W16 gates. Prompts never merge the ν-gate and registration gate or confer authority. No implementation or acceptance claim.
 - **v5.8 (2026-11-24):** added Stage B personalization follow-ups with stable individual identity and host/principal mapping owned by Line 1, and explicit personal/project/shared-team/approved cross-project profile scopes plus broader versioned structured memories owned by Line 2. Added ID-01–03, SCOPE-01–03, and MEM-01–03 acceptance cases, dependency ordering, privacy/identity/cross-line review, and W22 hardening boundaries. These are future plans, not Stage A implementation or acceptance claims.
+- **v5.9 (2026-11-24):** made concrete verified trajectories and implementation reuse the primary Stage A learning path. Required one shared sidecar/semantic ingestion pipeline, runtime-candidate-verified hierarchy, expected-effect evaluation, source-episode exclusion, native independent evaluation, and duplicate-asset prevention. Abstract procedural generation moved to Stage B with GEN-01–03 and a canonical concrete-learning test matrix. No implementation or acceptance claim.
 
 The old Phase 5–6 order was technically sensible for continuous execution but delayed a usable memory product behind SuperAgent. The current plan keeps the useful dependency order inside Stage B while delivering the independent memory product first. Self-learning is built into the existing subtask–Option–Model–Planner and STOMP governance chains rather than creating a separate observation-learning subsystem.
 

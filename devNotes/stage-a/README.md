@@ -78,8 +78,9 @@ PR02/PR03 and PR04/PR05 may proceed in parallel only when they do not touch the 
 | `pr01-tests.md` | Migration fixtures, assertions, execution commands, and OBS-C observation contract tests |
 | `pr02-lifecycle.md` | Lifecycle APIs, invariants, fixture, prompt-safe approval, and self-tests |
 | `pr03-evidence-adapters.md` | Connector contracts, semantic mappings, observation classification, and self-tests |
-| `pr04-learning-planner.md` | Passive-learning algorithm, Model transitions, proactive prompts, fixture sequence, and self-tests |
-| `pr05-acceptance.md` | Acceptance sequence, result schema, and unified observation evidence requirements |
+| `pr04-learning-planner.md` | Passive-learning algorithm, Model transitions, proactive prompts, concrete trajectory learning, fixture sequence, and self-tests |
+| `pr05-acceptance.md` | Acceptance sequence, result schema, unified observation and concrete trajectory evidence requirements |
+| `concrete-learning-tests.md` | Concrete trajectory fixtures, runtime-candidate-verified tests, evaluation invariants, acceptance fields, and merge blockers |
 | `iterative-testing.md` | Failure classification, spec refinement, versioning, and new-scenario template |
 | `review.md` | Weekly/biweekly review, independent reproduction, merge protocol, evidence matrix, and sign-off template |
 
@@ -98,7 +99,7 @@ pnpm build
 pnpm test
 ```
 
-The starting regression baseline is **37 files / 135 tests**. Add tests to this baseline rather than replacing it.
+The current recorded regression baseline is **38 files / 137 tests**; the original Stage A planning baseline was 37 files / 135 tests. Add tests to the current baseline rather than replacing it, and rerun it on every change.
 
 ## Shared implementation rules
 
@@ -117,7 +118,7 @@ The starting regression baseline is **37 files / 135 tests**. Add tests to this 
 13. Candidate Skill code is untrusted. Hash checks and approval do not replace sandboxing or least-privilege mandates.
 14. Stop every spawned service after acceptance and retain only required evidence under `.data/`.
 15. Read `docs/memory-regression-acceptance.md` before changing existing capture, Recall, revision, permission, or recovery behavior.
-16. All real observations enter authority/privacy/namespace/evidence-mode validation. Authorized non-personal evidence may be passive; personal evidence requires opt-in and stable principal identity before persistence. Prompts are bounded and idempotent and never replace the applicable admission gate.
+16. All real observations enter authority/privacy/namespace/evidence-mode validation. Authorized non-personal evidence may be passive; personal evidence requires opt-in and stable principal identity before persistence. Prompts are bounded and idempotent and never replace the applicable admission gate. Prefer concrete verified trajectories and existing implementations; do not generate abstract skills in Stage A.
 
 Shared result types:
 

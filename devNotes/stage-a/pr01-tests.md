@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr01-tests.md
 translation_status: reviewed
 owner: Line 1 (migration) and Line 2 (evidence fixtures)
-spec_version: 0.3.0
+spec_version: 0.4.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c

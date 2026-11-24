@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr01-contracts.md
 translation_status: reviewed
 owner: Line 1 (ADR/schema/migration) and Line 2 (S6/S7/S8 evidence contracts)
-spec_version: 0.3.0
+spec_version: 0.4.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -265,11 +265,38 @@ Line 1 resolves a validated namespace from `subtasks.context` and, for personal 
 
 The hash canonically covers policy version, namespace/principal scope, and sorted injected fact IDs, lineage versions, and update/revision tokens. Extend the existing Planner decision contract additively to carry this hash when declarative context is present. `submitPlannerDecision()` rejects stale or mismatched context before decision/execution side effects; the scheduler forwards the hash from its context read. Record the hash and exact injected references in `planner_event.context_json`.
 
+## Concrete evidence and implementation-reuse contract
+
+Use concrete verified trajectories whenever an implementation and outcome chain already exists. Do not force every observation into an abstract-skill template, and do not generate abstract skills in Stage A.
+
+A concrete procedural candidate must preserve, when available:
+
+- `option_id`, `model_id`, `pi_ref`, implementation version, and arguments.
+- Pre-state, post-state, environment, error, outcome, and verification verdict.
+- Source/episode IDs, evidence refs, and idempotency metadata.
+
+Candidate task signatures map to `proposed_subtask`, never directly to an authoritative subtask before approval. Reuse an existing Option/Model when compatible, or create a lineage-preserving version through `parent_option_id`, `parent_version`, and `origin_event_id`. Never duplicate an existing implementation merely because a new task signature was inferred.
+
+The hierarchy remains:
+
+```text
+Runtime observation metadata
+→ declarative candidate OR concrete procedural candidate
+→ independent evaluation and applicable approval
+→ verified declarative fact or existing/new-version Option/Model
+→ demotion on contradictory evidence
+```
+
+Runtime hypotheses are read-side projections, not a new memory relation. Expected effects are frozen before subsequent evaluation, not retroactively invented for historical outcomes. Source episodes are excluded from independent validation, with at most one conclusive verdict per candidate per episode. Sidecar evidence can propose a candidate but cannot release it; native independent evaluation is required.
+
+Review `devNotes/stage-a/concrete-learning-tests.md` for fixtures, reuse cases, negative cases, evaluation invariants, and acceptance fields. If no usable implementation exists, return `unknown` or `insufficient` and retain metadata only—do not generate an abstract skill.
+
 ## Stop conditions
 
 - Do not implement PR02 lifecycle execution or PR03 connectors/classification.
 - Do not implement PR04 prompt handling, candidate admission, or Planner context in PR01.
 - Do not permit persistent personal observation without opt-in, or treat all real observations as candidates.
+- Do not generate abstract skills in Stage A.
 - Do not use production data or delete an unknown `_next` relation.
 - Do not mark later acceptance scripts as passing.
 - Stop and request domain review if registration or evidence models must change.
@@ -279,3 +306,4 @@ The hash canonically covers policy version, namespace/principal scope, and sorte
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
 - **0.2.0 (2026-11-22):** Added governed declarative-preference contracts, S7 feedback payload, Planner read/audit semantics, and PREF-ADR review cases. This is a backward-compatible planning addition and no implementation or acceptance claim.
 - **0.3.0 (2026-11-23):** Generalized preferences into unified observation-driven declarative learning with authorized passive intake, deterministic mixed-pattern classification, stable personal identity, bounded proactive prompts, and distinct ν-gate/registration authority. No implementation or acceptance claim.
+- **0.4.0 (2026-11-24):** Added concrete verified-trajectory-first contracts, shared sidecar/semantic ingestion, runtime-candidate-verified hierarchy, expected-effect evaluation, implementation reuse, and Stage B-only abstract procedural generation. No implementation or acceptance claim.

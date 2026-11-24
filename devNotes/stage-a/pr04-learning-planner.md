@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr04-learning-planner.md
 translation_status: reviewed
 owner: Line 1 (Learning Planner, proactive prompts, and Planner context) and Line 2 (observation evidence and candidate mappings)
-spec_version: 0.3.0
+spec_version: 0.4.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -21,9 +21,9 @@ Produce a complete learning candidate only after compatible real evidence exists
 - `src/runtime/learning-planner.ts` and `src/runtime/learning-run.ts`.
 - Observation states: `dormant → observing → candidate_ready → evaluating → probation/active_release or dormant_watch`.
 - Task-signature derivation from goal, input/output schema, scope, mandate, and declarative premises.
-- Bounded template-based bundle synthesis; no arbitrary implementation generation.
+- Bounded concrete-trajectory bundle synthesis using observed implementations and version lineage; no Stage A abstract-skill or arbitrary implementation generation.
 - Model transition support: pre-state, anticipated post-state, actual post-state, postconditions, invariants, critique, and drift.
-- S8 LearningRun with learning/held-out separation, baseline, and real evaluation.
+- S8 LearningRun with learning/held-out separation, baseline, and independent native evaluation.
 - `tests/learning-planner.test.ts`, `tests/learning-state-transition.test.ts`, and `tests/learning-recovery.test.ts`.
 
 ## Learning API
@@ -52,22 +52,16 @@ export async function evaluateLearningBundle(candidate: LearningBundle): Promise
 
 1. Validate source authority, namespace, evidence mode, and any available subtask/plan_run/option_event chain. Store only an observation context on first valid evidence.
 2. Derive a task signature from goal, input/output schema, allowed effects, and declarative premise IDs. If not comparable, keep it null and return `need_more_evidence`.
-3. Group only identical task signatures and the same namespace. Never mix simulated/sidecar with native real evidence.
-4. The default MVP policy proposes a candidate after **two compatible native real observations**. This is a proposal threshold, not a success or certification threshold.
-5. Build a complete bundle from a bounded template: subtask scope, Option implementation, Model evidence/evaluation specs, premise IDs, and `approval_ref=null`.
-6. When state changes apply, populate expected transition and invariants. Otherwise set `expected_transition=null`.
-7. Evaluate on the next natural task or an approved isolated run. Held-out refs must not overlap learning refs.
-8. Record actual post-state, independent evidence, and `generator_score=null` in S8. Promotion still requires approval and the normal registration gate.
+3. Group only identical task signatures, namespace, evidence mode, and compatible implementation identity. Never mix simulated/sidecar with native real evidence.
+4. The default native-observation policy proposes a candidate after **two compatible native real observations**. The concrete sidecar scenario uses two compatible verified trajectories to create one proposal. Neither threshold establishes success or certification.
+5. Build a complete bundle from a concrete verified trajectory: `proposed_subtask`, observed `pi_ref`/implementation version and arguments, Model evidence/evaluation specs, premise IDs, and `approval_ref=null`. Reuse a compatible Option/Model or preserve version lineage through PR02; do not generate an abstract skill.
+6. When state changes apply, freeze expected transition and invariants in `model_event(anticipation)` before subsequent evaluation. Otherwise set `expected_transition=null`; never reconstruct expected effects retroactively from historical outcomes.
+7. Evaluate on the next natural task or an approved isolated native run on a non-source episode. Exclude all learning episodes and allow at most one conclusive verdict per candidate per episode.
+8. Record actual post-state, independent evidence, and `generator_score=null` in S8. Promotion still requires approval and the normal registration gate; sidecar-only evidence cannot release.
 
 ## Fixture sequence
 
-Use a local read-only fixture:
-
-```text
-Observation A: local note alpha.md → expected value A
-Observation B: local note beta.md → expected value B
-Held-out: local note gamma.md → expected value C
-```
+Use the planned concrete fixtures and expected results in `concrete-learning-tests.md`: alpha and beta are compatible concrete sidecar trajectories; gamma and delta are disjoint episodes for independent native evaluation. Imported trajectories retain `mode=sidecar`; only actual approved native evaluation supplies native real execution evidence.
 
 ## Acceptance sequence
 
@@ -161,13 +155,30 @@ Before PR05:
 4. Inspect actual rows to prove no new relations, combined admission gate, new tools/decision types, direct writes, or replay duplicates.
 5. Any red or unclassified test blocks PR05. Any contract change returns to the specification-change gate.
 
+## Concrete trajectory learning and evaluation
+
+Prefer concrete verified trajectories over abstract generation. A runtime hypothesis may inform the next decision in the same episode as non-instructional context, but it is not a fact, Option, or confirming observation.
+
+A procedural candidate is created only when the trajectory supplies a concrete implementation and outcome chain: `option_id`, `model_id`, `pi_ref`, version, arguments, pre/post state, outcome, and verification provenance. Reuse the existing implementation or preserve its version lineage. Missing implementation evidence returns `unknown` or `insufficient`, never an abstract skill.
+
+Evaluation must:
+
+- Freeze expected effects before subsequent execution and compare them with actual post-state evidence.
+- Exclude source episodes from independent validation and allow at most one conclusive verdict per candidate per episode.
+- Keep learning and held-out trajectories disjoint and preserve evidence modes.
+- Use deterministic support/precision calculations without calling them calibrated confidence.
+- Require independent native evaluation for release; sidecar evidence alone cannot release.
+- Use `model_event(anticipation)` for expected effects and `model_event(critique/drift)` for counterevidence and demotion.
+
+`devNotes/stage-a/concrete-learning-tests.md` defines the concrete reuse case, evaluation invariants, support/precision policy, and prohibition on Stage A abstract-skill generation.
+
 ## Stop conditions
 
 - Do not implement PR05 acceptance.
 - Do not create separate preference storage, lifecycle, confidence model, learner, or tool family, and do not combine the ν-gate and registration gate.
 - Do not persist personal observations without opt-in or treat every real observation as a candidate.
 - Do not let prompts confer truth, approval, execution authority, or certification.
-- Do not generate arbitrary implementation code or release/certify based on generator self-score.
+- Do not generate abstract skills or arbitrary implementation code in Stage A, or release/certify based on generator self-score.
 - Do not inject unconfirmed inference, raw personal payloads, or cross-namespace/principal memories.
 
 ## Change log
@@ -175,3 +186,4 @@ Before PR05:
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
 - **0.2.0 (2026-11-22):** Added two-line declarative-preference deliverables, PREF-P01–10 and PREF-D01–10, and the PR04 integration checkpoint. No implementation or acceptance claim.
 - **0.3.0 (2026-11-23):** Generalized preferences into unified observation-driven declarative learning with proactive bounded prompts, consent/identity rules, mixed candidate handling, and distinct admission gates. No implementation or acceptance claim.
+- **0.4.0 (2026-11-24):** Made concrete verified trajectories and implementation reuse the primary learning path, with runtime-candidate-verified guidance, source exclusion, native evaluation, and abstract procedural generation deferred to Stage B.
