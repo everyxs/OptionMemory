@@ -129,8 +129,19 @@ describe("shared persistent scheduler", () => {
     const first = await enqueueExecute("scheduler-serial-1");
     const second = await enqueueExecute("scheduler-serial-2");
     let release!: (value: PlannerDecision) => void;
+    let decisionStartedResolve!: () => void;
+    const decisionStarted = new Promise<void>((resolve) => { decisionStartedResolve = resolve; });
     const waiting = new Promise<PlannerDecision>((resolve) => { release = resolve; });
-    const firstProcess = processRuntimeInbox({ event_id: first.id, owner: "owner-a", planner_id: "scheduler_planner", decide: () => waiting });
+    const firstProcess = processRuntimeInbox({
+      event_id: first.id,
+      owner: "owner-a",
+      planner_id: "scheduler_planner",
+      decide: () => {
+        decisionStartedResolve();
+        return waiting;
+      },
+    });
+    await decisionStarted;
     const secondProcess = await processRuntimeInbox({ event_id: second.id, owner: "owner-b", planner_id: "scheduler_planner" });
     expect(secondProcess.status).toBe("subtask_lease_unavailable");
     release(executeDecision);
