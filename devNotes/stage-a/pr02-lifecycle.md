@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr02-lifecycle.md
 translation_status: reviewed
 owner: Line 1
-spec_version: 0.1.0
+spec_version: 0.3.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -103,12 +103,35 @@ implementation package = SKILL.md + local read-only script
 - **LIFE-07:** outcomes and calibration never become independent declarative facts.
 - **LIFE-08:** crash/retry/restart creates no duplicate Option, Model, event, or release.
 
+## Unified observation authority boundaries
+
+PR02's procedural lifecycle remains unchanged and is the only path that can approve, register, release, or revoke a procedural candidate. Proactive prompts may supply approval input to these existing APIs, but a prompt response itself changes no candidate, fact, Option, Model, release, or execution state.
+
+Additional invariants:
+
+- `approveProceduralCandidate` remains the sole `proposed → approved` transition; `registerApprovedCandidate` remains the sole registration path.
+- Declarative candidates never use procedural approval/registration APIs; they proceed through S6/ν-gate to facts + J/≺.
+- Mixed observations produce separate declarative and S1 components with shared source references but independent admission and recovery.
+- Prompt approval never replaces package verification, mandate checks, independent held-out evaluation, or Decision Gate.
+- A prompt response is not independent execution evidence and cannot settle, certify, or authorize an Option.
+- Recall/read annotations distinguish candidates, active declarative memories, and released procedural assets; no candidate becomes an active suggestion merely because it was observed.
+
+### Additional author self-tests
+
+- **LIFE-09:** prompt-only approval cannot approve, register, release, or execute a candidate; only the existing approval/registration APIs work.
+- **LIFE-10:** a declarative or mixed candidate cannot create an Option through the procedural path without its complete S1 bundle and independent evaluation.
+- **LIFE-11:** prompt replay creates no duplicate approval, registration, release, Option event, or revision, and dismissal/rejection is not approval.
+- **LIFE-12:** partial mixed-candidate admission returns `reconcile_required`; declarative and procedural components cannot share authority or half-register each other.
+- **LIFE-13:** recall/read annotations do not present candidates as active declarative memories or released capabilities, and source links remain distinct from J/≺.
+
 ## Stop conditions
 
 - Do not implement PR03 connectors or PR04 Learning Planner.
+- Do not let proactive prompts bypass lifecycle, evaluation, or Decision Gate checks.
 - Do not accept generated prose as lifecycle evidence.
 - Do not merge before migration/rollback, negative suite, and lifecycle acceptance pass.
 
 ## Change log
 
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
+- **0.3.0 (2026-11-23):** Added LIFE-09–13 for unified observation prompts, mixed candidates, prompt-safe approval/registration, and read-side status boundaries. Existing lifecycle requirements are unchanged.

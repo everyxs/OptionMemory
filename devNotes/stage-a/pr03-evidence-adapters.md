@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr03-evidence-adapters.md
 translation_status: reviewed
 owner: Line 2
-spec_version: 0.1.0
+spec_version: 0.3.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -91,12 +91,52 @@ A changed file creates a new envelope version rather than silently mutating hist
 - **DS-07:** no direct mnestic writes, no universal lossy schema, and no mandatory dataStore round trip for native STOMP.
 - **DS-08:** identical connector input produces the same deterministic envelope and idempotency result after restart.
 
+## Unified observation validation and classification
+
+All real observations may enter authority, privacy, namespace, and evidence-mode validation. Only validated, relevant observations produce candidates. Authorized non-personal operational evidence may be collected passively without an additional opt-in. Personal or behavioral evidence requires opt-in and a stable `principal_id` before persistent observation, candidate storage, or raw-payload retention; pre-consent processing is transient.
+
+Line 1's PR03A native/STOMP linkage must preserve actor, source event, namespace, principal ID where applicable, consent state, evidence mode, and idempotency through existing host/subtask/Planner/Option chains. Native activity does not require a dataStore round trip, and personal evidence cannot be persisted before consent.
+
+Line 2's PR03B mappers use the PR01 `ObservationPattern` payload and return:
+
+```text
+classification = declarative | procedural | mixed | unknown | insufficient
+classifier_version = approved deterministic version
+fact_candidates = declarative components, when validated
+procedural_candidates = S1 components, when validated
+unmapped = unsupported or unsafe fields
+```
+
+Declarative memories extend beyond preferences to assertions, corrections, recurring context, and other governed facts. Mixed observations produce separate declarative and S1 components with shared source references but independent authority. Unknown or insufficient patterns remain unmapped or return `need_more_evidence`; never invent a classification, confidence, scope, or task signature. The initial classifier is deterministic and records its version and evidence references.
+
+### Required observation mappings
+
+| Input | Required behavior |
+|---|---|
+| Authorized non-personal operational observation | Validate without an unnecessary consent prompt; map only relevant fields and preserve evidence mode. |
+| Personal/behavioral observation | Require opt-in and `principal_id` before persistence; denied/missing consent produces no stored observation/candidate/raw payload. |
+| Non-preference declarative assertion/context | Map to FactCandidate through the existing declarative lane, never a preference-only type. |
+| Procedural pattern | Map to S1 candidate only when the full required bundle metadata is available; file/activity presence alone is insufficient. |
+| Mixed pattern | Produce separate FactCandidate and S1 components with shared source refs and no shared authority. |
+| Unknown/insufficient pattern | Return unmapped or `need_more_evidence`; only a later bounded clarification prompt may supply missing evidence. |
+
+### Additional author self-tests
+
+- **DS-09:** every supported real-observation fixture can enter validation without being forced into a candidate, and real/simulated/sidecar modes remain separate.
+- **DS-10:** authorized non-personal evidence needs no extra opt-in, while denied/missing personal consent or `principal_id` creates no persistent observation, candidate, raw payload, or projection.
+- **DS-11:** non-preference declarative, procedural, and mixed patterns map to the specified candidate components with source refs and no shared authority.
+- **DS-12:** unknown/insufficient patterns remain unmapped or return `need_more_evidence`; no classification, rationale, confidence, scope, or task signature is invented.
+- **DS-13:** identical input and classifier version produce deterministic envelope/candidate IDs after restart; replay creates no duplicates.
+- **DS-14:** sensitive fields and prompt-injection text remain non-instructional and excluded, with no direct mnestic writes or combined declarative/procedural admission gate.
+
 ## Stop conditions
 
 - Do not implement PR04 Learning Planner or PR05 acceptance.
-- Do not turn parsed files into facts or Options directly.
+- Do not turn parsed files or real observations directly into facts or Options.
+- Do not persist personal evidence without opt-in or force every observation into declarative/procedural classification.
 - Do not import raw HTML/images/large JSONL into MemoryCore or invent missing metadata.
 
 ## Change log
 
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
+- **0.3.0 (2026-11-23):** Added unified observation validation, consent/identity requirements, deterministic declarative/procedural/mixed/unknown classification, and DS-09–14. No implementation or acceptance claim.

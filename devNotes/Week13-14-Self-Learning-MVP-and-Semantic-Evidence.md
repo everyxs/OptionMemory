@@ -32,18 +32,18 @@ By the end of W14, produce a **W15 release-candidate demo** proving:
 3. The candidate contains **subtask + Option + Model**, including task scope, declarative premises, an immutable implementation package, and a world-transition/evaluation model when applicable.
 4. A subsequent natural task or an approved isolated real run produces an S8 LearningRun and a release/revise/reject decision through the existing governance path.
 5. Initial dataStore connectors map local evidence into S7 EvidenceEnvelopes and STOMP-compatible evaluation data without direct mnestic writes.
-6. Explicit and explicitly confirmed user preferences follow the existing declarative S7 → FactCandidate → S6/ν-gate → facts path into a bounded, namespace-local `planner_context`, with correction, privacy, audit-hash, restart/replay, and real-host evidence. No separate preference subsystem is created.
+6. All supported real observations enter authority/privacy/namespace/evidence-mode validation and deterministic declarative/procedural/mixed/unknown/insufficient classification. Declarative memories extend beyond preferences, proactive prompts are bounded and idempotent, and candidates become authoritative only through their existing ν-gate or approval/evaluation/registration paths. Consent, identity, audit-hash, restart/replay, and real-host evidence are demonstrated without a new observation subsystem or combined admission gate.
 
-This is not the full W16 Stage A exit. Markdown lineage tail work and a read-only remote connector may continue into W15–W16. Preference correction, retention/erasure, lineage, and remote-evidence authority are revalidated at the full W16 gate.
+This is not the full W16 Stage A exit. Markdown lineage tail work and a read-only remote connector may continue into W15–W16. Observation correction, retention/erasure, lineage, and remote-evidence authority are revalidated at the full W16 gate.
 
 ## 2. Roles and review authority
 
 | Role | Responsibility |
 |---|---|
-| **Line 1 developer** | Lifecycle/registration/execution, Learning Planner, Model transition/evaluation, STOMP recovery, Planner preference context/audit; designs and runs all self-tests for owned work |
-| **Line 2 developer** | dataStore connectors, S6/S7/S8 evidence mapping, candidate identification, procedural recall join, lineage/demotion, preference mapping/live query/revision; designs and runs all self-tests for owned work |
+| **Line 1 developer** | Lifecycle/registration/execution, Learning Planner, Model transition/evaluation, STOMP recovery, proactive Planner prompts, declarative context/audit; designs and runs all self-tests for owned work |
+| **Line 2 developer** | dataStore connectors, S6/S7/S8 evidence mapping, observation classification, candidate identification, procedural recall join, lineage/demotion, candidate/prompt/live query/revision; designs and runs all self-tests for owned work |
 | **Experienced reviewer** | Weekly/biweekly architecture and evidence review, independent reproduction, approval or change requests, and merge after all gates pass |
-| **Domain owner** | Resolve scope or acceptance disputes, approve required Stage A preference scope, and approve any slide beyond the release-candidate boundary |
+| **Domain owner** | Resolve scope or acceptance disputes, approve required Stage A unified-observation scope, and approve any slide beyond the release-candidate boundary |
 
 Line 1 and Line 2 do not cross-review. The experienced reviewer is the only person authorized to grant final PR approval and merge into `main`. No author may approve or merge their own PR. Initial review response is due within **one business day**.
 
@@ -57,7 +57,7 @@ Line 1 and Line 2 do not cross-review. The experienced reviewer is the only pers
 | **PR04A/B** | Learning Planner, task-signature consumption, full bundle, Model transition, and LearningRun evaluation | Learning/held-out evidence packages and source mappings used by evaluation |
 | **PR05A/B** | Lifecycle and learning acceptance scripts, runtime evidence, and recovery verification | Evidence/contract documentation, source/regression verification, and bilingual companion updates |
 
-`devNotes/stage-a/README.md` is the authoritative per-file ownership map and includes the PR01/PR04/PR05 declarative-preference additions in §5A, including shared-file merge order. Parallel work is allowed only when it does not touch the same file or contract section; rebase before every merge.
+`devNotes/stage-a/README.md` is the authoritative per-file ownership map and includes the unified observation and learning additions for every PR in §5A, including shared-file merge order. Parallel work is allowed only when it does not touch the same file or contract section; rebase before every merge.
 
 ## 3. Architecture and invariants
 
@@ -129,7 +129,7 @@ Use `devNotes/stage-a/README.md` for the exact isolated setup, shared implementa
 
 ## 5. Copy-paste PR instructions
 
-Each prompt is intentionally short. Give one prompt to a coding agent and require it to read the linked spec and test plan before implementing. Authors run their own tests; there is no cross-review. For PR01A/B, PR04A/B, and PR05A/B, the prompt also includes the assigned declarative-preference deliverables, tests, and checkpoints in §5A and the 0.2.0 specifications.
+Each prompt is intentionally short. Give one prompt to a coding agent and require it to read the linked spec and test plan before implementing. Authors run their own tests; there is no cross-review. Every PR also includes its assigned unified-observation deliverables, tests, and checkpoints in §5A and the 0.3.0 specifications.
 
 ### PR01A — Line 1: lifecycle ADR, schema, and migration (Days 1–2)
 
@@ -189,8 +189,8 @@ Read and follow exactly:
 
 Deliver:
 - docs/stage-a-contracts.md with S6/S7/S8 owners, versions, fixtures, and change protocol.
-- src/datastore/evidence-envelope.ts with SourceKind, TaskSignature, EvidenceEnvelope, and the additive source-specific UserPreferenceFeedback payload in §5A.
-- Evidence fixtures for Markdown, SKILL.md, CSV/JSONL, trajectory exports, and PREF-C01–07 preference contract scenarios.
+- src/datastore/evidence-envelope.ts with SourceKind, TaskSignature, EvidenceEnvelope, and the additive source-specific ObservationPattern payload in §5A.
+- Evidence fixtures for Markdown, SKILL.md, CSV/JSONL, trajectory exports, and OBS-C01–10 unified-observation contract scenarios.
 - English/Chinese documentation companions where applicable.
 
 Write fixture and validation tests first for envelope round-trip, unknown fields, and held-out leakage.
@@ -515,44 +515,59 @@ Done when:
 Stop on generated-only evidence, production data, hidden failures, or any red test.
 ```
 
-## 5A. Declarative preference context increment (PR01A/B, PR04A/B, PR05A/B)
+## 5A. Unified observation and learning increment (all PRs)
 
-This increment is required Stage A scope and uses the existing declarative lane rather than creating a preference-learning subsystem:
+This increment is required Stage A scope and uses one validated observation intake for declarative and procedural learning. Preferences are only one declarative-memory subtype; assertions, corrections, recurring context, and other governed facts use the same declarative lane.
 
 ```text
-Host feedback / S7 trajectory envelope → source-specific mapper → FactCandidate
-→ S6 controlled ingestion + existing ν-gate → ordinary facts + J/≺
-→ Line 2 live query → Line 1 bounded planner_context
+Real observation → authority/privacy/namespace/evidence-mode validation
+→ S7 EvidenceEnvelope → deterministic source-specific classification
+→ declarative: FactCandidate → S6/ν-gate → facts + J/≺
+→ procedural: S1 candidate → full bundle → approval + independent evaluation + registration → Option/Model
 ```
 
-Only explicit durable preferences and explicitly confirmed inference may become eligible `status="in"` facts. Repeated corrections may annotate FactCandidates but never auto-promote them. Observation requires opt-in and defined inspection, correction, disablement, retention, and erasure behavior. Agent output/actions cannot confirm themselves, and influenced feedback cannot independently strengthen the same preference.
+All real observations may enter validation, but only relevant validated observations produce candidates. Authorized non-personal operational evidence may be collected passively without an additional opt-in. Personal or behavioral evidence requires opt-in and a stable `principal_id` before persistent observation or candidate storage; pre-consent processing is transient. Real, simulated, and sidecar evidence never mix silently.
 
-Preferences are non-instructional context. Decision Gate, mandate, and explicit project/safety rules remain hard constraints. Within them, current user instruction outranks explicit durable preferences, user-confirmed inference, and historical observations. No preference creates an Option/Model, changes budgets/effects/mandates, adds a decision type or tool, modifies `AGENTS.md`, or authorizes execution.
+Classification is `declarative | procedural | mixed | unknown | insufficient`. Mixed observations produce separate components with shared source references but no shared authority. Unknown or insufficient patterns remain unmapped or return `need_more_evidence`; never invent a classification, confidence, scope, or task signature. Record `classifier_version` and evidence references. The initial classifier is deterministic and requires no LLM.
+
+Proactive prompts use existing Planner `ask`, `wait`, and `replan` decisions and host approval/event paths. Prompt IDs are deterministic over candidate ID, prompt kind, and principal ID. Prompts are bounded, idempotent, dismissable, and evidence-linked. A prompt response is new evidence or approval input only—it never grants truth, approval, execution, or certification. Personal consent must precede persistent observation; prompts cannot bypass ν-gate, registration, independent evaluation, or Decision Gate.
+
+Declarative memories are non-instructional context. Only relevant `status="in"` memories enter bounded `declarative_context`; candidates and `out`, `archived`, `contested`, superseded, unrelated, or out-of-scope memories are excluded. Raw observations, sensitive claims, and cross-namespace/principal content are excluded. No observation or prompt creates an Option/Model, changes budgets/effects/mandates, adds a decision type or tool, modifies `AGENTS.md`, or authorizes execution.
 
 ### PR01A/B additions
 
-- **PR01A:** resolve PREF-ADR-01–06 for authority, existing-only storage, confirmed inference, privacy, audit, and compatibility. Schema 14 remains the only new relation; there is no preference relation or schema 15.
-- **PR01B:** add the S7 `UserPreferenceFeedback` payload, stable preference keys, actor/source/opt-in/influence provenance, allowlisted structured values, and `tests/stage-a-preference-contracts.test.ts` with PREF-C01–07 for round-trip, correction identity, invalid authority, self-confirmation provenance, unsafe values, evidence isolation, and unknown fields.
-- **M0/W13 gate:** domain owner approves scope; experienced reviewer approves cross-line/public/privacy contracts and independently runs PR01 plus baseline tests. Record the approved policy version and sample envelope → FactCandidate → fact/read-query shape. Any red/unclassified test or unresolved authority question blocks PR04.
+- **PR01A:** resolve OBS-ADR-01–08 for authority, storage/gates, privacy/identity, classification, inference/prompts, read scope, audit, and compatibility. Schema 14 remains the only new relation; no observation relation or schema 15.
+- **PR01B:** add the S7 `ObservationPattern` payload, actor/principal/consent/influence provenance, classification outputs, and `tests/stage-a-observation-contracts.test.ts` with OBS-C01–10 for authorized operational observations, personal consent, principal separation, general declarative memories, classification outcomes, replay/correction, self-confirmation, sensitive/unknown fields, evidence isolation, and prompt contracts.
+- **M0/W13 gate:** domain owner approves scope; experienced reviewer approves cross-line/public/privacy/identity/prompt contracts and independently runs PR01 plus baseline tests. Record approved observation/classifier versions and sample declarative, procedural, mixed, and insufficient mappings. Any red/unclassified test or unresolved authority question blocks dependent work.
+
+### PR02A/B additions
+
+- **PR02A:** preserve the existing procedural lifecycle as the only approval/registration/release path. LIFE-09–13 prove prompts cannot approve/register/execute, declarative and mixed candidates cannot bypass full S1 evaluation/registration, replay/dismissal is not approval, partial mixed admission reconciles, and candidates are not presented as active memories/capabilities.
+- **PR02B:** S2 recall/lineage annotations distinguish candidates, active declarative memories, and released procedural assets without conflating source links and J/≺.
+
+### PR03A/B additions
+
+- **PR03A:** native/STOMP linkage preserves actor, source event, namespace, principal ID where applicable, consent state, evidence mode, and idempotency through existing host/subtask/Planner/Option chains. Personal evidence cannot persist before consent; native activity does not require a dataStore round trip.
+- **PR03B:** implement deterministic observation classification and source-specific candidate mapping with classifier versions and unmapped handling. DS-09–14 cover validation of all supported observations, consent/identity, non-preference declarative and mixed mappings, unknown/insufficient outcomes, deterministic replay, sensitive content, and no direct writes or combined gates.
 
 ### PR04A/B additions
 
-- **PR04A:** consume Line 2's live query using validated `subtasks.context.namespace`; add bounded deterministic `declarative_context`; verify the additive preference-context hash and forward it through the scheduler; record exact fact/version references in `planner_event.context_json`. Add `tests/stage-a-preference-planner.test.ts` with PREF-P01–10 for relevant context, namespace/status filtering, read-only empty behavior, deterministic bounds, hash/stale handling, scheduler propagation, authority invariance, restart/retraction, and replay.
-- **PR04B:** implement preference-feedback → FactCandidate mapping, S6 validation, live preference-fact query, and revision/reconciliation through existing components. Add `tests/stage-a-preference-evidence.test.ts` with PREF-D01–10 for explicit mapping, replay, opt-in/actor authority, confirmed inference, self-confirmation, evidence separation, correction lineage, partial recovery, sensitive data, and storage authority.
-- **PR04 integration gate:** both lines attach independent self-test packages and actual row/event IDs; PREF-P/PREF-D and the full suite pass on isolated Mem/RocksDB; one explicit-feedback → decision → correction vertical slice is reproduced. Contract changes return to the M0/specification-change gate, and red/unclassified tests block PR05.
+- **PR04A:** implement bounded proactive prompts through existing Planner decisions and host approval/event paths; consume Line 2's live declarative query using validated namespace and principal mapping; add bounded deterministic `declarative_context` and hash binding; record fact/version and prompt-response references. Add `tests/stage-a-observation-planner.test.ts` with OBS-P01–12 for consent, identity, prompt replay/dismissal, prompt-to-gate separation, general declarative context, namespace/principal filtering, deterministic bounds, stale hashes, scheduler state, authority invariance, and mixed paths.
+- **PR04B:** consume PR03 classification outputs; implement S6 authority/namespace/principal/evidence-mode/idempotency validation, live declarative query, candidate/prompt/revision lineage, and reconciliation. Add `tests/stage-a-observation-evidence.test.ts` with OBS-D01–12 for authorized operational evidence, personal consent/identity, general declarative facts, mixed components, unknown/insufficient patterns, replay, self-confirmation, evidence separation, correction lineage, partial recovery, sensitive data, and storage authority.
+- **PR04 integration gate:** both lines attach independent self-test packages and actual row/event IDs; OBS-P/OBS-D and the full suite pass on isolated Mem/RocksDB; authorized non-personal, personal-consent, declarative non-preference, procedural, mixed, unknown, and prompt-replay scenarios pass through one intake. Contract changes return to the M0/specification-change gate, and red/unclassified tests block PR05.
 
-The existing procedural Learning Planner, full bundle, Model transition, S8 evaluation, and held-out independence requirements remain unchanged. Preference evidence is not a held-out Skill dataset and requires no capability certification.
+The existing procedural Learning Planner, full bundle, Model transition, S8 evaluation, and held-out independence requirements remain unchanged. Declarative memories require no S8 capability evaluation; procedural bundles retain independent held-out evaluation.
 
 ### PR05A/B additions
 
 Extend `scripts/stage_a_learning_acceptance.ts` and its existing result schema/pass token; do not add another acceptance framework.
 
-- **PR05A:** PREF-A01–08 cover real OpenCode and DSH capture/context/decision, cross-session namespace/correction, instruction/mandate precedence, inference/self-confirmation negatives, restart/replay/recovery, privacy/retention/erasure, and existing regressions. Require `declarative_preference_context`, `preference_namespace_and_privacy`, `preference_revision_replay_recovery`, `preference_audit_hash_binding`, and `preference_real_host_behavior` to be true. Record actual preference fact, revision, Planner event, and context-hash IDs.
-- **PR05B:** PREF-E01–05 verify source-to-fact/revision lineage, duplicate/contradictory/unconfirmed/influenced/cross-namespace/sensitive fixtures, original connector and S8 regressions, explicit limitations, and bilingual contract parity.
-- **W14 gate:** the experienced reviewer independently reruns RocksDB and real-host scenarios, inspects actual rows/logs, verifies zero cross-namespace leaks/unauthorized effects/sensitive injections/unconfirmed injections, and confirms preference evidence did not contaminate held-out evaluation. Any failed gate blocks merge.
-- **Post-merge/W16:** rerun build/tests and both acceptance scripts on `main`. At the full W16 gate, revalidate correction, restart, retention/erasure, lineage, and remote-evidence authority after the remaining W16 work. Remote imported evidence cannot silently become native user confirmation.
+- **PR05A:** OBS-A01–10 cover OpenCode/DSH operational observations, personal consent and principal isolation, non-preference declarative memories, procedural and mixed paths, unknown/insufficient patterns, prompt idempotency/authority, instruction/mandate precedence, restart/replay/recovery, privacy/retention/erasure, and existing regressions. Require `observation_classification`, `observation_consent_privacy`, `observation_prompt_gates`, `declarative_memory_revision_recovery`, and `observation_real_host_behavior` to be true. Record actual observation envelope, declarative fact, procedural candidate, prompt event, and learning-context hash IDs.
+- **PR05B:** OBS-E01–06 verify source/classification/candidate/gate lineage, classification and consent/identity regressions, original connector and S8 regressions, prompt idempotency and authority limitations, and bilingual contract parity.
+- **W14 gate:** the experienced reviewer independently reruns RocksDB and real-host scenarios, inspects actual rows/logs, verifies zero cross-namespace/principal leaks, unauthorized effects, personal evidence persisted without consent, sensitive injections, unconfirmed injections, or prompt-derived authority. Any failed gate blocks merge.
+- **Post-merge/W16:** rerun build/tests and both acceptance scripts on `main`. At the full W16 gate, revalidate observation correction, restart, retention/erasure, lineage, and remote-evidence authority after the remaining W16 work. Remote imported evidence cannot silently become native user confirmation.
 
-The canonical details are in `devNotes/stage-a/pr01-contracts.md`, `pr01-tests.md`, `pr04-learning-planner.md`, `pr05-acceptance.md`, and `review.md` at specification version **0.2.0**. All preference scenarios follow `iterative-testing.md`: record fixtures, expected failures, iterations, classifications, actual evidence, and limitations; no planned test or pass token is an acceptance claim before execution.
+The canonical details are in `devNotes/stage-a/pr01-contracts.md`, `pr01-tests.md`, `pr02-lifecycle.md`, `pr03-evidence-adapters.md`, `pr04-learning-planner.md`, `pr05-acceptance.md`, and `review.md` at specification version **0.3.0**. All observation scenarios follow `iterative-testing.md`: record fixtures, expected failures, iterations, classifications, actual evidence, and limitations; no planned test or pass token is an acceptance claim before execution.
 
 ## 6. Review and acceptance
 

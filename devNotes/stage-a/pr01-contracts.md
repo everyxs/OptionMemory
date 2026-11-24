@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr01-contracts.md
 translation_status: reviewed
 owner: Line 1 (ADR/schema/migration) and Line 2 (S6/S7/S8 evidence contracts)
-spec_version: 0.2.0
+spec_version: 0.3.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -188,67 +188,88 @@ Do not default to production 9070.
 9. On rollback, restore from the untouched backup and verify IDs, bindings, facts, J/≺, R4, and the 97-record quality boundary.
 10. Return JSON with `status`, `reused`, `optionCount`, `modelCount`, `candidateCount`, `backupDir`, and `rollbackStatus` where applicable. Never print raw payloads or secrets.
 
-## Declarative preference context contract
+## Unified observation and candidate contract
 
-Lightweight personalized Planner context is part of the existing declarative-evidence lane, not a new learning subsystem. Use host events or S7 trajectory envelopes, source-specific FactCandidate mapping, S6 controlled ingestion, the existing ν-gate, ordinary facts, and J/≺. Do not add a preference relation, status vocabulary, learner, host tool, Option, Model, decision type, or schema 15.
+All real observations may enter authority, privacy, namespace, and evidence-mode validation. Only validated, relevant observations produce candidates. Authorized non-personal operational evidence may be observed passively without an additional opt-in. Personal or behavioral evidence requires opt-in before persistent observation, candidate storage, or raw-payload retention; any pre-consent processing is transient. A real observation is not automatically correct, relevant, generalizable, or safe to learn from.
+
+Use one intake and distinct admission paths:
+
+```text
+Real observation → authority/privacy/namespace/evidence-mode validation
+→ S7 EvidenceEnvelope → deterministic source-specific classification
+→ declarative: FactCandidate → S6/ν-gate → facts + J/≺
+→ procedural: S1 candidate → full bundle → approval + independent evaluation + registration → Option/Model
+```
+
+Classification is `declarative | procedural | mixed | unknown | insufficient`. Mixed observations may produce separate declarative and procedural components with shared source references. Unknown or insufficient patterns remain unmapped or return `need_more_evidence`; never force a classification. Record `classifier_version` and evidence references. The initial classifier is deterministic and requires no LLM.
 
 ### ADR requirements
 
 The lifecycle/learning ADR must resolve these review cases before PR04:
 
-- **PREF-ADR-01 — authority:** mandates, explicit project/safety rules, and Decision Gate are non-overridable. Current user instructions and preferences operate only within them.
-- **PREF-ADR-02 — storage:** no preference-specific relation, materialized shadow profile, or new asset family. Preference facts use existing fact provenance, status, and revision semantics.
-- **PREF-ADR-03 — inference:** repeated user corrections may produce or annotate FactCandidates. Unconfirmed inference is never promoted or injected; explicit user confirmation uses the same S6/ν-gate path.
-- **PREF-ADR-04 — privacy:** observation requires opt-in and supports inspection, correction, disablement, retention, and personal-data erasure. Governance retention does not justify retaining personal payloads indefinitely.
-- **PREF-ADR-05 — audit:** a preference-context hash covers the exact injected fact/version references and policy/namespace inputs. It does not claim to snapshot all Planner state.
-- **PREF-ADR-06 — compatibility:** existing tool counts, OptionExecutor, Decision Gate, procedural Learning Planner, LearningRun, and held-out evaluation semantics remain unchanged.
+- **OBS-ADR-01 — authority:** mandates, explicit project/safety rules, and Decision Gate remain non-overridable. Current user instructions operate only within them.
+- **OBS-ADR-02 — storage and gates:** no new observation relation, preference-specific lifecycle, shadow profile, or combined truth/authorization gate. FactCandidates and S1 procedural candidates remain distinct.
+- **OBS-ADR-03 — privacy and identity:** authorized non-personal evidence may be passive. Personal evidence requires opt-in before persistence and a stable `principal_id`; namespace alone does not identify a person. Inspection, correction, disablement, retention, and erasure are defined.
+- **OBS-ADR-04 — classification:** declarative, procedural, mixed, unknown, and insufficient cases have explicit outcomes. Mixed evidence is split without shared authority, and unknowns are never guessed.
+- **OBS-ADR-05 — inference and prompts:** unconfirmed inference never becomes authoritative automatically. Proactive prompts are bounded, idempotent, dismissable, and evidence-linked, but do not confer truth, approval, or execution authority.
+- **OBS-ADR-06 — read scope:** declarative memories extend beyond preferences, but not every admitted memory enters Planner context. Relevance, status, namespace, principal scope, sensitivity, and size limits apply at read time.
+- **OBS-ADR-07 — audit:** context hashes cover exact injected fact/version references and policy/namespace/principal inputs. They do not claim complete Planner-state reproducibility.
+- **OBS-ADR-08 — compatibility:** existing tool counts, OptionExecutor, Decision Gate, procedural LearningRun, held-out evaluation, and real/simulated/sidecar separation remain unchanged.
 
 The precedence is:
 
 ```text
 Decision Gate, mandate, and explicit project/safety rules are hard constraints.
-Within them: current user instruction > explicit durable preference
-> user-confirmed inferred preference > historical non-instructional observations.
+Within them: current user instruction > relevant authoritative declarative context
+> historical non-instructional observations.
 ```
 
-### S7 preference-feedback payload
+### S7 observation-pattern payload
 
 Add a source-specific payload contract in `src/datastore/evidence-envelope.ts` without changing the generic EvidenceEnvelope or creating a top-level asset:
 
 ```ts
-export interface UserPreferenceFeedback {
-  feedback_kind: "explicit" | "correction" | "confirmation" | "rejection";
+export interface ObservationPattern {
+  observation_kind: "instruction" | "correction" | "confirmation" | "rejection" | "activity" | "outcome";
   actor: "user" | "agent" | "external";
   source_event_id: string;
-  preference_key: string;
-  kind: "response_style" | "workflow_choice";
-  scope: string;
-  value: string;
+  principal_id: string | null;
+  personal: boolean;
+  consent: "not_required" | "required" | "granted" | "denied";
+  pattern: {
+    kind: string;
+    scope: string;
+    value: unknown;
+  };
   influenced_by_fact_ids: string[];
-  opt_in: boolean;
 }
 ```
 
-The S7 envelope supplies namespace, evidence mode, observed timestamp, and idempotency. `preference_key` remains stable across corrections; `source_event_id` is unique per genuine event. Values are allowlisted and canonical, not arbitrary personal-profile text. Unknown fields remain raw/null and are reported as unmapped. Agent-authored evidence cannot confirm itself.
+The S7 envelope supplies namespace, evidence mode, observed timestamp, and idempotency. `principal_id` is required when `personal=true`; it is null for non-personal operational evidence. `consent="not_required"` is invalid when `personal=true`. Pattern kinds are mapper-allowlisted, but values are not automatically safe for Planner injection. Unknown fields remain raw/null and are reported as unmapped. Agent-authored evidence cannot confirm itself.
+
+### Candidate, prompt, and admission semantics
+
+Declarative memories include preferences, assertions, corrections, recurring context, and other governed facts. Preferences are only one subtype. Personal preference confirmation may authorize that preference through the existing ν-gate; it does not establish an objective fact or executable capability. Procedural candidates still require a full `subtask + Option + Model` bundle, approval, independent evaluation, and registration.
+
+Proactive prompts use existing Planner `ask`, `wait`, and `replan` decisions and host approval/event paths. A prompt ID is deterministic over candidate ID, prompt kind, and principal ID. Each prompt is issued at most once unless the underlying candidate materially changes. Dismissal or rejection suppresses repeated prompts and never becomes confirmation. A prompt response is new evidence or approval input, not authority by itself.
 
 ### Fact and read semantics
 
-Represent admitted preferences with the existing `facts` shape and an allowlisted predicate such as `user_preference`. Canonical arguments identify namespace, preference key/kind, scope, and value. Use existing `layer`, `lin_*`, `eps_*`, verification, and revision fields; do not invent calibrated confidence or treat ε metadata as execution authority.
+Use existing fact status, provenance, ε metadata, verification, and revision fields. Do not invent calibrated confidence or treat ε metadata as execution authority. Only ordinary `status="in"` facts are eligible for read projections. FactCandidates and `out`, `archived`, `contested`, superseded, unrelated, or out-of-scope entries are excluded. Corrections use existing revision APIs and fail closed with `reconcile_required` when partial.
 
-Only ordinary `status="in"` facts are eligible. FactCandidates and `out`, `archived`, `contested`, superseded, unrelated, or out-of-scope entries are excluded. Corrections use existing revision APIs and fail closed: a partial correction returns `reconcile_required` and never leaves two active values after reconciliation.
-
-Line 1 resolves a validated namespace from `subtasks.context` and consumes Line 2's live preference-fact query. Missing or ambiguous namespace produces an empty projection. The query and `getPlannerContext()` are read-only live reads, not a materialized profile.
+Line 1 resolves a validated namespace from `subtasks.context` and, for personal memory, a validated principal ID through the approved host identity mapping. Missing or ambiguous identity produces no personal projection. Line 2 supplies a live declarative-memory query. The query and `getPlannerContext()` are read-only, not a materialized profile.
 
 ### Planner audit contract
 
-`planner_context` may add a bounded `declarative_context` containing policy version, resolved namespace, deterministically ordered structured preferences, and `context_hash`. Raw host/S7 payloads, source text, secrets, and arbitrary free-form claims are excluded.
+`planner_context` may add a bounded `declarative_context` containing policy version, resolved identity/scope, deterministically ordered structured memories, and `context_hash`. Raw host/S7 payloads, source text, secrets, and arbitrary free-form claims are excluded.
 
-The hash canonically covers policy version, namespace, and sorted injected fact IDs, lineage versions, and update/revision tokens. Extend the existing Planner decision contract additively to carry this hash when preferences are present. `submitPlannerDecision()` rejects stale or mismatched preference context before creating decision/execution side effects; the scheduler forwards the hash from its context read. Record the hash and exact injected references in `planner_event.context_json`.
+The hash canonically covers policy version, namespace/principal scope, and sorted injected fact IDs, lineage versions, and update/revision tokens. Extend the existing Planner decision contract additively to carry this hash when declarative context is present. `submitPlannerDecision()` rejects stale or mismatched context before decision/execution side effects; the scheduler forwards the hash from its context read. Record the hash and exact injected references in `planner_event.context_json`.
 
 ## Stop conditions
 
-- Do not implement PR02 lifecycle execution or PR03 connectors.
-- Do not implement PR04 preference mappers, ingestion, or Planner context in PR01.
+- Do not implement PR02 lifecycle execution or PR03 connectors/classification.
+- Do not implement PR04 prompt handling, candidate admission, or Planner context in PR01.
+- Do not permit persistent personal observation without opt-in, or treat all real observations as candidates.
 - Do not use production data or delete an unknown `_next` relation.
 - Do not mark later acceptance scripts as passing.
 - Stop and request domain review if registration or evidence models must change.
@@ -257,3 +278,4 @@ The hash canonically covers policy version, namespace, and sorted injected fact 
 
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
 - **0.2.0 (2026-11-22):** Added governed declarative-preference contracts, S7 feedback payload, Planner read/audit semantics, and PREF-ADR review cases. This is a backward-compatible planning addition and no implementation or acceptance claim.
+- **0.3.0 (2026-11-23):** Generalized preferences into unified observation-driven declarative learning with authorized passive intake, deterministic mixed-pattern classification, stable personal identity, bounded proactive prompts, and distinct ν-gate/registration authority. No implementation or acceptance claim.

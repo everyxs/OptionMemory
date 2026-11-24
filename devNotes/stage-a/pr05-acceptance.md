@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr05-acceptance.md
 translation_status: reviewed
 owner: Line 1 (runtime acceptance) and Line 2 (evidence/regression/docs)
-spec_version: 0.2.0
+spec_version: 0.3.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -80,56 +80,60 @@ Print `STAGE_A_LEARNING_PASS` only after the result file has been written and ev
 1. Lifecycle demo from PR02 passes.
 2. Empty-memory passive-learning demo from PR04 passes, ending in approved release, revision, or explicit rejection.
 3. dataStore evidence is traceable to source, STOMP execution, and S8 evaluation.
-4. The declarative-preference vertical slice from PR04 passes before restart/replay checks.
+4. The unified observation and proactive-prompt vertical slices from PR04 pass before restart/replay checks.
 5. Existing memory capture/revise/recall and bilingual recall regression remain green.
 6. No forced seed, auto-registration, auto-publish, automatic `AGENTS.md` edit, direct mnestic write, or outcome-as-fact path.
 7. R4 remains blocked and no certification, production SuperAgent, general multilingual semantic claim, or continuous-service claim is made.
 
-## Declarative preference acceptance
+## Unified observation acceptance
 
-Extend `scripts/stage_a_learning_acceptance.ts`; do not add another acceptance script or pass token. Insert the preference vertical slice after the passive-learning fixture and include preference facts/revisions in restart and replay verification.
+Extend `scripts/stage_a_learning_acceptance.ts`; do not add another acceptance script or pass token. Run authorized non-personal, personal-consent, declarative non-preference, procedural, mixed, unknown, and prompt-replay scenarios through one shared intake before restart/replay verification.
 
 ### Line 1 — PR05A
 
-- **PREF-A01 — OpenCode:** in an isolated real session, opt in, state an explicit durable preference, observe structured Planner context, and record a hash-bound decision using an existing Option or permitted Planner action.
-- **PREF-A02 — DSH parity:** repeat capture, context, and permitted decision behavior under the same contract and isolated storage.
-- **PREF-A03 — namespace and correction:** project B and missing-namespace runs receive no preference; explicit correction replaces project A's context and preserves revision history across sessions/restart.
-- **PREF-A04 — instruction and mandate:** current user instruction prevails over preference only within the mandate. Preference text requesting unauthorized execution, extra budget, or `AGENTS.md` modification has no such effect and Decision Gate still blocks.
-- **PREF-A05 — inference negative:** repeated agent behavior and agent-influenced acceptance do not activate inference; explicit user confirmation is required.
-- **PREF-A06 — recovery:** replay source events and decisions after restart and injected correction failures; no duplicate facts, revisions, Planner events, executions, or resurrected preferences.
-- **PREF-A07 — privacy:** raw personal payloads and sensitive values are absent from Planner context/logs; disablement and erasure follow approved policy while permitted lineage remains auditable.
-- **PREF-A08 — regression:** existing capture/recall/revision, bilingual, lifecycle, passive procedural learning, and tool-count acceptance remains green.
+- **OBS-A01 — OpenCode operational observation:** an authorized non-personal real observation passes validation without an unnecessary consent prompt and produces the appropriate declarative or procedural candidate.
+- **OBS-A02 — DSH parity:** repeat the shared intake and admission behavior under the same contract and isolated storage.
+- **OBS-A03 — personal consent and identity:** missing/denied consent prevents persistent personal evidence; a bounded opt-in prompt allows later storage and two principals in one namespace remain isolated.
+- **OBS-A04 — declarative beyond preferences:** a non-preference assertion or recurring-context memory proceeds through ν-gate into relevant Planner context with fact/version provenance.
+- **OBS-A05 — procedural and mixed paths:** a procedural candidate still needs a full bundle, approval, independent evaluation, and registration; mixed components share source refs but not authority.
+- **OBS-A06 — unknown and insufficient patterns:** unclassifiable or incomplete evidence returns unmapped/`need_more_evidence` and can trigger only a bounded clarification prompt, never a fabricated candidate.
+- **OBS-A07 — prompt idempotency and authority:** prompt replay, dismissal, and rejection do not repeat or confirm; a response cannot bypass ν-gate, registration, evaluation, or Decision Gate.
+- **OBS-A08 — instruction and mandate:** current user instruction and mandates remain authoritative within hard constraints; observation text cannot expand effects, budgets, tools, or `AGENTS.md`.
+- **OBS-A09 — recovery:** restart/replay and injected correction/prompt failures create no duplicate observations, candidates, facts, revisions, prompt responses, Planner events, executions, or resurrected memories.
+- **OBS-A10 — privacy and regression:** raw personal payloads and sensitive values are absent from Planner context/logs; disablement and erasure follow policy, and existing capture/recall/revision, bilingual, lifecycle, passive procedural learning, and tool-count acceptance remains green.
 
 Merge these fields into `checks` and require all to be true:
 
 ```json
 {
-  "declarative_preference_context": true,
-  "preference_namespace_and_privacy": true,
-  "preference_revision_replay_recovery": true,
-  "preference_audit_hash_binding": true,
-  "preference_real_host_behavior": true
+  "observation_classification": true,
+  "observation_consent_privacy": true,
+  "observation_prompt_gates": true,
+  "declarative_memory_revision_recovery": true,
+  "observation_real_host_behavior": true
 }
 ```
 
-Record actual `preferenceFactId`, `preferenceRevisionId`, `preferencePlannerEventId`, and `preferenceContextHash` under `ids`. Print `STAGE_A_LEARNING_PASS` only after every existing and new check passes and the result file is written.
+Record actual `observationEnvelopeId`, `declarativeFactId`, `proceduralCandidateId`, `promptEventId`, and `learningContextHash` under `ids`. Print `STAGE_A_LEARNING_PASS` only after every existing and new check passes and the result file is written.
 
 ### Line 2 — PR05B
 
-- **PREF-E01 — lineage:** every accepted preference traces source event/S7 → FactCandidate → S6/ν-gate → fact → revision; Planner influence links by fact/version reference rather than raw payload copying.
-- **PREF-E02 — mapping regression:** duplicate, contradictory, unconfirmed, agent-influenced, cross-namespace, and sensitive fixtures retain expected blocked/unmapped/revised outcomes.
-- **PREF-E03 — source regression:** original Markdown, SKILL.md, CSV/JSONL, trajectory, and S8 mappings remain unchanged; preference evidence does not enter held-out Skill evaluation.
-- **PREF-E04 — limitations:** documentation states no automatic inferred-preference promotion, calibrated confidence, arbitrary personal profiles, new subsystem, or capability certification.
-- **PREF-E05 — bilingual parity:** English/Chinese companions describe the same authority, privacy, correction, and acceptance behavior.
+- **OBS-E01 — lineage:** every accepted memory/candidate traces source observation/S7 → classification/version → candidate → applicable gate → fact or procedural release, including prompt-response references without raw payload copying.
+- **OBS-E02 — classification regression:** declarative, procedural, mixed, unknown, insufficient, duplicate, agent-influenced, and cross-namespace/principal fixtures retain expected outcomes.
+- **OBS-E03 — consent and identity regression:** authorized non-personal evidence needs no extra opt-in; personal denied/missing consent or principal identity produces no persistent evidence.
+- **OBS-E04 — source and held-out regression:** original Markdown, SKILL.md, CSV/JSONL, trajectory, and S8 mappings remain unchanged; declarative evidence does not contaminate procedural held-out evaluation.
+- **OBS-E05 — prompt and limitation evidence:** actual prompt IDs/responses are idempotent and linked to gate outcomes, and documentation never claims prompts grant truth, approval, execution, or certification.
+- **OBS-E06 — bilingual parity:** English/Chinese companions describe the same observation, consent, classification, prompt, correction, and acceptance behavior.
 
 ## Stop conditions
 
 - Do not mark the W16 full Stage A exit complete.
 - Do not accept generated prose as evidence or hide failing checks.
 - Do not run against production 9070 or production Markdown roots.
-- Do not pass preference acceptance with unconfirmed inference, cross-namespace leakage, raw sensitive injection, or missing real-host evidence.
+- Do not pass with personal evidence persisted without consent, forced classification, prompt-derived authority, cross-namespace/principal leakage, or missing real-host evidence.
 
 ## Change log
 
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
 - **0.2.0 (2026-11-22):** Added PREF-A01–08 and PREF-E01–05, mandatory preference result fields and evidence IDs, and real-host/privacy/recovery acceptance. No acceptance claim.
+- **0.3.0 (2026-11-23):** Added OBS-A01–10 and OBS-E01–06 for unified observation classification, general declarative memories, consent/identity, proactive prompts, mixed candidates, and gate-separated acceptance. No acceptance claim.

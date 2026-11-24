@@ -2,8 +2,8 @@
 lang: en
 canonical: devNotes/stage-a/pr04-learning-planner.md
 translation_status: reviewed
-owner: Line 1 (Learning Planner and Planner context) and Line 2 (evidence and preference mappings)
-spec_version: 0.2.0
+owner: Line 1 (Learning Planner, proactive prompts, and Planner context) and Line 2 (observation evidence and candidate mappings)
+spec_version: 0.3.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -91,77 +91,87 @@ Held-out: local note gamma.md → expected value C
 - **LRN-07:** crash/retry produces no duplicate candidates, memories, or executions.
 - **LRN-08:** changed premises or contradictory evidence trigger re-evaluation, revision, or revocation.
 
-## Declarative preference context
+## Unified observation-driven learning and proactive prompts
 
-PR04A/B also deliver lightweight personalized Planner context through the existing declarative-evidence lane. This is not part of the procedural Learning Planner and never creates a subtask + Option + Model bundle for a preference.
+PR04A/B consume PR03's validated observation classifications. Declarative memories include preferences and other assertions, corrections, recurring context, and governed facts; preferences are only one subtype. Procedural learning still requires full bundles and independent evaluation. Prompts help obtain missing consent, clarification, confirmation, or approval but never grant authority.
 
 ```text
-Host feedback / S7 trajectory envelope → Line 2 mapper → FactCandidate
-→ S6 + existing ν-gate → ordinary facts + J/≺
-→ Line 2 live query → Line 1 planner_context
+Validated observation → PR03 classification → candidate(s)
+→ optional bounded prompt → declarative: S6/ν-gate → facts + J/≺
+                       → procedural: approval + independent evaluation + registration → Option/Model
+→ bounded Planner context or governed Option discovery
 ```
 
-Use the PR01 preference contract and approved policy version. Only explicit preferences and explicitly confirmed inference may become eligible facts. Observation requires opt-in. Agent output/actions cannot confirm themselves, and feedback influenced by a preference cannot independently strengthen it. Existing revision APIs handle corrections. No new relation, lifecycle, confidence model, host tool, or learner is permitted.
+Authorized non-personal evidence may be collected passively. Personal evidence requires opt-in before persistent observation or candidate storage. Pre-consent processing is transient. Prompt IDs are deterministic over candidate ID, prompt kind, and principal ID; replay, dismissal, and rejection never repeat or confirm a prompt. Prompt responses are new evidence/approval inputs only.
 
 ### Line 1 deliverables — PR04A
 
-- Resolve a validated namespace from `subtasks.context` and consume Line 2's live query; do not parse raw feedback or add CozoScript to the Planner service.
-- Add a bounded, deterministic `declarative_context` to `getPlannerContext()` containing only eligible structured facts and existing provenance/quality metadata.
-- Generate and verify the additive preference-context hash, forward it through the scheduler, and record exact fact/version references in `planner_event.context_json`.
-- Keep `getPlannerContext()` read-only and `planner_options`, mandate, budgets, decision vocabulary, OptionExecutor, and Decision Gate unchanged.
-- Add `tests/stage-a-preference-planner.test.ts`.
+- Implement bounded proactive prompts through existing Planner `ask`, `wait`, and `replan` decisions and host approval/event paths, without adding tools or decision types.
+- Consume Line 2's live declarative-memory query using validated `subtasks.context.namespace` and the approved principal mapping for personal memories.
+- Add a bounded, deterministic `declarative_context` containing only relevant `status="in"` memories, not every admitted fact or raw observation.
+- Generate and verify the additive declarative-context hash, forward it through the scheduler, and record exact fact/version and prompt-response references in `planner_event.context_json`.
+- Keep `getPlannerContext()` read-only and preserve `planner_options`, mandates, budgets, decision vocabulary, OptionExecutor, and Decision Gate.
+- Add `tests/stage-a-observation-planner.test.ts`.
 
 ### Line 1 author self-tests
 
-- **PREF-P01:** an admitted explicit preference appears in the next relevant context with namespace, kind/value, fact/version identity, and provenance.
-- **PREF-P02:** another namespace or missing valid `subtasks.context.namespace` returns an empty projection; never infer namespace from text or session names.
-- **PREF-P03:** FactCandidates and `out`, `archived`, `contested`, superseded, unrelated, and out-of-scope entries are excluded.
-- **PREF-P04:** empty storage returns no preferences and creates no seed, observation, candidate, event, or asset; context reads change no counts or timestamps.
-- **PREF-P05:** ordering, relevance, count/byte bounds, and truncation are deterministic; only allowlisted structured fields are returned.
-- **PREF-P06:** identical fact/version inputs produce the same hash; correction changes it; Planner events record exact references without raw personal payloads.
-- **PREF-P07:** stale/mismatched hashes block with a stable reason and no decision, Option event, execution, or outbox write; matching hashes and replay remain correct.
-- **PREF-P08:** the scheduler forwards the hash and handles preference changes between read and decision without executing stale context.
-- **PREF-P09:** before/after snapshots of Options, mandate, budgets, tools, and decision vocabulary are identical; unauthorized execution remains blocked.
-- **PREF-P10:** isolated RocksDB restart preserves facts/lineage, retraction takes effect on the next live read, and replay creates no duplicates.
+- **OBS-P01:** authorized non-personal evidence needs no additional opt-in and reaches the appropriate admission path without a consent prompt.
+- **OBS-P02:** denied/missing personal consent or principal identity prevents persistent observation and personal projection; transient consent prompting is the only permitted pre-consent action.
+- **OBS-P03:** prompt issue/replay is idempotent, dismissal/rejection does not confirm, and a material candidate change is required before a new prompt.
+- **OBS-P04:** a prompt response cannot settle a fact, approve/register an Option, authorize execution, or suppress another required gate.
+- **OBS-P05:** a non-preference declarative memory admitted through ν-gate appears in relevant context with fact/version and provenance.
+- **OBS-P06:** another namespace or principal receives no personal projection; missing/ambiguous identity returns an empty projection.
+- **OBS-P07:** FactCandidates and `out`, `archived`, `contested`, superseded, unrelated, or out-of-scope entries are excluded; empty reads create no records.
+- **OBS-P08:** ordering, relevance, count/byte bounds, and truncation are deterministic; raw observations and sensitive claims are excluded.
+- **OBS-P09:** identical inputs produce identical hashes; correction changes the hash; stale/mismatched hashes block before decision, execution, or outbox writes.
+- **OBS-P10:** scheduler forwards the hash and prompt state without executing stale context or duplicating a prompt after restart.
+- **OBS-P11:** Options, mandate, budgets, tools, and decision vocabulary remain unchanged; unauthorized execution remains blocked.
+- **OBS-P12:** mixed observations use separate declarative and procedural admission paths with shared source references but no shared authority.
 
 ### Line 2 deliverables — PR04B
 
-- Implement the preference-feedback mapper, S6 authority/namespace/evidence-mode/idempotency validation, and live preference-fact query through the existing evidence/read-side components.
-- Add explicit, correction, confirmation, rejection, duplicate, agent-influenced, cross-namespace, contradictory, and sensitive fixtures.
-- Use existing revision APIs for correction/retraction; preserve history and return `reconcile_required` for partial correction.
-- Add `tests/stage-a-preference-evidence.test.ts`. Preference evidence is not a learning/held-out Skill dataset and requires no S8 capability evaluation.
+- Consume PR03 classification outputs and implement S6 authority/namespace/principal/evidence-mode/idempotency validation and the live declarative-memory query through existing components.
+- Persist prompt responses and candidate/fact/revision lineage with `classifier_version` and source references; prompt responses never bypass admission.
+- Add general declarative, preference, mixed, unknown, insufficient, duplicate, agent-influenced, cross-namespace/principal, contradictory, and sensitive fixtures.
+- Use existing revision APIs for corrections and fail closed with `reconcile_required` on partial changes.
+- Add `tests/stage-a-observation-evidence.test.ts`. Declarative memories do not require S8 capability evaluation; procedural bundles retain independent held-out evaluation.
 
 ### Line 2 author self-tests
 
-- **PREF-D01:** valid explicit feedback maps to one ordinary `status="in"` fact with correct lineage and no Option/Model output.
-- **PREF-D02:** source replay returns the existing result without duplicate host event, envelope, candidate, fact, revision, or metadata/confidence update.
-- **PREF-D03:** missing opt-in, agent-authored feedback, invalid namespace, or unverified evidence creates no eligible fact.
-- **PREF-D04:** repeated corrections may annotate a candidate, but unconfirmed inference is neither promoted nor queryable; explicit confirmation follows the same S6/ν-gate path.
-- **PREF-D05:** agent actions and influenced feedback cannot independently strengthen a preference; a new explicit user correction remains valid.
-- **PREF-D06:** namespaces and evidence modes never combine silently, and imported feedback is not relabeled native real.
-- **PREF-D07:** correction retires the old value, admits one replacement, preserves history, and returns only the replacement from the live query.
-- **PREF-D08:** failure between retirement and replacement is fail-closed with `reconcile_required`, never two active values after reconciliation; retry/restart creates no duplicates.
-- **PREF-D09:** raw payloads, source text, secrets, arbitrary claims, and unsupported values are absent from the read projection and logs.
-- **PREF-D10:** all writes use approved S6/service methods; no direct mnestic write, shadow profile, or additional tool/asset family appears.
+- **OBS-D01:** authorized non-personal evidence maps to the appropriate candidate without an unnecessary consent step.
+- **OBS-D02:** denied/missing personal consent or `principal_id` creates no persistent observation, candidate, fact, raw payload, or personal projection.
+- **OBS-D03:** two principals in one namespace retain separate personal candidates and read projections.
+- **OBS-D04:** a non-preference declarative memory can become one ordinary `status="in"` fact through ν-gate with correct lineage and no Option/Model output.
+- **OBS-D05:** mixed observations produce separate FactCandidate and S1 components with shared source references and no shared authority.
+- **OBS-D06:** unknown/insufficient patterns remain unmapped or return `need_more_evidence`; no classification, confidence, or task signature is invented.
+- **OBS-D07:** source and prompt replay returns existing results without duplicate observations, candidates, facts, prompt responses, revisions, or metadata updates.
+- **OBS-D08:** agent output and influenced feedback cannot independently confirm their own candidate; genuine new user feedback remains distinguishable.
+- **OBS-D09:** namespaces, principals, and real/simulated/sidecar evidence never combine silently; imported feedback is not relabeled native real.
+- **OBS-D10:** correction retires the old value, admits one replacement through the applicable gate, preserves history, and returns only the replacement.
+- **OBS-D11:** partial correction/prompt admission is fail-closed with `reconcile_required`, never two active values after reconciliation; retry/restart creates no duplicates.
+- **OBS-D12:** all writes use approved S6/service methods; no direct mnestic write, shadow profile, sensitive read projection, or additional tool/asset family appears.
 
-### PR04 preference integration checkpoint
+### PR04 unified-observation integration checkpoint
 
 Before PR05:
 
 1. Both lines attach independent author self-test commands, results, spec versions, test iterations, and actual row/event IDs; no cross-review is required.
-2. Run PREF-P01–10 and PREF-D01–10 on isolated Mem and required RocksDB scenarios, then `pnpm build && pnpm test`.
-3. Exercise explicit feedback → candidate → fact → Planner context → hash-bound decision → correction → revision.
-4. Inspect actual rows to prove no new relations, Options, Models, decision types, direct writes, or replay duplicates.
+2. Run OBS-P01–12 and OBS-D01–12 on isolated Mem and required RocksDB scenarios, then `pnpm build && pnpm test`.
+3. Exercise authorized non-personal, personal-consent, declarative non-preference, procedural, mixed, unknown, and prompt-replay scenarios through one shared intake.
+4. Inspect actual rows to prove no new relations, combined admission gate, new tools/decision types, direct writes, or replay duplicates.
 5. Any red or unclassified test blocks PR05. Any contract change returns to the specification-change gate.
 
 ## Stop conditions
 
 - Do not implement PR05 acceptance.
-- Do not create separate preference storage, lifecycle, confidence model, learner, or tool family. Use only the governed declarative path defined above.
+- Do not create separate preference storage, lifecycle, confidence model, learner, or tool family, and do not combine the ν-gate and registration gate.
+- Do not persist personal observations without opt-in or treat every real observation as a candidate.
+- Do not let prompts confer truth, approval, execution authority, or certification.
 - Do not generate arbitrary implementation code or release/certify based on generator self-score.
-- Do not inject unconfirmed inference, raw personal payloads, or cross-namespace preferences.
+- Do not inject unconfirmed inference, raw personal payloads, or cross-namespace/principal memories.
 
 ## Change log
 
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
 - **0.2.0 (2026-11-22):** Added two-line declarative-preference deliverables, PREF-P01–10 and PREF-D01–10, and the PR04 integration checkpoint. No implementation or acceptance claim.
+- **0.3.0 (2026-11-23):** Generalized preferences into unified observation-driven declarative learning with proactive bounded prompts, consent/identity rules, mixed candidate handling, and distinct admission gates. No implementation or acceptance claim.

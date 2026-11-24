@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr01-tests.md
 translation_status: reviewed
 owner: Line 1 (migration) and Line 2 (evidence fixtures)
-spec_version: 0.2.0
+spec_version: 0.3.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -63,21 +63,24 @@ Round-trip a valid EvidenceEnvelope. Unknown fields remain raw/null and do not c
 
 Reject a LearningRun whose held-out refs duplicate learning refs.
 
-## Declarative preference contract tests
+## Unified observation contract tests
 
-PR01A keeps MIG-01–04 and S1-01–02 unchanged and adds an assertion that migration creates only the approved schema 14 procedural-candidate relation, never a preference relation.
+PR01A keeps MIG-01–04 and S1-01–02 unchanged and adds an assertion that migration creates only the approved schema 14 procedural-candidate relation, never an observation or preference relation.
 
-PR01B owns `tests/stage-a-preference-contracts.test.ts` and preference fixtures under `tests/fixtures/stage-a/`. Write expected-failure tests before implementation where practical:
+PR01B owns `tests/stage-a-observation-contracts.test.ts` and observation fixtures under `tests/fixtures/stage-a/`. Write expected-failure tests before implementation where practical:
 
-- **PREF-C01 — explicit instruction round-trip:** preserve actor, namespace, source event, idempotency key, evidence mode, stable preference key, scope, and allowlisted value.
-- **PREF-C02 — correction and confirmation identity:** a correction has a new source event ID and the same preference key; replay retains deterministic identity; confirmation remains distinguishable from inference.
-- **PREF-C03 — invalid authority:** missing/invalid namespace, non-user actor, missing opt-in, or unverified source is rejected or unmapped without fabricating a valid FactCandidate.
-- **PREF-C04 — self-confirmation provenance:** preserve `influenced_by_fact_ids` and source-action references so agent-influenced feedback cannot independently confirm a preference.
-- **PREF-C05 — unsafe or unsupported values:** arbitrary profiles, secrets, unsupported kinds, and non-canonical values are blocked or unmapped.
-- **PREF-C06 — evidence isolation:** real, simulated, and sidecar fixtures retain their modes, and different namespaces cannot share candidate identity.
-- **PREF-C07 — unknown fields:** unknown data remains raw/null with `unmapped` entries; no confidence, rationale, scope, or task signature is invented.
+- **OBS-C01 — authorized operational observation:** round-trip a non-personal real observation with `consent="not_required"`, actor, namespace, source event, evidence mode, and idempotency intact.
+- **OBS-C02 — personal consent boundary:** `personal=true` with missing/denied consent or missing `principal_id` prevents persistent observation, candidate storage, and raw-payload retention; only transient consent prompting is allowed.
+- **OBS-C03 — identity separation:** two principals in one namespace retain distinct candidate identity and cannot share personal projections.
+- **OBS-C04 — declarative beyond preferences:** a non-preference assertion or recurring-context claim maps to a FactCandidate, not a preference-specific type.
+- **OBS-C05 — classification outcomes:** declarative, procedural, mixed, unknown, and insufficient fixtures produce their specified outputs; mixed components share source refs but not authority.
+- **OBS-C06 — replay and correction identity:** replay is reused without another envelope/candidate, while correction has a new source event and stable target identity.
+- **OBS-C07 — self-confirmation provenance:** agent output and influenced feedback cannot independently confirm their own candidate.
+- **OBS-C08 — sensitive and unknown fields:** secrets and unsupported fields remain excluded or unmapped; no confidence, rationale, scope, or task signature is invented.
+- **OBS-C09 — evidence isolation:** real, simulated, and sidecar fixtures retain their modes, and different namespaces/principals cannot share personal candidate identity.
+- **OBS-C10 — prompt contract:** prompt IDs are deterministic and replay-safe, dismissal is not confirmation, and a prompt response cannot bypass ν-gate, registration, evaluation, or Decision Gate.
 
-PR01B supplies fixtures and contract validation only. It does not implement the PR04 mapper, S6 ingestion, or Planner integration.
+PR01B supplies fixtures and contract validation only. It does not implement PR03 classification, PR04 prompts/admission, or Planner integration.
 
 ## Commands
 
@@ -89,15 +92,15 @@ node scripts/migrate_stage_a_candidates.ts --data .data/stage-a-w13-14 --backup 
 
 Record commands, exact results, isolated evidence, relevant row/event IDs, and limitations in the PR description. Do not mark later acceptance scripts as passing.
 
-## M0 / end-of-W13 preference checkpoint
+## M0 / end-of-W13 unified-observation checkpoint
 
-Before PR04 preference work begins, the experienced reviewer and domain owner must:
+Before PR03 classification and PR04 learning/prompt work begins, the experienced reviewer and domain owner must:
 
-1. Approve PREF-ADR-01–06, the cross-line S7/FactCandidate/live-query contract, the additive Planner hash contract, and privacy/retention behavior.
-2. Verify PREF-C01–07 have explicit expected results and recorded test iterations.
-3. Confirm no new relation, tool family, or automatic inference-promotion path was introduced.
-4. Independently run PR01 tests and the full baseline. Any red or unclassified test blocks PR04.
-5. Record the approved preference policy version and a sample envelope → FactCandidate → fact/read-query shape in `docs/stage-a-contracts.md`.
+1. Approve OBS-ADR-01–08, the cross-line S7/classification/candidate/live-query contracts, proactive prompt semantics, and privacy/identity/retention behavior.
+2. Verify OBS-C01–10 have explicit expected results and recorded test iterations.
+3. Confirm no new relation, combined admission gate, tool family, or automatic inference-promotion path was introduced.
+4. Independently run PR01 tests and the full baseline. Any red or unclassified test blocks dependent work.
+5. Record the approved observation/classifier policy versions and sample declarative, procedural, mixed, and insufficient mappings in `docs/stage-a-contracts.md`.
 
 ## Merge blockers
 
@@ -106,9 +109,10 @@ Before PR04 preference work begins, the experienced reviewer and domain owner mu
 - Missing backup or rollback evidence.
 - Changed historical IDs, bindings, R4, tool counts, or the 97-record boundary.
 - Any contract requirement that remains an unrecorded open question.
-- An unresolved preference authority, privacy, namespace, or cross-line contract decision.
+- Unresolved observation authority, consent, classification, identity, or cross-line contract decisions.
 
 ## Change log
 
 - **0.1.0 (2026-11-21):** Initial test plan. Test iteration 0; no acceptance claim. Add discovered scenarios using the template in `iterative-testing.md`.
 - **0.2.0 (2026-11-22):** Added PREF-C01–07, the no-preference-relation migration assertion, and the M0/W13 contract checkpoint. Test iteration 0; no implementation or acceptance claim.
+- **0.3.0 (2026-11-23):** Replaced preference-only cases with OBS-C01–10 covering general declarative memories, all observation classifications, personal consent/identity, and prompt-to-gate boundaries. Test iteration 0; no implementation or acceptance claim.
