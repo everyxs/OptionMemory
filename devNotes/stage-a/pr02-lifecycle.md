@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr02-lifecycle.md
 translation_status: reviewed
 owner: Line 1
-spec_version: 0.4.0
+spec_version: 0.5.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -137,11 +137,40 @@ Additional author self-tests:
 
 `devNotes/stage-a/concrete-learning-tests.md` defines the concrete fixture, reuse, mismatch, duplicate, and rejected-verification scenarios. Abstract procedural generation is deferred to Stage B.
 
+## Unified fulfillment and propagation lifecycle (0.5.0)
+
+Both `candidate_kind="concrete_option"` and `candidate_kind="trajectory_policy"` contain complete Option + Model proposals and use the existing approval/package/mandate/registration lifecycle. An NL Option uses `pi_type="natural_language"` and an immutable structured policy package rather than a fictitious code implementation. Registration verifies its normalized policy/package hash, scope, predicates, and declared inference/effects.
+
+`planner_options` lists both fulfillment forms with an additive discriminator. `planner_decision.execute(option_id)` passes either kind through Decision Gate. Implementation-backed Options use the existing controlled implementation path; NL Options require a controlled NativeAdapter/OptionExecutor fulfillment handler. An unavailable handler blocks. This is a scoped extension to OptionExecutor, not an execution-gate bypass or a new host tool family.
+
+An authorized NL execution permits only the approved policy version, host inference budget, and declared effects. Any tool/code action recommended by its output requires another valid Planner decision selecting an authorized Option. Raw observations, candidate text, and model self-scores never confer execution authority.
+
+Policy merges create immutable versions with parent policy/version references, source-episode unions, normalized policy/effect hashes, and proposer/validator versions. They never overwrite verified originals, sum supporting votes, or treat paraphrases as independent corroboration. Material policy/scope/action/effect changes require appropriate reevaluation.
+
+Fixed reviewed Horn/Datalog rules may derive `affected`, `guidance_eligible`, `option_retrievable`, and `contested` from explicit status/dependency evidence. Propagation is scoped and provenance-linked:
+
+- `affected` requires reevaluation; it is not automatic invalidity.
+- Required contradictions can lead to demotion through existing lifecycle APIs; alternative valid justifications can preserve eligibility.
+- Support does not automatically flow to dependents, merge children, or semantically similar Options.
+- Observed declarative claims still use FactCandidate → S6/ν-gate → facts + J/≺; no outcome-as-fact conversion or generated-rule activation is permitted.
+
+Additional author self-tests:
+
+- **LIFE-16:** an NL Option follows the full bundle/approval/package/mandate/registration path, and a missing NL handler or excessive effect/budget blocks execution.
+- **LIFE-17:** an NL policy cannot directly invoke tools; a recommended tool action requires a separate authorized execute decision through Decision Gate.
+- **LIFE-18:** policy merges preserve immutable parent versions and source lineage without duplicate support; material changes require reevaluation.
+- **LIFE-19:** required contradictions propagate `affected`/demotion only through explicit dependencies, while alternative justifications and unrelated Options remain intact.
+- **LIFE-20:** no propagation expands allowed effects, budgets, mandates, tool counts, or declarative status, and arbitrary Horn rules cannot activate.
+
+`devNotes/stage-a/procedural-options-tests.md` defines the unified lifecycle, fan-out, propagation, and negative scenarios.
+
 ## Stop conditions
 
 - Do not implement PR03 connectors or PR04 Learning Planner.
 - Do not let proactive prompts bypass lifecycle, evaluation, or Decision Gate checks.
-- Do not generate abstract skills in Stage A.
+- Do not generate abstract skills or generalized NL policies in Stage A; trajectory-level NL Options are not a shortcut around full Option registration.
+- Do not let NL output invoke tools directly or let an unregistered fulfillment handler execute.
+- Do not treat propagation as independent evidence or authority.
 - Do not accept generated prose as lifecycle evidence.
 - Do not merge before migration/rollback, negative suite, and lifecycle acceptance pass.
 
@@ -150,3 +179,4 @@ Additional author self-tests:
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
 - **0.3.0 (2026-11-23):** Added LIFE-09–13 for unified observation prompts, mixed candidates, prompt-safe approval/registration, and read-side status boundaries. Existing lifecycle requirements are unchanged.
 - **0.4.0 (2026-11-24):** Added LIFE-14–15 for concrete implementation reuse, lineage preservation, mismatch/rejection handling, and no duplicate-asset behavior. Abstract procedural generation moved to Stage B.
+- **0.5.0 (2026-11-24):** Added unified NL/implementation Option lifecycle, controlled fulfillment, immutable policy merges, LIFE-16–20, and scoped Horn/provenance propagation.

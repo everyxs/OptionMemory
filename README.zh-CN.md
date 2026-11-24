@@ -364,11 +364,11 @@ supersedes 使用刚才的 document_id，namespace=global，idempotency_key=proj
 1. **正常使用 Skill。** 通过现有 `pdf-to-latex` Skill 转换 `alpha.pdf`，不创建人造种子任务。STOMP 记录真实的 subtask/plan_run/execute decision、实现版本、观察结果、结果与前后状态。
 2. **映射证据。** dataStore 将 PDF 与 Skill 包的哈希、任务签名、namespace、pre_state 和证据模式映射为 S7 EvidenceEnvelope。这里只建立观察上下文；安装 Skill 或一次成功转换不等于已经学会该能力。
 3. **积累兼容证据。** 按同一正常流程转换 `beta.pdf` 等其他文档，比较结构与不变量：唯一输出、原始 PDF 不变、预期编码、没有越权写入。不从单次观察泛化，也不补造缺失状态。
-4. **证据充分后才提出候选束。** 两个兼容的原生 real 观察之后，Learning Planner 才可提出完整 subtask + Option + Model 候选束。Option 使用有边界的实现模板；Model 包含预期后置条件、不变量与评估要求，`approval_ref` 保持 `null`。
-5. **独立评估。** 将后续自然出现的 `gamma.pdf` 或经批准的隔离运行作为留出证据，记录 S8 LearningRun，包含预期/实际 post_state、独立证据和 `generator_score=null`。
-6. **治理结果。** 只有经过审批与合规的 real 评估，注册门才可接纳候选束，后续 Planner 决策才能选择已发布 Option。来源结构变化或矛盾结果触发重新评估、修订或撤销，而不是强化原结论。
+4. **证据充分后才提出候选束。** 两个兼容的原生 real 观察之后，Learning Planner 才可提出完整 subtask + Option + Model 候选束。实现型 Option 复用已观察实现或保留版本血缘；轨迹级自然语言 Option 则使用不可变策略包，包含适用范围和预期/失败效果。二者都不是泛化的抽象 Skill，`approval_ref` 保持 `null`。
+5. **独立评估与扇出审计。** 将后续自然出现的 `gamma.pdf`、`delta.pdf` 或经批准的隔离运行作为互不重叠的留出证据。每次经授权的代码执行或受控宿主推理前，登记所有兼容隐藏候选的冻结效果规范。一次真实执行可给多个候选分别产生支持、矛盾或未决结论，但不能据此验证另一个不同实现或 NL 策略；它们仍需各自经批准的原生评估。S8 LearningRun 记录预期/实际 post_state、独立证据和 `generator_score=null`。
+6. **治理结果。** 只有经过审批与合规的 real 评估，注册门才可接纳候选束。`planner_options` 可同时列出两类 Option，`planner_decision.execute(option_id)` 对两者都经过 Decision Gate。NL Option 不得直接调用工具，后续工具/代码动作必须另有经授权的决策。固定 Horn/血缘规则仅传播明确的依赖与资格后果，不传播独立支持、规范事实或执行权限。来源结构变化或矛盾结果触发重新评估、修订、降级或撤销，而不是强化原结论。
 
-规划边界：不任意生成实现、不自动修改 `AGENTS.md`、不直接写入 mnestic、不把 sidecar 当作 real 证据，也不因 Skill 已存在就声称它已学习或已认证。
+规划边界：不任意生成实现或泛化抽象 Skill、不自动修改 `AGENTS.md`、不直接写入 mnestic、不把 sidecar 当作 real 证据、不激活任意生成的 Horn 规则，也不因 Skill 已存在就声称它已学习或已认证。0.5.0 版计划的验收矩阵见 `devNotes/stage-a/concrete-learning-tests.md` 和 `devNotes/stage-a/procedural-options-tests.md`。
 
 ## 八、当前边界
 

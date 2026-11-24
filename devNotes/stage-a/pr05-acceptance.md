@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr05-acceptance.md
 translation_status: reviewed
 owner: Line 1 (runtime acceptance) and Line 2 (evidence/regression/docs)
-spec_version: 0.4.0
+spec_version: 0.5.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -155,12 +155,46 @@ The acceptance result must additionally require:
 
 Record actual `nativeEvaluationOptionEventId` for gamma, implementation/version lineage, and evaluation evidence references including delta's native Option event. Sidecar-only evidence cannot satisfy the independent native evaluation check; one episode cannot supply two verdicts.
 
+## Unified Options, fan-out, and propagation acceptance (0.5.0)
+
+Extend `scripts/stage_a_learning_acceptance.ts`; do not add another acceptance script or pass token. Retain the concrete trajectory scenario and all unified observation checks, then demonstrate on real OpenCode and DSH with isolated storage:
+
+1. Stepwise extraction produces a concrete implementation-backed Option and a trajectory-level NL Option, each with a complete Option + Model bundle and immutable package.
+2. `planner_options` exposes both fulfillment forms with deterministic filtering/ranking/bounds and exact versions. No generalized abstract policy appears.
+3. Each selected Option passes Decision Gate before actual code execution or controlled host inference. Missing handlers, excessive effects/budgets, invalid output, and attempted NL-to-tool bypass remain blocked.
+4. Before each selected execution, all eligible hidden candidates are registered with frozen effect specifications. One actual execution yields independent per-candidate supporting/contradictory/unresolved verdicts and exactly one Option event.
+5. A distinct implementation or NL policy receives no capability validation from another Option's execution. Both kinds require actual approved native evaluation for release.
+6. Delayed terminal/user/external evidence resolves eligible pending trials without duplicate episode votes. Source episodes and actor-influenced self-confirmation are excluded.
+7. Horn/provenance propagation marks only explicitly dependent assets affected and preserves alternative justifications. It does not transfer support, canonical fact status, mandates, budgets, or execution authority.
+8. Merges preserve immutable parent versions and do not double-count support. Restart/replay preserves retrieval, pending audits, verdicts, and lineage across Mem and RocksDB.
+
+The acceptance result must additionally require:
+
+```json
+{
+  "stepwise_option_extraction": true,
+  "prequential_candidate_fanout": true,
+  "provenance_scoped_propagation": true,
+  "nl_option_decision_gate": true,
+  "nl_option_fulfillment_evidence": true,
+  "deterministic_procedural_retrieval": true,
+  "policy_merge_and_why_lineage": true,
+  "negative_delayed_evaluation": true,
+  "nl_tool_authority_preserved": true
+}
+```
+
+Record actual `nativeEvaluationOptionEventId`, `nlEvaluationOptionEventId`, `fanoutLearningRunId`, policy/package hashes, audit IDs, verdict keys, originating execution IDs, rule/evaluator versions, and affected-entity references. `nlEvaluationOptionEventId` is a real controlled host-inference event, not a generated prose sample or model self-score. Evidence contains no hidden chain-of-thought, credentials, raw personal payloads, or absolute local paths.
+
+Use `devNotes/stage-a/procedural-options-tests.md` for the canonical STEP, POL, RET, MERGE, DELAY, HORN, WHY, AUDIT, PROP, and GATE-NL matrix. The W14 reviewer independently verifies both fulfillment paths, audit fan-out, scoped propagation, native held-out separation, and no unauthorized side effects. Post-merge and full-W16 checks revalidate these requirements with the remaining source and remote-evidence work.
+
 ## Stop conditions
 
 - Do not mark the W16 full Stage A exit complete.
 - Do not accept generated prose as evidence or hide failing checks.
 - Do not run against production 9070 or production Markdown roots.
 - Do not pass with personal evidence persisted without consent, forced classification, prompt-derived authority, cross-namespace/principal leakage, missing real-host evidence, duplicate assets, or abstract-skill generation.
+- Do not pass with an NL gate/handler bypass, direct NL-to-tool execution, duplicate audit votes, support inherited without direct compatible evidence, arbitrary Horn activation, or validation of a distinct policy/implementation without its actual approved execution.
 
 ## Change log
 
@@ -168,3 +202,4 @@ Record actual `nativeEvaluationOptionEventId` for gamma, implementation/version 
 - **0.2.0 (2026-11-22):** Added PREF-A01–08 and PREF-E01–05, mandatory preference result fields and evidence IDs, and real-host/privacy/recovery acceptance. No acceptance claim.
 - **0.3.0 (2026-11-23):** Added OBS-A01–10 and OBS-E01–06 for unified observation classification, general declarative memories, consent/identity, proactive prompts, mixed candidates, and gate-separated acceptance. No acceptance claim.
 - **0.4.0 (2026-11-24):** Made concrete verified-trajectory reuse the primary acceptance scenario, added native independent evaluation/source-exclusion/no-duplicate/no-abstract checks, and moved abstract procedural generation to Stage B.
+- **0.5.0 (2026-11-24):** Added unified Decision-Gated NL/implementation Options, prequential fan-out, deterministic retrieval, delayed evidence, and scoped Horn/provenance propagation with real-host acceptance requirements.

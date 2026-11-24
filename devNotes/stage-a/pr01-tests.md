@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr01-tests.md
 translation_status: reviewed
 owner: Line 1 (migration) and Line 2 (evidence fixtures)
-spec_version: 0.4.0
+spec_version: 0.5.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -92,6 +92,21 @@ node scripts/migrate_stage_a_candidates.ts --data .data/stage-a-w13-14 --backup 
 
 Record commands, exact results, isolated evidence, relevant row/event IDs, and limitations in the PR description. Do not mark later acceptance scripts as passing.
 
+## Unified procedural Option and fan-out contracts (0.5.0)
+
+Add contract and migration cases for both procedural fulfillment forms; no implementation or acceptance claim is made by this plan:
+
+- **POL-01 — trajectory-policy bundle:** round-trip a complete NL Option + Model candidate with `candidate_kind="trajectory_policy"`, `pi_type="natural_language"`, an immutable policy package/reference, trajectory scope, expected/failure predicates, and no arbitrary code or generalized abstract-skill claim.
+- **POL-07 — implementation bundle:** preserve the concrete Option + Model path, its implementation/version lineage, and existing package/mandate checks. Both kinds use approval, registration, evaluation, and Decision Gate.
+- **POL-03 — public Option projection:** both kinds expose an additive `fulfillment` discriminator and exact policy/implementation versions. Existing implementation-backed fields remain compatible; raw observations and sensitive payloads are not returned.
+- **AUDIT-00 — audit identity:** `audit_id` binds candidate/version, episode, selected Option event, and predicate hash; `verdict_key` binds candidate/version and episode. Replay is reused, source episodes are excluded, and one episode has at most one conclusive verdict per candidate.
+- **HORN-00 — fixed-rule boundary:** fixed reviewed Horn/Datalog queries round-trip eligibility and explicit dependency relationships. Arbitrary generated rules cannot activate, and R4 remains blocked.
+- **WHY-00 — provenance:** merge parents, source episodes, generator/validator versions, policy/effect hashes, approval, fulfillment, and evaluation references round-trip without copying raw sensitive payloads.
+
+Migration tests must include `candidate_kind` while creating only the approved schema 14 relation, not a new observation, preference, audit, or policy table. Both candidate kinds carry full Option + Model proposals; `package_ref` identifies either an immutable implementation or policy package, and `package_hash` commits to its exact normalized contents.
+
+`devNotes/stage-a/procedural-options-tests.md` is the canonical fixture and test matrix for POL, AUDIT, STEP, RET, MERGE, DELAY, HORN, WHY, PROP, and GATE-NL scenarios.
+
 ## M0 / end-of-W13 unified-observation checkpoint
 
 Before PR03 classification and PR04 learning/prompt work begins, the experienced reviewer and domain owner must:
@@ -99,8 +114,10 @@ Before PR03 classification and PR04 learning/prompt work begins, the experienced
 1. Approve OBS-ADR-01–08, the cross-line S7/classification/candidate/live-query contracts, proactive prompt semantics, and privacy/identity/retention behavior.
 2. Verify OBS-C01–10 have explicit expected results and recorded test iterations.
 3. Confirm no new relation, combined admission gate, tool family, or automatic inference-promotion path was introduced.
-4. Independently run PR01 tests and the full baseline. Any red or unclassified test blocks dependent work.
-5. Record the approved observation/classifier policy versions and sample declarative, procedural, mixed, and insufficient mappings in `docs/stage-a-contracts.md`.
+4. Approve the unified Option/Planner schema, NL effect vocabulary, inference budget/privacy, immutable policy package identity, controlled fulfillment-adapter boundary, fan-out audit/verdict identities, and fixed-Horn/provenance propagation rules.
+5. Verify the new procedural-option contract cases have expected results and recorded iterations, including NL tool-bypass denial, distinct-procedure validation requirements, and no abstract runtime policy.
+6. Independently run PR01 tests and the full baseline. Any red or unclassified test blocks dependent work.
+7. Record the approved observation/classifier, retrieval, predicate, and fixed-rule versions and sample declarative, concrete Option, trajectory-policy, mixed, and insufficient mappings in `docs/stage-a-contracts.md`.
 
 ## Merge blockers
 
@@ -110,9 +127,13 @@ Before PR03 classification and PR04 learning/prompt work begins, the experienced
 - Changed historical IDs, bindings, R4, tool counts, or the 97-record boundary.
 - Any contract requirement that remains an unrecorded open question.
 - Unresolved observation authority, consent, classification, identity, or cross-line contract decisions.
+- An NL Option that bypasses Decision Gate, invokes tools directly, executes through an unregistered handler, or claims validation from a different policy or implementation's execution.
+- Support inherited without direct compatible evidence, duplicated merge votes, or arbitrary generated Horn-rule activation.
 
 ## Change log
 
 - **0.1.0 (2026-11-21):** Initial test plan. Test iteration 0; no acceptance claim. Add discovered scenarios using the template in `iterative-testing.md`.
 - **0.2.0 (2026-11-22):** Added PREF-C01–07, the no-preference-relation migration assertion, and the M0/W13 contract checkpoint. Test iteration 0; no implementation or acceptance claim.
 - **0.3.0 (2026-11-23):** Replaced preference-only cases with OBS-C01–10 covering general declarative memories, all observation classifications, personal consent/identity, and prompt-to-gate boundaries. Test iteration 0; no implementation or acceptance claim.
+- **0.4.0 (2026-11-24):** Aligned the version marker with the concrete evidence and implementation-reuse increment; detailed scenarios are in `concrete-learning-tests.md`.
+- **0.5.0 (2026-11-24):** Added unified NL/implementation Option contracts, fan-out audit identities, fixed-Horn/provenance boundaries, and expanded M0 checkpoints. Test iteration 0; no implementation or acceptance claim.

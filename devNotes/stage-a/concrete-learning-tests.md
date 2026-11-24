@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/concrete-learning-tests.md
 translation_status: reviewed
 owner: Line 1 (Planner/runtime/acceptance) and Line 2 (evidence/classification/lineage)
-spec_version: 0.4.0
+spec_version: 0.5.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -194,6 +194,14 @@ node scripts/stage_a_learning_acceptance.ts
 
 Use isolated Mem/RocksDB, temporary Markdown roots, and real OpenCode/DSH sessions where required. Do not use production 9070, production Markdown roots, real credentials, or real network collection.
 
+## Unified procedural-option companion suite (0.5.0)
+
+`devNotes/stage-a/procedural-options-tests.md` extends this plan to both concrete implementation-backed Options and trajectory-level natural-language Options. NL Options have complete Option + Model bundles and immutable policy packages, pass Decision Gate, and execute through a controlled host-inference fulfillment handler. They are not generalized abstract Skills.
+
+The companion suite adds general stepwise extraction, unified `planner_options`, prequential fan-out over all eligible hidden candidates, deterministic retrieval, semantic merge/version lineage, delayed evidence, and fixed Horn/provenance propagation. One real execution may test multiple compatible predictions but never validates a distinct implementation or NL policy without that procedure's own approved native execution.
+
+All existing concrete-reuse, native-evaluation, privacy, and authority cases remain mandatory. In particular, propagation cannot create independent corroboration, canonical facts, tool authority, or duplicate merge support.
+
 ## Merge blockers
 
 - Any missing/red test or unclassified failure.
@@ -204,8 +212,10 @@ Use isolated Mem/RocksDB, temporary Markdown roots, and real OpenCode/DSH sessio
 - Personal evidence persisted without consent or stable principal identity.
 - Prompt-derived truth, approval, execution, or certification.
 - Raw personal payloads, secrets, absolute local paths, or unsupported fields in Planner context/logs.
+- NL Decision Gate or fulfillment-handler bypass, direct tool invocation from NL output, unsupported fan-out/propagation, or arbitrary Horn-rule activation.
 - Changed historical IDs, R4, tool counts, or the 97-record boundary.
 
 ## Change log
 
 - **0.4.0 (2026-11-24):** Added concrete verified-trajectory-first testing, shared sidecar/semantic ingestion, runtime-candidate-verified checks, source-episode exclusion, expected-effect evaluation, implementation reuse, and a prohibition on Stage A abstract-skill generation. Test iteration 0; no implementation or acceptance claim.
+- **0.5.0 (2026-11-24):** Linked the unified NL/implementation Option, prequential fan-out, retrieval, merge/provenance, and propagation companion suite while retaining every concrete-reuse requirement. Test iteration 0; no implementation or acceptance claim.

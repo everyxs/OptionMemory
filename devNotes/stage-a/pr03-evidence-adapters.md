@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr03-evidence-adapters.md
 translation_status: reviewed
 owner: Line 2
-spec_version: 0.4.0
+spec_version: 0.5.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -145,12 +145,38 @@ A concrete procedural candidate retains the observed `pi_ref`, implementation ve
 
 `devNotes/stage-a/concrete-learning-tests.md` defines the shared fixtures and duplicate-ingestion, concrete-reuse, unknown/insufficient, and native-evaluation requirements.
 
+## Stepwise Options and fan-out evidence mapping (0.5.0)
+
+Apply stepwise extraction to both implementation-backed and natural-language Options. Deterministic triggers include verified output/post-state changes, explicit errors, trusted repeated no-progress evidence, terminal/user feedback, and concrete implementation or policy-package observations. A trigger creates an extraction opportunity, not a candidate, LLM call, or validation vote.
+
+The existing native/STOMP chain supplies selected Option, implementation/policy version, arguments, available pre/post state, environment, output, error, outcome, and source episode. Native activity does not require a dataStore round trip. Missing pre/post state or terminal evidence remains null/unresolved; do not invent it or collect hidden chain-of-thought. `report`/`answer` and run completion/stopping provide boundaries, not automatic success/failure labels.
+
+PR03A preserves `fulfillment`, declared inference/effects, policy/package hash, and actual host inference or code execution references through existing Planner/Option/Model events. NL output may be an answer or proposed next decision, never direct tool execution. PR03B extends the shared S7/sidecar/semantic pipeline with:
+
+- A versioned `StepTrigger` payload and normalized evidence-field registry for restricted predicates.
+- `candidate_kind="concrete_option" | "trajectory_policy"` and immutable policy-package/scope mappings.
+- Source episodes, fulfillment, predicate hashes, compatibility versions, and audit/verdict lineage required by PR04 fan-out evaluation.
+- Optional bounded LLM policy extraction and merge proposals with structured output, deterministic schema/scope/action/effect validation, and no arbitrary implementation generation. The deterministic no-LLM path remains required.
+- No duplicate semantic mapper or STOMP projection for any source event.
+
+Additional author self-tests:
+
+- **DS-15:** code and NL step triggers normalize actual observations without forced candidates, duplicate projections, hidden chain-of-thought, or fabricated pre/post/terminal evidence.
+- **DS-16:** a trajectory-policy mapping produces a complete immutable Option + Model policy package with scope, effects, predicates, and provenance; generalized/abstract output is rejected in Stage A.
+- **DS-17:** fan-out mapping preserves per-candidate predicate/scope/action/version identities and supporting, contradictory, or unresolved inputs without collapsing them into one execution-success value.
+- **DS-18:** optional LLM output and merge targets remain untrusted until deterministic validation; paraphrases add no independent support, and unavailable inference produces no fabricated candidate.
+- **DS-19:** delayed feedback and host lifecycle boundaries remain distinct, with terminal verdicts linked to actual evidence rather than inferred from run status alone.
+- **DS-20:** real, simulated, and sidecar modes remain separate; a sidecar NL or code candidate can propose but cannot release without actual approved native evaluation.
+
+`devNotes/stage-a/procedural-options-tests.md` defines the shared STEP, DS, POL, AUDIT, MERGE, and propagation fixtures.
+
 ## Stop conditions
 
 - Do not implement PR04 Learning Planner or PR05 acceptance.
 - Do not turn parsed files or real observations directly into facts or Options.
 - Do not persist personal evidence without opt-in or force every observation into declarative/procedural classification.
-- Do not create duplicate sidecar and semantic-mapper ingestion paths or abstract skills in Stage A.
+- Do not create duplicate sidecar and semantic-mapper ingestion paths, generalized abstract skills, or arbitrary code in Stage A.
+- Do not let an LLM invent a task signature, effect field, implementation, validation verdict, or execution entitlement.
 - Do not import raw HTML/images/large JSONL into MemoryCore or invent missing metadata.
 
 ## Change log
@@ -158,3 +184,4 @@ A concrete procedural candidate retains the observed `pi_ref`, implementation ve
 - **0.1.0 (2026-11-21):** Initial specification. Test iteration 0; no acceptance claim. Refine only through `iterative-testing.md` with classified results and linked evidence.
 - **0.3.0 (2026-11-23):** Added unified observation validation, consent/identity requirements, deterministic declarative/procedural/mixed/unknown classification, and DS-09–14. No implementation or acceptance claim.
 - **0.4.0 (2026-11-24):** Required one shared sidecar/semantic ingestion pipeline, concrete implementation evidence, no duplicate projections, and no Stage A abstract-skill generation.
+- **0.5.0 (2026-11-24):** Added general code/NL stepwise extraction, normalized fan-out evidence, immutable policy-package mapping, optional untrusted semantic proposals, and DS-15–20.

@@ -129,7 +129,7 @@ Use `devNotes/stage-a/README.md` for the exact isolated setup, shared implementa
 
 ## 5. Copy-paste PR instructions
 
-Each prompt is intentionally short. Give one prompt to a coding agent and require it to read the linked spec and test plan before implementing. Authors run their own tests; there is no cross-review. Every PR also includes its assigned unified-observation deliverables, tests, and checkpoints in §5A and the 0.4.0 specifications.
+Each prompt is intentionally short. Give one prompt to a coding agent and require it to read the linked spec and test plan before implementing. Authors run their own tests; there is no cross-review. Every PR also includes its assigned unified-observation deliverables, tests, and checkpoints in §5A and the 0.5.0 specifications.
 
 ### PR01A — Line 1: lifecycle ADR, schema, and migration (Days 1–2)
 
@@ -567,7 +567,7 @@ Extend `scripts/stage_a_learning_acceptance.ts` and its existing result schema/p
 - **W14 gate:** the experienced reviewer independently reruns RocksDB and real-host scenarios, inspects actual rows/logs, verifies zero cross-namespace/principal leaks, unauthorized effects, personal evidence persisted without consent, sensitive injections, unconfirmed injections, or prompt-derived authority. Any failed gate blocks merge.
 - **Post-merge/W16:** rerun build/tests and both acceptance scripts on `main`. At the full W16 gate, revalidate observation correction, restart, retention/erasure, lineage, and remote-evidence authority after the remaining W16 work. Remote imported evidence cannot silently become native user confirmation.
 
-The canonical details are in `devNotes/stage-a/pr01-contracts.md`, `pr01-tests.md`, `pr02-lifecycle.md`, `pr03-evidence-adapters.md`, `pr04-learning-planner.md`, `pr05-acceptance.md`, and `review.md` at specification version **0.4.0**. All observation scenarios follow `iterative-testing.md`: record fixtures, expected failures, iterations, classifications, actual evidence, and limitations; no planned test or pass token is an acceptance claim before execution.
+The canonical details are in `devNotes/stage-a/pr01-contracts.md`, `pr01-tests.md`, `pr02-lifecycle.md`, `pr03-evidence-adapters.md`, `pr04-learning-planner.md`, `pr05-acceptance.md`, and `review.md` at specification version **0.5.0**. All observation scenarios follow `iterative-testing.md`: record fixtures, expected failures, iterations, classifications, actual evidence, and limitations; no planned test or pass token is an acceptance claim before execution.
 
 ## 5B. Concrete evidence and implementation-reuse refinement (all PRs)
 
@@ -618,6 +618,46 @@ Runtime hypotheses remain non-instructional projections. Expected effects are fr
 - Require `concrete_trajectory_reuse`, `native_independent_evaluation`, `source_episode_exclusion`, `no_duplicate_assets`, and `no_abstract_generation` in the acceptance result.
 - Record actual native evaluation Option event, implementation/version lineage, and evidence references; do not accept sidecar-only release or duplicate assets.
 - Extend the sanitized evidence package with concrete trajectory and evaluation lineage without raw logs or absolute local paths.
+
+## 5C. Unified Options and prequential fan-out (all PRs)
+
+Stage A supports two fulfillment forms through the same full Option + Model, approval/package/mandate/registration, retrieval, evaluation, and why-provenance model:
+
+```text
+Concrete implementation Option → Decision Gate → controlled code/tool fulfillment
+Trajectory-level NL Option → Decision Gate → controlled host inference
+```
+
+NL Options use `pi_type="natural_language"` and immutable policy packages with condition, policy text, trajectory scope, compatible actions, declared effects, expected/failure predicates, source episodes, parent versions, and normalized policy hashes. They are not generalized abstract Skills. An unavailable NL handler blocks. NL output cannot invoke tools directly; every downstream tool/code action requires another authorized execute decision.
+
+Only trajectory-level, episode-proximate, evidence-linked NL hypotheses enter runtime guidance. They are non-authoritative and expire with the episode. Verified NL Options remain restricted to their concrete trajectory scope. Generalized abstract NL Skills and generated Horn rules remain Stage B.
+
+### Stepwise extraction and unified retrieval
+
+- **PR01A/B:** define `candidate_kind="concrete_option" | "trajectory_policy"`, immutable policy packages and versions, inference/effect vocabulary, fan-out audit/verdict identities, fixed Horn/provenance rules, and multi-candidate fixtures. M0 additionally approves the public `planner_options` schema, NL handler, inference budget/privacy, and propagation contracts.
+- **PR02A/B:** both kinds follow approval/package/mandate/registration and release/revoke lifecycle. LIFE-16–20 prove full NL registration, missing-handler/effect denial, no direct tool invocation, immutable merges, scoped contradiction propagation, and no authority expansion.
+- **PR03A/B:** general stepwise triggers capture actual output/post-state, errors, trusted no-progress, terminal/user feedback, and policy-package observations through native STOMP and one shared S7/sidecar/semantic pipeline. Optional LLM policy/merge proposals remain untrusted until deterministic validation; no duplicate projections or fabricated pre/post state, terminal verdicts, or chain-of-thought are allowed.
+- **PR04A/B:** `planner_options` lists both kinds with additive fulfillment metadata. Fixed Cozo eligibility filters plus deterministic application ranking handle episode/task proximity, schema/action compatibility, evidence, current version, and tie-breaks. Mem is an episode cache; RocksDB is the persistent authority. Do not use placeholder embeddings as semantic scores.
+
+### Prequential fan-out and propagation
+
+After the actor selects an authorized Option and before implementation or inference, register every eligible hidden candidate with compatible trajectory scope/action and a frozen falsifiable effect specification. `audit_id` binds candidate/version, episode, selected Option event, and predicate hash; `verdict_key` binds candidate/version and episode. Recheck source exclusions and verdict uniqueness at registration and recording.
+
+One actual execution can produce independent supporting, contradictory, or unresolved verdicts for several candidates without duplicate execution records. It cannot validate a distinct implementation or NL policy without that procedure's own approved native execution. Actor-visible guidance is separate from hidden audit candidates and cannot independently confirm itself.
+
+Deterministic audit budgets leave overflow pending and visible without extra effects. Pending trials may be resolved by eligible terminal/user/external evidence; completion is not automatically success and stopping is not automatically failure. Retry/replay cannot create another conclusive episode verdict.
+
+Fixed reviewed Horn/Datalog rules propagate only explicit `affected`, `guidance_eligible`, `option_retrievable`, and `contested` consequences. Required contradictions use existing revision/demotion paths; alternative valid justifications remain effective. Support never automatically flows to dependents, merge children, or similar Options. Declarative claims still require FactCandidate → S6/ν-gate → facts + J/≺. No arbitrary generated Horn rule activates in Stage A.
+
+Every consequence retains source execution, candidate/policy/predicate versions, audit/verdict, merge parents, rule/evaluator versions, approval/mandate where applicable, fulfillment, and affected-entity provenance. Merges never overwrite verified originals or double-count support.
+
+### PR05A/B — unified acceptance and evidence
+
+Use `devNotes/stage-a/procedural-options-tests.md` for STEP, POL, RET, MERGE, DELAY, HORN, WHY, AUDIT, PROP, and GATE-NL scenarios. Extend the existing learning acceptance with real OpenCode/DSH code and controlled NL inference, `nlEvaluationOptionEventId`, `fanoutLearningRunId`, policy/package hashes, audit IDs, verdict keys, originating execution IDs, rule/evaluator versions, and affected-entity references.
+
+Require `stepwise_option_extraction`, `prequential_candidate_fanout`, `provenance_scoped_propagation`, `nl_option_decision_gate`, `nl_option_fulfillment_evidence`, `deterministic_procedural_retrieval`, `policy_merge_and_why_lineage`, `negative_delayed_evaluation`, and `nl_tool_authority_preserved` in addition to every earlier result field. No new acceptance script, host tool, decision type, or pass token is introduced.
+
+At M0, approve unified Option/Planner schemas, inference effects/budget/privacy, package identity, fulfillment adapter, audit identities, fixed Horn rules, and provenance. At PR04, both lines provide independent self-test packages and actual row/event IDs for all existing and new scenarios. At W14, independently reproduce code and NL fulfillment, fan-out evaluation, delayed feedback, restart/replay, and propagation on isolated RocksDB and real hosts. Positive NL acceptance cannot be satisfied by a missing-handler test or generated prose.
 
 ## 6. Review and acceptance
 

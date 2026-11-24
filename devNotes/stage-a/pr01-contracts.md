@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr01-contracts.md
 translation_status: reviewed
 owner: Line 1 (ADR/schema/migration) and Line 2 (S6/S7/S8 evidence contracts)
-spec_version: 0.4.0
+spec_version: 0.5.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -47,6 +47,7 @@ Create exactly this initial relation. Additional fields require a later reversib
 ```cozoscript
 :create procedural_candidates {
   candidate_id: String =>
+  candidate_kind: String,
   source_kind: String,
   source_ref: String,
   task_signature: Json,
@@ -69,10 +70,11 @@ Create exactly this initial relation. Additional fields require a later reversib
 
 Allowed values:
 
+- `candidate_kind`: `concrete_option | trajectory_policy`. Both require a full Option + Model proposal; trajectory policies use immutable NL policy packages rather than fictitious code implementations.
 - `source_kind`: `markdown | skill | csv | jsonl | trajectory`.
 - `status`: `proposed | approved | registered | rejected | evaluating | dormant`.
 - `evidence_mode`: `real | simulated | sidecar`.
-- `package_hash`: always `null` until registration computes and verifies the immutable implementation hash.
+- `package_hash`: always `null` until registration computes and verifies the immutable implementation or policy-package hash.
 - `approval_ref`: `null` until explicit approval.
 
 ## TypeScript contracts
@@ -213,8 +215,8 @@ The lifecycle/learning ADR must resolve these review cases before PR04:
 - **OBS-ADR-04 — classification:** declarative, procedural, mixed, unknown, and insufficient cases have explicit outcomes. Mixed evidence is split without shared authority, and unknowns are never guessed.
 - **OBS-ADR-05 — inference and prompts:** unconfirmed inference never becomes authoritative automatically. Proactive prompts are bounded, idempotent, dismissable, and evidence-linked, but do not confer truth, approval, or execution authority.
 - **OBS-ADR-06 — read scope:** declarative memories extend beyond preferences, but not every admitted memory enters Planner context. Relevance, status, namespace, principal scope, sensitivity, and size limits apply at read time.
-- **OBS-ADR-07 — audit:** context hashes cover exact injected fact/version references and policy/namespace/principal inputs. They do not claim complete Planner-state reproducibility.
-- **OBS-ADR-08 — compatibility:** existing tool counts, OptionExecutor, Decision Gate, procedural LearningRun, held-out evaluation, and real/simulated/sidecar separation remain unchanged.
+- **OBS-ADR-07 — audit:** context hashes cover exact injected fact/version references, returned Option/policy versions, retrieval-policy inputs, and policy/namespace/principal inputs. Hidden-audit references are recorded separately from actor-visible guidance. The hashes do not claim complete Planner-state reproducibility.
+- **OBS-ADR-08 — compatibility:** existing host tool counts, decision vocabulary, Decision Gate authority, procedural LearningRun, held-out evaluation, and real/simulated/sidecar separation remain unchanged. Additive fulfillment metadata and a controlled NL fulfillment extension to NativeAdapter/OptionExecutor are reviewed contract changes, not permission to bypass existing execution checks.
 
 The precedence is:
 
@@ -291,12 +293,108 @@ Runtime hypotheses are read-side projections, not a new memory relation. Expecte
 
 Review `devNotes/stage-a/concrete-learning-tests.md` for fixtures, reuse cases, negative cases, evaluation invariants, and acceptance fields. If no usable implementation exists, return `unknown` or `insufficient` and retain metadata only—do not generate an abstract skill.
 
+## Unified procedural Option, fan-out audit, and provenance contracts (0.5.0)
+
+### Option and policy packages
+
+Both candidate kinds are complete `subtask + Option + Model` bundles with approval, package, mandate, evaluation, and registration. `LearningBundle` additionally carries `candidate_kind` and `package_ref`; the existing LearningRun remains the evaluation envelope for either kind.
+
+- `candidate_kind="concrete_option"` references a controlled implementation and preserves its implementation/version lineage.
+- `candidate_kind="trajectory_policy"` references an immutable trajectory-level NL policy package. Its proposed Option has `pi_type="natural_language"`; its policy is the procedure, not a generalized abstract Skill.
+- `fulfillment="natural_language" | "implementation"` is an additive Planner/read discriminator derived from the approved Option's `pi_type`, not a second storage authority.
+- Both use `planner_decision.execute(option_id)` and Decision Gate. Implementation-backed Options use the existing controlled implementation path; NL Options require a controlled NativeAdapter/OptionExecutor fulfillment handler, with no uncontrolled fallback.
+
+The NL handler authorizes only the approved policy version, inference budget, and declared effects. Tool/code actions mentioned in NL output require another valid execute decision for an authorized implementation-backed Option. Raw observations and unverified policy text are not execution authority.
+
+Define an immutable policy package along these lines in the learning runtime contracts:
+
+```ts
+export interface EffectPredicate {
+  field: string;
+  op: "eq" | "ne" | "gt" | "ge" | "lt" | "le";
+  value: string | number | boolean | null;
+}
+
+export interface TrajectoryPolicyPackage {
+  schema_version: "trajectory-policy-v0.1";
+  policy_id: string;
+  version: string;
+  condition: string;
+  policy_text: string;
+  trajectory_scope: {
+    namespace: string;
+    principal_id: string | null;
+    task_signature: unknown;
+    episode_pattern: string;
+    proximity: string[];
+  };
+  compatible_actions: Array<{ pi_type: string; pi_ref: string; action_type: string }>;
+  declared_effects: string[];
+  expected_effects: EffectPredicate[];
+  failure_evidence: EffectPredicate[];
+  source_episode_ids: string[];
+  parent_policy_refs: Array<{ policy_id: string; version: string }>;
+  provenance: {
+    generator_ref: string | null;
+    validator_version: string;
+    merge_rule_version: string | null;
+    normalized_policy_hash: string;
+  };
+}
+```
+
+`policy_text` is untrusted until the package and applicable approval/evaluation/registration gates pass. Execution resolves the approved package reference and verifies its normalized hash. Predicate fields come from the adapter's registered normalized evidence schema; no generated executable predicate or arbitrary CozoScript is allowed. Merges preserve immutable versions and parent references and never sum support from paraphrases or shared episodes.
+
+### Prequential fan-out records
+
+After the actor selects an authorized Option and before its actual implementation or inference, register every eligible hidden candidate with compatible trajectory scope/action and a frozen falsifiable effect specification. Store pending audit/verdict state in the planned LearningRun/policy evaluation payloads, not a new audit relation or fictitious Model.
+
+```ts
+export interface PrequentialAudit {
+  audit_id: string;
+  verdict_key: string;
+  candidate_id: string;
+  candidate_version: string;
+  evaluation_episode_id: string;
+  selected_option_id: string;
+  selected_option_event_id: string;
+  predicate_hash: string;
+  compatibility_version: string;
+  evidence_mode: "real" | "simulated" | "sidecar";
+  status: "pending" | "supporting" | "contradictory" | "unresolved";
+  provenance_refs: string[];
+}
+```
+
+`audit_id` is deterministic over candidate ID/version, evaluation episode, selected Option event, and predicate hash. `verdict_key` is deterministic over candidate ID/version and evaluation episode and permits at most one conclusive verdict. The selected Option event reference is deterministic before dispatch; it does not prove that execution occurred. Recheck source-episode and verdict exclusions at registration and recording, including retries and steps after discovery.
+
+All eligible candidates with valid specifications are registered. Deterministic audit budgets leave overflow pending and visible without dropping provenance, adding effects, or executing another Option. Unrelated authorized execution is not blocked by overflow; a required candidate-evaluation run cannot proceed without its frozen audit. A compatible execution tests predictions about that action only—it cannot validate a distinct implementation or NL policy without that procedure's own approved native execution.
+
+### Planner, Horn, and why-provenance contracts
+
+`planner_options` returns both fulfillment kinds with exact versions, schemas, trajectory scope, and declared effects. Fixed Cozo filters establish eligibility; deterministic application ranking handles episode/task proximity, schema/action compatibility, evidence, current version, and tie-breaks. The Planner hash covers exact returned Option/policy IDs, versions, and retrieval-policy version. Mem is an episode cache; RocksDB is the persistent authority. Current placeholder embeddings are not semantic scores.
+
+Fixed reviewed Horn/Datalog queries may derive `affected`, `guidance_eligible`, `option_retrievable`, and `contested` from explicit evidence and dependencies. Propagation never automatically transfers support, canonical fact status, mandates, budgets, or execution authority. Required contradictions can request revision/demotion through existing lifecycle APIs; alternative valid justifications remain effective. Declarative claims still require FactCandidate → S6/ν-gate → facts + J/≺.
+
+Why-provenance links originating execution, candidate/policy/predicate versions, audit/verdict, merge parents, generator/validator and rule versions, approval/mandate, fulfillment, and affected entities. Merges preserve source-episode unions without double-counting verdicts or overwriting verified originals. `memory_why` remains a Stage B interface.
+
+The lifecycle/learning ADR must additionally resolve:
+
+- NL `pi_type`, policy-package schema/hash, immutable version and merge semantics, and the full Option + Model lifecycle for both kinds.
+- NL inference/effect vocabulary, budget/privacy, prompt-injection handling, missing-handler behavior, output schemas, and prohibition on direct NL-to-tool execution.
+- Public `planner_options` fulfillment metadata, deterministic retrieval/bounds/hash, Mem/Rocks behavior, and trajectory-only runtime expiry.
+- Fan-out eligibility, audit/verdict identity, overflow, hidden-versus-used attribution, delayed feedback, and the rule that distinct procedures require actual execution.
+- Fixed Horn eligibility/dependency rules, alternative-justification handling, sanitized why-provenance, and the prohibition on arbitrary generated-rule activation or R4 changes.
+
+`devNotes/stage-a/procedural-options-tests.md` is the canonical companion test matrix. Schema 14 remains the only new relation; no observation, preference, standalone audit, or separate NL-policy table is added and reserved plan templates remain disabled.
+
 ## Stop conditions
 
 - Do not implement PR02 lifecycle execution or PR03 connectors/classification.
 - Do not implement PR04 prompt handling, candidate admission, or Planner context in PR01.
 - Do not permit persistent personal observation without opt-in, or treat all real observations as candidates.
-- Do not generate abstract skills in Stage A.
+- Do not generate abstract skills, generalized NL policies, arbitrary code, or arbitrary active Horn rules in Stage A.
+- Do not let NL output invoke tools directly, use an unregistered fulfillment handler, or claim validation from a different procedure's execution.
 - Do not use production data or delete an unknown `_next` relation.
 - Do not mark later acceptance scripts as passing.
 - Stop and request domain review if registration or evidence models must change.
@@ -307,3 +405,4 @@ Review `devNotes/stage-a/concrete-learning-tests.md` for fixtures, reuse cases, 
 - **0.2.0 (2026-11-22):** Added governed declarative-preference contracts, S7 feedback payload, Planner read/audit semantics, and PREF-ADR review cases. This is a backward-compatible planning addition and no implementation or acceptance claim.
 - **0.3.0 (2026-11-23):** Generalized preferences into unified observation-driven declarative learning with authorized passive intake, deterministic mixed-pattern classification, stable personal identity, bounded proactive prompts, and distinct ν-gate/registration authority. No implementation or acceptance claim.
 - **0.4.0 (2026-11-24):** Added concrete verified-trajectory-first contracts, shared sidecar/semantic ingestion, runtime-candidate-verified hierarchy, expected-effect evaluation, implementation reuse, and Stage B-only abstract procedural generation. No implementation or acceptance claim.
+- **0.5.0 (2026-11-24):** Added unified Decision-Gated NL/implementation Option bundles, immutable trajectory-policy packages, prequential fan-out audit/verdict identities, deterministic retrieval, and fixed Horn/why-provenance propagation contracts. No implementation or acceptance claim.

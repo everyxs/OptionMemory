@@ -3,7 +3,7 @@ lang: en
 canonical: devNotes/stage-a/pr04-learning-planner.md
 translation_status: reviewed
 owner: Line 1 (Learning Planner, proactive prompts, and Planner context) and Line 2 (observation evidence and candidate mappings)
-spec_version: 0.4.0
+spec_version: 0.5.0
 status: in_iteration
 change_control: Follow iterative-testing.md
 source_commit: ec6e40c
@@ -104,7 +104,7 @@ Authorized non-personal evidence may be collected passively. Personal evidence r
 - Consume Line 2's live declarative-memory query using validated `subtasks.context.namespace` and the approved principal mapping for personal memories.
 - Add a bounded, deterministic `declarative_context` containing only relevant `status="in"` memories, not every admitted fact or raw observation.
 - Generate and verify the additive declarative-context hash, forward it through the scheduler, and record exact fact/version and prompt-response references in `planner_event.context_json`.
-- Keep `getPlannerContext()` read-only and preserve `planner_options`, mandates, budgets, decision vocabulary, OptionExecutor, and Decision Gate.
+- Keep `getPlannerContext()` read-only. Extend `planner_options` additively for both fulfillment kinds and extend NativeAdapter/OptionExecutor with controlled NL fulfillment while preserving mandates, budgets, decision vocabulary, and Decision Gate authority.
 - Add `tests/stage-a-observation-planner.test.ts`.
 
 ### Line 1 author self-tests
@@ -119,7 +119,7 @@ Authorized non-personal evidence may be collected passively. Personal evidence r
 - **OBS-P08:** ordering, relevance, count/byte bounds, and truncation are deterministic; raw observations and sensitive claims are excluded.
 - **OBS-P09:** identical inputs produce identical hashes; correction changes the hash; stale/mismatched hashes block before decision, execution, or outbox writes.
 - **OBS-P10:** scheduler forwards the hash and prompt state without executing stale context or duplicating a prompt after restart.
-- **OBS-P11:** Options, mandate, budgets, tools, and decision vocabulary remain unchanged; unauthorized execution remains blocked.
+- **OBS-P11:** host tools, mandates, budgets, and decision vocabulary remain unchanged; both fulfillment kinds use the same Decision Gate and unauthorized execution remains blocked.
 - **OBS-P12:** mixed observations use separate declarative and procedural admission paths with shared source references but no shared authority.
 
 ### Line 2 deliverables — PR04B
@@ -157,7 +157,7 @@ Before PR05:
 
 ## Concrete trajectory learning and evaluation
 
-Prefer concrete verified trajectories over abstract generation. A runtime hypothesis may inform the next decision in the same episode as non-instructional context, but it is not a fact, Option, or confirming observation.
+Prefer concrete verified trajectories over abstract generation. A trajectory-level runtime hypothesis may inform the next decision in the same episode only as non-authoritative guidance; it is not a fact or confirming observation and expires with the episode. A separate full Option + Model lifecycle can later make an NL or implementation-backed Option eligible for `planner_options` and Decision-Gated execution.
 
 A procedural candidate is created only when the trajectory supplies a concrete implementation and outcome chain: `option_id`, `model_id`, `pi_ref`, version, arguments, pre/post state, outcome, and verification provenance. Reuse the existing implementation or preserve its version lineage. Missing implementation evidence returns `unknown` or `insufficient`, never an abstract skill.
 
@@ -172,14 +172,66 @@ Evaluation must:
 
 `devNotes/stage-a/concrete-learning-tests.md` defines the concrete reuse case, evaluation invariants, support/precision policy, and prohibition on Stage A abstract-skill generation.
 
+## Unified Options and prequential fan-out (0.5.0)
+
+### Procedural retrieval and fulfillment
+
+Extend `planner_options` to return both `fulfillment="natural_language"` and `fulfillment="implementation"` with exact policy/implementation versions, input/output schemas, trajectory scope, and declared effects. Existing implementation-backed fields remain compatible; raw observations, secrets, and sensitive source payloads are excluded. No new host tool or decision type is added.
+
+Use a deterministic two-stage retrieval contract:
+
+1. Fixed Cozo queries filter namespace, principal, episode, trajectory scope, action compatibility, status, revision, evidence mode, mandate, and subtask binding.
+2. Application-level ranking orders exact episode/task proximity, schema/action compatibility, verification evidence, current version, and deterministic ID tie-breaks, then applies count/byte limits.
+
+The Planner hash covers exact returned Option/policy IDs, versions, and retrieval-policy version. Mem is an episode cache, not a second authority; RocksDB retains persistent candidates, Options, evidence, and lineage. Runtime projections are reconstructible from authorized events or explicitly transient when persistence is not consented. Add lexical fallback only for demonstrated paraphrase misses. Do not use current placeholder embeddings as semantic scores or enable HNSW ranking without meaningful embeddings and evaluation.
+
+Only trajectory-level, episode-proximate, evidence-linked NL hypotheses enter runtime guidance. They are non-authoritative and expire with the episode. A verified NL Option is eligible for `planner_options` only within its concrete scope. `planner_decision.execute(option_id)` sends both kinds through Decision Gate. The NL fulfillment handler authorizes only its approved policy version, inference budget, and declared effects; every subsequent tool/code action requires another authorized decision.
+
+### Prequential fan-out auditing
+
+After the actor selects an authorized Option and before its implementation or inference runs, the Learning Planner registers every eligible hidden candidate with compatible trajectory scope/action and a frozen falsifiable effect specification:
+
+- `audit_id` hashes candidate ID/version, evaluation episode, selected Option event, and predicate hash.
+- `verdict_key` hashes candidate ID/version and evaluation episode, enforcing at most one conclusive verdict per candidate per episode.
+- Recheck source-episode exclusions and existing verdicts at registration and recording, including steps after discovery and retries.
+- Freeze predicate, scope, compatibility, policy/package, and evidence-mode versions in `planner_event.context_json` and the outbox payload. Hidden candidates are not exposed to the actor; used Options are recorded separately from audit candidates.
+- Evaluate each candidate independently as `supporting`, `contradictory`, or `unresolved`. Missing evidence is unresolved, and one execution never becomes several independent observations.
+- Bound audit work deterministically. Overflow remains pending and visible; it never silently drops claims, adds effects, or executes another Option. An ordinary unrelated authorized execution is not blocked by audit overflow, but a candidate evaluation run cannot proceed without its required frozen audit.
+
+A compatible execution tests only a candidate's prediction about that action. A distinct implementation or NL policy still requires its own actual approved native evaluation for capability validation. NL output and generator self-score cannot certify themselves.
+
+Pending trials may be resolved by eligible terminal/user/external evidence through existing host and runtime-inbox events. Completion alone is not success, stopping alone is not failure, and retries do not add independent votes.
+
+### Horn and why-provenance propagation
+
+Use fixed reviewed Horn/Datalog queries for explicit eligibility, merge compatibility, conflicts, and dependency consequences. Do not activate arbitrary generated Horn rules or change the existing R1–R3/R4 boundaries.
+
+Propagate only scoped, provenance-linked `affected`, `guidance_eligible`, `option_retrievable`, and `contested` consequences. Required contradictions can request revision/demotion through existing lifecycle APIs; alternative valid justifications can preserve eligibility. Support never automatically flows to dependents, merge children, or semantically similar Options. Declarative claims still use FactCandidate → S6/ν-gate → facts + J/≺.
+
+Every consequence links its originating execution, candidate/policy/predicate versions, verdict, merge parents, rule/evaluator versions, fulfillment, approval/mandate where applicable, and downstream affected entities. Mem projections are invalidated and recomputed from the same versioned inputs; no automatic Mem-to-Rocks authority replication is implied.
+
+### Additional deliverables and tests
+
+- **PR04A:** unified `planner_options`, runtime expiry, deterministic retrieval/cache, audit registration and scheduler propagation, NL Decision Gate/fulfillment integration, `tests/procedural-options.test.ts`, `tests/prequential-audit.test.ts`, and `tests/procedural-retrieval.test.ts`.
+- **PR04B:** fan-out verdict evaluation, delayed evidence, semantic merge and why-provenance, fixed dependency queries, lexical candidate fallback, and `tests/procedural-option-evidence.test.ts`.
+- **OBS-P13:** trajectory-only runtime hypotheses expire at episode boundaries, while verified NL Options remain scope-restricted and unauthorized inference/tool effects stay blocked.
+- **OBS-P14:** `planner_options` returns both fulfillment kinds with deterministic filtering/ranking/bounds and no raw/sensitive payloads.
+- **OBS-P15:** audit registration precedes immediate or outbox execution, and one actual execution produces independent per-candidate verdicts without duplicate Option events or self-confirmation.
+- **OBS-P16:** incompatible implementations/policies, missing specifications, overflow, and delayed evidence remain unvalidated or pending rather than receiving invented support.
+- **OBS-P17:** propagation is scoped and provenance-linked, preserves alternative justifications, and never transfers support, facts, mandates, budgets, or execution authority implicitly.
+- **OBS-P18:** restart and Mem/Rocks replay preserve exact Option/policy/audit versions, hashes, and pending/conclusive verdicts without duplicates.
+
+Before PR05, run all existing OBS-P/OBS-D checks plus STEP, POL, RET, MERGE, DELAY, HORN, WHY, AUDIT, PROP, and GATE-NL from `procedural-options-tests.md`. Inspect actual rows/events for one execution with multiple audit verdicts, no hidden-candidate injection, no unsupported propagation, no arbitrary rule activation, and no new observation/audit/preference relation.
+
 ## Stop conditions
 
 - Do not implement PR05 acceptance.
 - Do not create separate preference storage, lifecycle, confidence model, learner, or tool family, and do not combine the ν-gate and registration gate.
 - Do not persist personal observations without opt-in or treat every real observation as a candidate.
-- Do not let prompts confer truth, approval, execution authority, or certification.
-- Do not generate abstract skills or arbitrary implementation code in Stage A, or release/certify based on generator self-score.
-- Do not inject unconfirmed inference, raw personal payloads, or cross-namespace/principal memories.
+- Do not let prompts or NL output confer truth, approval, execution authority, certification, or direct tool invocation.
+- Do not generate abstract skills, generalized NL policies, arbitrary implementations, or arbitrary active Horn rules in Stage A, or release/certify based on generator self-score.
+- Do not inject unverified persistent candidates, hidden audit candidates, raw personal payloads, or cross-namespace/principal memories into actor guidance.
+- Do not treat compatible execution as validation of a distinct implementation or policy, or propagate support as independent corroboration.
 
 ## Change log
 
@@ -187,3 +239,4 @@ Evaluation must:
 - **0.2.0 (2026-11-22):** Added two-line declarative-preference deliverables, PREF-P01–10 and PREF-D01–10, and the PR04 integration checkpoint. No implementation or acceptance claim.
 - **0.3.0 (2026-11-23):** Generalized preferences into unified observation-driven declarative learning with proactive bounded prompts, consent/identity rules, mixed candidate handling, and distinct admission gates. No implementation or acceptance claim.
 - **0.4.0 (2026-11-24):** Made concrete verified trajectories and implementation reuse the primary learning path, with runtime-candidate-verified guidance, source exclusion, native evaluation, and abstract procedural generation deferred to Stage B.
+- **0.5.0 (2026-11-24):** Added unified Decision-Gated NL/implementation Options, deterministic procedural retrieval, prequential fan-out auditing, delayed evidence, and scoped Horn/provenance propagation.
