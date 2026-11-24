@@ -149,7 +149,7 @@ Use the same command with `--rollback` to roll back. See `docs/phase4-field-auth
 pnpm test
 ```
 
-The current baseline is **37 test files, 135/135 passing**, using isolated instances without a production 9070 service.
+The current baseline is **38 test files, 137/137 passing**, using isolated instances without a production 9070 service.
 
 Run the Phase 4 full CSV, closure/J, transient-settlement, and RocksDB restart acceptance:
 

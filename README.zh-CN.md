@@ -150,7 +150,7 @@ node scripts/migrate_phase4_fields.ts \
 pnpm test
 ```
 
-当前基线为 **37 个测试文件、135/135 通过**，测试使用独立实例，不需要启动生产 9070。
+当前基线为 **38 个测试文件、137/137 通过**，测试使用独立实例，不需要启动生产 9070。
 
 Phase 4 CSV 全量、闭包/J、transient 结算与 RocksDB 重启验收：
 

@@ -15,7 +15,7 @@ pnpm test
 
 Use isolated Mem/RocksDB storage and Markdown roots. Never run migration, crash, cancellation, or failure-injection tests against production `9070` or production data.
 
-The current regression baseline is **37 test files / 135 tests**. It grows with each merged increment; do not replace the baseline or treat its existence as proof of planned functionality.
+The current regression baseline is **38 test files / 137 tests**. It grows with each merged increment; do not replace the baseline or treat its existence as proof of planned functionality.
 
 ## Project workflow
 
