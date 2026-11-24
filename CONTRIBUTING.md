@@ -152,7 +152,7 @@ Move unfinished work intentionally rather than relabeling it as complete. Use ta
 
 The repository remains a personal repository with three collaborators; no organization migration, formal teams, or ownership matrix is needed. Give the two implementation developers Write access and the experienced reviewer only the additional Maintain access their duties require.
 
-CI runs on pushes and pull requests. Branch protection is **not currently enabled**, so maintainers should use a green `build-and-test` result as the manual merge criterion. If protection is enabled while `everyxs` is the only collaborator, require pull requests and the `build-and-test` check without an unavailable independent approval. When all three collaborators are active, require one independent approval for implementation PRs. Up-to-date branches, resolved conversations, and force-push/deletion blocks are recommended when protection is enabled. `CODEOWNERS` is optional and is not required for this three-person setup.
+CI runs on pushes and pull requests. **Branch protection is enabled on `main` and applies to administrators.** Pull requests are required, the `build-and-test` check must pass with the branch up to date, review conversations must be resolved, and force-pushes and branch deletion are blocked. While `everyxs` is the only collaborator, no independent approval is required; this enforces the PR/CI process, not an unavailable independent review. When all three collaborators are active, require one independent approval for implementation PRs and retain the no-author-self-merge rule. `CODEOWNERS` is optional and is not required for this three-person setup.
 
 ## Specification and evidence changes
 
