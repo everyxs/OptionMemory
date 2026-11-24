@@ -1,15 +1,15 @@
 ---
 创建时间: 2026-11-18
-更新时间: 2026-11-23
-类型: Development handbook and developer onboarding (Dual-Track v5.7, English edition)
+更新时间: 2026-11-24
+类型: Development handbook and developer onboarding (Dual-Track v5.8, English edition)
 所属项目: "26-04 AI4Science"
-对应路线图: "S01 Minimal Product Roadmap (full edition) §3.1A / §10.4B / §11.5B / §17; Week13-14 and Week15-16 handbooks, subject to §0.2 overrides; approved self-learning and unified-observation refinement"
-状态: v5.7 unified-observation refinement drafted; Phase 4 closed and Repo-accepted; Stage A next
+对应路线图: "S01 Minimal Product Roadmap (full edition) §3.1A / §10.4B / §11.5B / §17; Week13-14 and Week15-16 handbooks, subject to §0.2 overrides; approved self-learning, unified-observation, and Stage B personalization refinement"
+状态: v5.8 unified-observation and Stage B personalization refinement drafted; Phase 4 closed and Repo-accepted; Stage A next
 tags:
   - dev-handbook
   - developer-onboarding
   - dual-track
-  - v5.7
+  - v5.8
   - self-learning
   - semantic-evidence-adapters
   - procedural-governance
@@ -113,9 +113,9 @@ tags:
     world-state transition model: 世界状态迁移模型（前置假设、预期/实际后态、不变量与漂移）
 ---
 
-# Dual-Track Development Handbook (v5.7): Self-Learning Memory × Continuous Runtime + Semantic dataStore
+# Dual-Track Development Handbook (v5.8): Self-Learning Memory × Continuous Runtime + Semantic dataStore
 
-> **Current edition: 2026-11-23.** This refinement preserves the dual-track product split, the built-in procedural Learning Planner, and the semantic dataStore adapter layer. It adds unified observation validation and deterministic declarative/procedural/mixed/unknown/insufficient classification, with general declarative memories, bounded proactive prompts, and distinct ν-gate and registration authority. Authorized non-personal evidence may be passive; personal evidence requires opt-in before persistence. This planning addition is not an implementation or acceptance claim.
+> **Current edition: 2026-11-24.** This refinement preserves the dual-track product split, the built-in procedural Learning Planner, and the semantic dataStore adapter layer. Stage A adds unified observation validation and deterministic declarative/procedural/mixed/unknown/insufficient classification with bounded proactive prompts and distinct admission gates. Stage B adds stable individual identity, explicit profile scopes, and broader structured memory through the same governance model. Authorized non-personal evidence may be passive; personal evidence requires opt-in before persistence. These are planning additions, not implementation or acceptance claims.
 >
 > - **Stage A (W13–W16), joint:** a usable Markdown + Skills memory product plus a **passive self-learning MVP**, with zero SuperAgent dependency.
 > - **Stage B (W17–W21), parallel:** Line 1 delivers continuous self-learning and SuperAgent integration; Line 2 delivers semantic evidence adaptation, read-side lineage/export, and dataStore interfaces.
@@ -174,7 +174,7 @@ Status words in this handbook are deliberate:
 
 When documents disagree, use this order:
 
-1. **This v5.7 handbook:** future staging, ownership, learning/evidence contracts, acceptance gates, and schedule.
+1. **This v5.8 handbook:** future staging, ownership, learning/evidence contracts, acceptance gates, and schedule.
 2. `devNotes/S01最小产品路线图-完整版.md`: domain goals, phase baselines, and dataStore requirements.
 3. `docs/*acceptance*.md` and phase baselines: historical evidence of what was actually accepted.
 4. `README.md`: installation and everyday operation.
@@ -182,7 +182,7 @@ When documents disagree, use this order:
 
 The Week 13–14 and Week 15–16 handbooks are **not followed verbatim**. Their technical detail is reused only after the corresponding step starts and its current gate is confirmed.
 
-| Topic | Current v5.7 rule | Older text to disregard |
+| Topic | Current v5.8 rule | Older text to disregard |
 |---|---|---|
 | Phase 4 baseline | Closed and Repo-accepted on 2026-11-19; see §0.1 | Statements that Stage A cannot start because Phase 4 is still open |
 | P6-5 placement | Stage A, before generation/certification | Requirements that Phase 5 or P6-1–P6-4 close first |
@@ -398,7 +398,7 @@ A hash proves implementation identity/integrity, not safety, correctness, or cer
 
 ---
 
-## 2. Final Assignment and Schedule (v5.7)
+## 2. Final Assignment and Schedule (v5.8)
 
 ### 2.1 Delivery table
 
@@ -424,10 +424,13 @@ A hash proves implementation identity/integrity, not safety, correctness, or cer
 | **W16 full Stage A exit**, including passive learning and lineage | both | W16 | Joint self-tests + domain owner |
 | **Stage B: continuous self-learning + SuperAgent ∥ semantic dataStore/read side** | | | |
 | P5-1 shared planner-runtime, recovery, lease, handoff | Line 1 | W17–18 | Author self-test + weekly experienced review |
+| Stable individual identity and host/principal mapping, identity lifecycle, and principal-bound prompts | Line 1 | W17–18 | Author self-test + identity/privacy experienced review |
 | Continuous Learning Planner: scheduled re-evaluation, new versions, release/rollback | Line 1 | W18–20 | Author self-test + weekly experienced review |
 | P5-2 `superagent-adapter v0.1` | Line 1 | W18–19 | Author self-test + experienced PR reviewer |
 | P5-3 event-writer semantics and decision-chain association IDs | Line 1 | W18 | Author self-test + weekly experienced review |
 | P5-3 `memory_why`, six-tuple queries, decision-chain reads, event export | **Line 2** | W18–19 | Author self-test + weekly experienced review |
+| Explicit personal/project/shared-team/approved cross-project profile scopes and scope-aware reads | **Line 2** | W18–19 | Author self-test + cross-line authority/privacy review |
+| Broader structured declarative memories, versioned kinds/schemas, source/revision lineage, and safe read projections | **Line 2** | W19–21 | Author self-test + privacy/read-side experienced review |
 | P5-4 SuperAgent persistent memory adaptation and learning approval/stop `SuperAgent · MM-L1` | Line 1 | W19–20 | Author self-test + weekly experienced review |
 | Dual-host v0.3.0 release candidate, 7→8 memory tools | Line 1 | W19 | Joint self-tests + experienced PR review |
 | P6-1 active planning + generation | Line 1 | W20–21 | Author self-test + weekly experienced review |
@@ -484,6 +487,30 @@ All items are due at **W16**, not the W15 release-candidate demo:
 - [ ] The memory-governance family remains exactly **7 tools**, Stage A remains at **13 total tools**, and no new host tool family, observation subsystem, or combined admission gate is added.
 - [ ] No Stage A product code imports or calls SuperAgent adapter/Ticket/Attention/deliver/stop APIs.
 - [ ] No claim of ω_certify, general multilingual semantic recall, RL readiness, arbitrary code generation, or full continuous service is made.
+
+### 2.3A Stage B personalization follow-ups
+
+These are future Stage B capabilities, not additional Stage A acceptance claims. They extend the unified observation lane rather than creating a separate personalization subsystem. Delivery order is **stable individual identity → explicit profile scopes → broader structured memory**. W22 remains validation and hardening only, not new feature delivery.
+
+**Stable individual identity — Line 1.** Define authenticated `principal_id` lifecycle and host/principal mapping across OpenCode, DSH, restart, and handoff. Principal identity must not be inferred from session names, profile text, or arbitrary client input. Principal-bound prompts and approvals remain idempotent and evidence-linked. Account departure, disablement, retention, and erasure follow the approved identity/privacy policy.
+
+- **ID-01:** two principals in one namespace keep distinct observations, candidates, facts, prompts, and read projections with no fallback to namespace as identity.
+- **ID-02:** host/principal mapping remains stable across restart and handoff; unauthenticated or ambiguous identity produces no personal projection.
+- **ID-03:** departure, disablement, and erasure remove personal projections while retaining only permitted governance lineage and never reviving personal observations.
+
+**Explicit profile scopes — Line 2.** Define personal, project, shared-team, and explicitly approved cross-project scopes, with scope-aware candidate/read/revision semantics. Personal is the default boundary. Cross-namespace or cross-principal sharing requires explicit approval and preserves source, principal, scope, and approval lineage. Line 1 reviews mandate and Planner authority boundaries.
+
+- **SCOPE-01:** personal/project/team/approved cross-project fixtures apply the intended scope and default to no sharing.
+- **SCOPE-02:** cross-project or cross-principal sharing requires explicit approval and never overrides current user instruction, mandate, or Decision Gate.
+- **SCOPE-03:** conflicting profile values retain their distinct scopes and revision chains rather than being merged silently.
+
+**Broader structured memory — Line 2.** Define versioned declarative-memory kinds and schemas for profile/context records beyond response style and workflow choice. Structured records retain source, principal/scope, evidence mode, candidate classification, and revision lineage. Unknown fields remain unmapped, and arbitrary free-form profiles, raw observations, secrets, and unsupported values never enter Planner context. Line 1 owns bounded Planner consumption and injection limits.
+
+- **MEM-01:** new versioned kinds round-trip through the unified observation/classification path without creating a new top-level asset family or combined admission gate.
+- **MEM-02:** unknown or sensitive fields remain unmapped/excluded and never reach Planner context or logs.
+- **MEM-03:** scope/correction/restart/replay preserves fact/version lineage and deterministic read behavior without duplicates or cross-scope leakage.
+
+These follow-ups require identity, privacy, public-contract, and cross-line experienced review before implementation. Existing Stage A OBS and DS tests remain their prerequisite; future ID/SCOPE/MEM tests are added only when the corresponding Stage B issue is opened.
 
 ### 2A. MD-Memory and evidence tracks
 
@@ -909,6 +936,7 @@ No forced seed workflow, auto-registration, auto-publish, automatic `AGENTS.md` 
 - **v5.5 (2026-11-21):** approved self-learning refinement. Added the built-in Learning Planner, passive activation from real usage, full subtask + Option + Model learning bundles, Model world-state transitions, S7/S8 evidence and learning contracts, and dataStore as a pluggable semantic evidence adapter for local/remote sources. Stage A now includes a self-learning MVP; Stage B adds continuous self-learning while preserving SuperAgent ownership and Line 2's evidence/read-side role. Extended the target to W22 with W22 reserved for hardening. Review uses author self-tests, weekly/biweekly experienced-review checkpoints, and independent experienced-reviewer PR approval rather than cross-review or a separate third-reviewer role.
 - **v5.6 (2026-11-22):** drafted required declarative-preference personalization within the existing S6/S7 → FactCandidate → ν-gate → facts lane and bounded Planner live read. Integrated contracts/tests/acceptance into PR01A/B, PR04A/B, and PR05A/B with PREF scenarios and M0/PR04/W14/W16 checkpoints. Explicit and explicitly confirmed preferences only; no preference-specific storage, lifecycle, learner, tools, automatic inference promotion, or held-out Skill evaluation. This is a planning addition, not an implementation or acceptance claim.
 - **v5.7 (2026-11-23):** generalized preference-specific work into unified observation-driven learning across all PRs. All real observations enter authority/privacy/namespace/evidence-mode validation; deterministic declarative/procedural/mixed/unknown/insufficient classification feeds distinct FactCandidate and S1 paths. General declarative memories, authorized non-personal passive evidence, personal opt-in/principal identity, mixed candidates, and bounded proactive prompts are specified with OBS-C/OBS-P/OBS-D/OBS-A/OBS-E and DS-09–14 tests and M0/PR04/W14/W16 gates. Prompts never merge the ν-gate and registration gate or confer authority. No implementation or acceptance claim.
+- **v5.8 (2026-11-24):** added Stage B personalization follow-ups with stable individual identity and host/principal mapping owned by Line 1, and explicit personal/project/shared-team/approved cross-project profile scopes plus broader versioned structured memories owned by Line 2. Added ID-01–03, SCOPE-01–03, and MEM-01–03 acceptance cases, dependency ordering, privacy/identity/cross-line review, and W22 hardening boundaries. These are future plans, not Stage A implementation or acceptance claims.
 
 The old Phase 5–6 order was technically sensible for continuous execution but delayed a usable memory product behind SuperAgent. The current plan keeps the useful dependency order inside Stage B while delivering the independent memory product first. Self-learning is built into the existing subtask–Option–Model–Planner and STOMP governance chains rather than creating a separate observation-learning subsystem.
 
