@@ -163,7 +163,7 @@ Run the daily-memory failure and recovery acceptance:
 node scripts/phase4_memory_stomp_acceptance.ts
 ```
 
-See `docs/phase4-acceptance.md` for the original Phase 4 baseline, P4-0–P4-6, real v0.2.0 dual-host execution, and upgrade-retention evidence. See `docs/phase4-memory-stomp-acceptance.md` for the daily-memory slice.
+See `docs/phase4-acceptance.md` for the original Phase 4 baseline, P4-0–P4-6, real v0.2.0 dual-host execution, and upgrade-retention evidence. See `docs/phase4-memory-stomp-acceptance.md` for the daily-memory slice. For sanitized result artifacts, actual IDs, source hashes, and a verified CI result, see `docs/acceptance-evidence/README.md`.
 
 ## 7. Everyday Markdown examples
 

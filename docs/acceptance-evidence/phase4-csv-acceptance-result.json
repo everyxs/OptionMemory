@@ -1,0 +1,45 @@
+{
+  "gate": "pass",
+  "verifiedAt": "2026-11-19T13:58:25.415Z",
+  "csvPath": "<redacted absolute source path; sourceHash retained>",
+  "checks": {
+    "s01_parse_closure_lineage_settlement": true,
+    "hea_full_batch_and_transient_settlement": true,
+    "rocks_restart_retention_and_idempotent_replay": true,
+    "r4_remains_blocked_and_ref_delta_preserved": true
+  },
+  "s01": {
+    "plannerEventId": "planner_event_b2c401c8ceb89838be503c070f65ead42298f95bc460c3e0d39293f4cf02d308",
+    "optionEventId": "option_event_c8aa56392f0d8a1dec96e8b0be9ecb7fcc06807eed3e1568a54959f9ed01d5bf",
+    "settlementId": "settlement_e0e5a1fd1f4c1c94359c9862e83124adacd2174eddccfc91a39463a271190dfb",
+    "rawFacts": 5,
+    "derivedFacts": 3
+  },
+  "hea": {
+    "plannerEventId": "planner_event_bbaa210a3eead4455408ff8af9e14d58eabeb38c85075ba9c9355fdb70451676",
+    "optionEventId": "option_event_6727da3c99232f265936bab8c10199e9c84b6c1f78e01ae26a865acb41839345",
+    "settlementId": "settlement_2b0fa98352617bc339df36a0ef38a82c4fafec0e9b5648aafd63ff616e3ca102",
+    "inputRows": 1540,
+    "entities": 701,
+    "rawFacts": 3502,
+    "derivedFacts": 1402,
+    "durationMs": 1092,
+    "sourceHash": "541a08e8d1f7c20998323cb19273465a67c865daffb359161f1c06561bae3dc1"
+  },
+  "countsAfterRestart": {
+    "total": 4912,
+    "candidate_solid_solution": 702,
+    "composition": 702,
+    "ref_delta": 701,
+    "source_ref": 698,
+    "smix": 702,
+    "alloy_name": 701,
+    "ref_smix": 701,
+    "hardness": 1,
+    "phase_structure": 1,
+    "process": 1,
+    "xrd_peak": 2
+  },
+  "activeJustificationsAfterRestart": 1405,
+  "replayStatusAfterRestart": "reused"
+}

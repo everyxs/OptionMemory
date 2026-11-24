@@ -1,0 +1,141 @@
+{
+  "schema_version": "acceptance-evidence-manifest-v1",
+  "created_at": "2026-11-24",
+  "purpose": "Make acceptance outcomes auditable from the repository without publishing raw host logs, databases, secrets, or absolute local paths.",
+  "trust_boundary": "These are sanitized copies of pre-existing acceptance results, not a new independent acceptance run. Verify raw logs locally when available and reproduce acceptance using the linked specifications.",
+  "artifacts": [
+    {
+      "file": "phase4-v02-host-acceptance-result.json",
+      "source": ".data/phase4-v02-host-acceptance-result.json",
+      "source_sha256": "ce2713f88cdd7e3654b50a08ddad83f194a08a7b240d10db95dfc1e52f7953a7",
+      "redactions": []
+    },
+    {
+      "file": "phase4-v02-upgrade-retention-result.json",
+      "source": ".data/phase4-v02-upgrade-retention-result.json",
+      "source_sha256": "6bef805d4059f4933698fc472776ecf22acc0930315c40bde035f18459268bec",
+      "redactions": []
+    },
+    {
+      "file": "phase4-memory-stomp-acceptance-result.json",
+      "source": ".data/phase4-memory-stomp-acceptance-result.json",
+      "source_sha256": "19db6b7462e854c4aa122bcf17c3bfa5cddf104049c59cfa938fa7ddeecb4570",
+      "redactions": []
+    },
+    {
+      "file": "phase4-csv-acceptance-result.json",
+      "source": ".data/phase4-csv-acceptance-result.json",
+      "source_sha256": "1d8a4e24e954f3f57390372692219aeece2212f2f8731bb3cde1e8224e4d5d25",
+      "redactions": [
+        "csvPath replaced with a redaction placeholder; sourceHash is retained for source verification"
+      ]
+    },
+    {
+      "file": "bilingual-acceptance-result.json",
+      "source": ".data/bilingual-acceptance-result.json",
+      "source_sha256": "9680f15cc0804edcaabd2ee45e25044a65a0bf0906ef58749a00af1276c80ea7",
+      "redactions": []
+    },
+    {
+      "file": "phase4-sidecar-acceptance-result.json",
+      "source": ".data/phase4-sidecar-acceptance-result.json",
+      "source_sha256": "c7845fc1ef3096b7832096a4a95d75fb4441ab59ec24de43f2ae7e9ac10b1b50",
+      "redactions": []
+    },
+    {
+      "file": "phase4-superagent-acceptance-result.json",
+      "source": ".data/phase4-superagent-acceptance-result.json",
+      "source_sha256": "fcbbcc47816fb5110ed6a2372f97630cd3d25139072bac8487047ac168ddef99",
+      "redactions": []
+    },
+    {
+      "file": "phase4-scheduler-acceptance-result.json",
+      "source": ".data/phase4-scheduler-acceptance-result.json",
+      "source_sha256": "6df6e82fc126976f2e67798b0b268d18886acde872af8e3d134bd105c3b15045",
+      "redactions": []
+    },
+    {
+      "file": "phase4-memory-acceptance-result.json",
+      "source": ".data/phase4-memory-acceptance-result.json",
+      "source_sha256": "20a9d32a7d2c02f6fb5e307e08ab7cb36ed5c60fef52b499d72f53a7027b5388",
+      "redactions": []
+    }
+  ],
+  "ci_runs": [
+    {
+      "file": "ingest-note-ci-result.json",
+      "run_id": 45319460987,
+      "commit": "01c23db980cdabfd8c164312768b20cd461e883a",
+      "conclusion": "success",
+      "test_files": "38/38",
+      "tests": "137/137",
+      "url": "https://github.com/everyxs/OptionMemory/actions/runs/45319460987"
+    }
+  ],
+  "raw_log_hashes": [
+    {
+      "path": ".data/phase4-v02-opencode-run.jsonl",
+      "sha256": "db89bc9a4c251bbe323f25f6e2e4aecc962c1f1778f97a7eac7b41aadc9a8056"
+    },
+    {
+      "path": ".data/phase4-v02-dsh-run.log",
+      "sha256": "6a48b39ebc961e7c106aef9899b45d9516d75f9b1bee1a94800d4c388e833165"
+    },
+    {
+      "path": ".data/phase4-memory-stomp-opencode-a.jsonl",
+      "sha256": "b28b71bdc19a56b3b65407259a9c21d566a30e34dd5cab04f59b7ea63354a7c0"
+    },
+    {
+      "path": ".data/phase4-memory-stomp-opencode-b.jsonl",
+      "sha256": "83717948f11ca6ed2b1167f866ce704c658439c67d04865716c5aadf2a00bcf4"
+    },
+    {
+      "path": ".data/phase4-memory-stomp-opencode-c.jsonl",
+      "sha256": "3b9136df36c76751f9acb43383e40abafdbc4c4cb1baeabedf204b27898507f2"
+    },
+    {
+      "path": ".data/phase4-memory-stomp-opencode-d.jsonl",
+      "sha256": "38c53146b479c3efa1e6bcb9070896b9215b51de764d17a0b53ee10161bb7897"
+    },
+    {
+      "path": ".data/phase4-memory-stomp-dsh-a.log",
+      "sha256": "ee9d50c8e0766619ab8261d7cb2c892849ac75771ba165b8276e41f91bb61666"
+    },
+    {
+      "path": ".data/phase4-memory-stomp-dsh-b.log",
+      "sha256": "9640107514c73eb6a029e190af726c0f0ca0bbb2e2ce69ed2b3571aa87890f32"
+    },
+    {
+      "path": ".data/phase4-memory-stomp-dsh-c.log",
+      "sha256": "1bfdba4559c5476803de008d61d8d2666750af598b8188cee4f914fc4827098c"
+    },
+    {
+      "path": ".data/phase4-memory-stomp-dsh-d.log",
+      "sha256": "f5fe611a8bad02204d8b8ad0780ca278e4b15563d2a0dd40550f2cfaf9b64e9a"
+    },
+    {
+      "path": ".data/bilingual-opencode-a.jsonl",
+      "sha256": "200a3518dca40894420043a0ea70027c70b50d159465091671ecae0d9669476c"
+    },
+    {
+      "path": ".data/bilingual-opencode-b.jsonl",
+      "sha256": "30ce20aee4e846c280416c98132483b51f17e5b343e10ed492bdf44a2e494f88"
+    },
+    {
+      "path": ".data/bilingual-dsh-c.log",
+      "sha256": "c83bbb9946e3610b08043a4396d1d150597108091d6c521f6a68729cc6c9d959"
+    },
+    {
+      "path": ".data/bilingual-dsh-d.log",
+      "sha256": "83fa4c7bd7ca9fa6887cc70b00c29c01606780a68dd82618990ac1ffb6bf246c"
+    },
+    {
+      "path": ".data/phase4-opencode/opencode-real-run-v10.jsonl",
+      "sha256": "0c39a6bc6e1d0496fbc6df8cdf1ebb2eb119e6db5abe50a64ed2314bf68bbc07"
+    },
+    {
+      "path": ".data/phase4-dsh-run.jsonl",
+      "sha256": "e99e494bf41571e0b633e7745d8a00708a9a6b0041e4226d216a65fd1bb9c43f"
+    }
+  ]
+}

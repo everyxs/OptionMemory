@@ -1,0 +1,77 @@
+{
+  "gate": "pass",
+  "verifiedAt": "2026-11-19T07:32:39.209Z",
+  "checks": {
+    "raw_crash_recovery_and_unknown_null": true,
+    "native_real_and_observed_real_are_separate": true,
+    "five_skill_measurements": true,
+    "baseline_isolation_and_observed_zero_reward": true,
+    "incomplete_chain_raw_only_without_placeholder_assets": true,
+    "restart_preserves_raw_mapping_memory_and_no_plan_template": true
+  },
+  "endpoint": "http://127.0.0.1:58527/text-query",
+  "mappingVersion": "sidecar-mapping-v0.1",
+  "realBaseline": "baseline-p45-real",
+  "simulatedBaseline": "baseline-p45-simulated",
+  "realRunEventId": "sidecar_event_ea48b292ebefa8216439eaae2414153b2cc63b1b4a6e60947f5b98c59b6d6729",
+  "realPlanRunId": "plan_run_c0d1ea12d694b735cbdb56d4ce872cabe8b0c73e5d57c4e823fb17a9f1e9793c",
+  "simulatedPlanRunId": "plan_run_1d816ac13a2d1f9dbfa951d2113f4d12e5bf9be9db29583ed40b14e979c12f59",
+  "realPlannerEventId": "planner_event_35771a8342c356a6e4f43148c457898302916e031b8fb4fb4daffa940ab3f139",
+  "realOptionEventId": "option_event_1b358b1e1bd277b47c51e2ba1f7a2aac9ebbcb67f5ed89881a614f058bb009f6",
+  "simulatedOptionEventId": "option_event_e19fef3a2acb8d30c586b6c67e853a182b58116aa0f869eab66cbd2e8012972c",
+  "nativeRealOptionEventId": "option_event_native_real_p45",
+  "realOutcome": {
+    "option_event_id": "option_event_1b358b1e1bd277b47c51e2ba1f7a2aac9ebbcb67f5ed89881a614f058bb009f6",
+    "status": "success",
+    "evaluation_json": {
+      "reward_source": "uncalibrated",
+      "scalar_reward": null
+    },
+    "cost_json": {
+      "observed": false,
+      "value": null
+    },
+    "error_json": {
+      "observed": false,
+      "value": null
+    },
+    "created_at": 1795073559.852
+  },
+  "simulatedOutcome": {
+    "option_event_id": "option_event_e19fef3a2acb8d30c586b6c67e853a182b58116aa0f869eab66cbd2e8012972c",
+    "status": "success",
+    "evaluation_json": {
+      "reward_source": "observed",
+      "scalar_reward": 0
+    },
+    "cost_json": {
+      "observed": false,
+      "value": null
+    },
+    "error_json": {
+      "observed": false,
+      "value": null
+    },
+    "created_at": 1795073560.181
+  },
+  "realModelEventId": "model_event_7337eff5775e9ae57fe061d5dc0bf640f2dad43e8c0a48c60986a1df5b92e809",
+  "simulatedModelEventId": "model_event_68c492606685798a2202fc940c37ccdeb2a960065744bab87c4b763dc27d2c80",
+  "incompleteSidecarEventId": "sidecar_event_6f424f1a2cc56ccca4b82eed429dc8ea734fc352ea21bf40440a1d156eb9ed86",
+  "incompleteUnmapped": [
+    "plan_run_missing"
+  ],
+  "memoryDocumentId": "document_3089a4d30ce8cec75f8807945e7e995a9d86c27dfb8cdcdd3778cdbf05a64b48",
+  "memoryRecallId": "recall_4dfdfee5f81568bef8ecd83d45ebaf65d7c0c83985ad1c0c353f492b2f28bea1",
+  "measurement": {
+    "registeredSkillEventId": "sidecar_event_bea3b46112eb7eaa1a60b596bf3fb67421bec070d9c380b7ef0ad00135d38ea8",
+    "updatedSkillEventId": "sidecar_event_a17a435388d15fba0f00dc0be247f626b4ba87a3845e2174f0bf8e8c06f412eb",
+    "noCallPlannerEventId": "planner_event_828c8bc5efe28351a7ac50fb39ed26e55ba12c43f703b820e54602a752a2b8eb",
+    "rollbackEventId": "sidecar_event_de2512bb250e60229fafc9efb17a3f7d88d78482a06e88d479e8116151aff48a",
+    "recoveryOptionEventId": "option_event_6efa0e9a4d7f718fc556514b87e550d08f83fa87b74f731f5888b1f16f545858",
+    "verificationModelEventId": "model_event_3c655b975c61967fc4c46b600f3fbb779bb8c85e7e0c769f38d1a4d89dbffd56",
+    "driftModelEventId": "model_event_7c89faa67be0442f7b2623119a82af54075b146e3e726a2e04cde9ad2e28f8fc"
+  },
+  "realBaselineEventCount": 10,
+  "planTemplateCount": 0,
+  "database": "isolated temporary RocksDB; two actual adapter restarts completed"
+}

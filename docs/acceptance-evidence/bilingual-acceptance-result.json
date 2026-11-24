@@ -1,0 +1,16 @@
+{
+  "gate": "pass",
+  "verifiedAt": "2026-11-19T13:54:56.456Z",
+  "endpoint": "http://127.0.0.1:9174/text-query",
+  "originalDocumentId": "document_13a9712a21327c935fcf3be4bd14dca51003fe8f736ac31d670ab887e58d3adf",
+  "revisionDocumentId": "document_6aec89c137fd1ee58c4a94e7a7af70bd23c44eaa7b09544ac3e295a7550a2fc0",
+  "recallId": "recall_5e1fb62b564ecbc3c7484173b725015a41adc0736dbd0542bd0606a117b8eac4",
+  "strategyVersion": "keyword-recall-v2",
+  "returned": "yarn",
+  "query": "包管理器",
+  "sourceLanguage": "en",
+  "queryLanguage": "zh-CN",
+  "originalStatus": "superseded",
+  "revisionStatus": "active",
+  "supersedes": "document_13a9712a21327c935fcf3be4bd14dca51003fe8f736ac31d670ab887e58d3adf"
+}

@@ -1,0 +1,28 @@
+{
+  "gate": "pass",
+  "verifiedAt": "2026-11-19T13:58:32.680Z",
+  "checks": {
+    "capture_native_stomp_and_idempotency": true,
+    "revise_superseding_and_next_recall": true,
+    "missing_outcome_requires_reconcile_without_replay": true,
+    "recall_refresh_option_and_stale_mapping": true,
+    "world_state_and_anticipation_are_separate": true,
+    "native_adapter_success_failure_cancel_and_restart": true,
+    "restart_preserves_native_history_and_sensitive_filter": true
+  },
+  "refreshOptionEventId": "option_event_c5ced03c15eaeb470948b69d3265e570c5442165199fb0830fe83d2dfdf9ffff",
+  "endpoint": "http://127.0.0.1:60484/text-query",
+  "capturePlanRunId": "plan_run_aade21d115a82dd4a4e633cae49b01a737d0f946f0a0f252ddbe0509caeb09f2",
+  "captureOptionEventId": "option_event_6b1f1199b98a86bd381e32a218eff500fa053e9e22b05062bb25330905eb36b0",
+  "revisionOptionEventId": "option_event_ca64095c0cc800a494456e5163f38e662a91b8e10c6c9288076bf786e02bc45b",
+  "captureDocumentId": "document_57c2f95fa4cca07da0a99de05f4e24d07741ba173690c5c4185bf59c905e8969",
+  "revisionDocumentId": "document_f08282161bbc1d34e78ddb76a92b836487c9a688300834c392bb19cff3ac9f2a",
+  "sidecarOptionEventId": "option_event_aeba2ebf53f6feb6e15d70062dd8965a5315e366072ed71e568cc6e0888f6c21",
+  "sidecarAnticipationEventId": "model_event_d1105cff8191c47a174c5b378c295b7d987abf5573c674e1f7022d6b026ed13a",
+  "nativePlanRunId": "plan_run_f417b55160e6f8ea04d99d53b92fc996a700acebe50a7f6a36ff00fdc6da750e",
+  "nativeOptionEventId": "option_event_53fd97b51bd5b777351f521f9e3d422a809cbaa7ed1a781e2f7e9c49cae4547b",
+  "nativeFailureOptionEventId": "option_event_3b42948b8d5d6948b4f8b6c15f42bf0fc57c039754fe74c737f3ad15494034dc",
+  "nativeCancelOptionEventId": "option_event_bbe5dcf96b9f79b9a38f1455f5e9379abce2aa4df206a6f13718c773e86a6ff8",
+  "nativeCallCount": 3,
+  "database": "isolated temporary RocksDB; two actual adapter restarts completed"
+}

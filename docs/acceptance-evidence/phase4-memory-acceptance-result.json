@@ -1,0 +1,34 @@
+{
+  "gate": "pass",
+  "verifiedAt": "2026-11-19T13:59:17.685Z",
+  "endpoint": "http://127.0.0.1:9074/text-query",
+  "originalDocument": {
+    "document_id": "document_6b40374fa8eeb204767c60c6f404b758c151d5b2dfbbbf51d2f161b32e46149c",
+    "raw_ref": "capture://session-a/daily-pnpm-v1",
+    "path": "capture://session-a/daily-pnpm-v1",
+    "namespace": "global",
+    "content_hash": "dc407481447311929b71bdaa19a396f967ef37fcce25834a2d37a726ecf7cea3",
+    "parser_version": "explicit-capture-v1",
+    "status": "superseded",
+    "supersedes": null,
+    "source_updated_at": 1794748265.845,
+    "recorded_at": 1794748265.867
+  },
+  "currentDocument": {
+    "document_id": "document_053d59912e101f6281ae63a51ff3b40c33e0d43b7c700e0e6229a271534aa2fc",
+    "raw_ref": "capture://session-revision/daily-yarn-v1",
+    "path": "capture://session-revision/daily-yarn-v1",
+    "namespace": "global",
+    "content_hash": "e326ab0886edce17c68adda55a7b06504446519f9290e6a5bc08735a9ad21496",
+    "parser_version": "explicit-capture-v1",
+    "status": "active",
+    "supersedes": "document_6b40374fa8eeb204767c60c6f404b758c151d5b2dfbbbf51d2f161b32e46149c",
+    "source_updated_at": 1794748755.351,
+    "recorded_at": 1794748755.371
+  },
+  "recallEventCount": 6,
+  "pnpmRecallId": "recall_c0f2bddf5be514520ca51df79dfdce06efe850a26ba36735e1cbe541a68ff3d1",
+  "yarnRecallId": "recall_1e4452f2a8d579070d65e564d7192ea12e2ce726b0128bbf244b91d8b881cb99",
+  "plannerReadOnly": true,
+  "originalMarkdownModifiedByBridge": false
+}

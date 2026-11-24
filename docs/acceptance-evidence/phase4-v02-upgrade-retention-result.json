@@ -1,0 +1,20 @@
+{
+  "gate": "pass",
+  "verifiedAt": "2026-11-19T07:30:27.780Z",
+  "packageVersion": "0.2.0",
+  "manifestVersion": "0.2.0",
+  "comparedFields": [
+    "planRunId",
+    "openCodePlanRunId",
+    "decisions",
+    "traces",
+    "dshStatus",
+    "openCodeStatus",
+    "crossDshStatus"
+  ],
+  "beforeVerifiedAt": "2026-11-19T07:27:09.644Z",
+  "afterVerifiedAt": "2026-11-19T07:29:57.194Z",
+  "opencodeVersion": "2.3.2",
+  "dshVersion": "0.2.2-rc.1",
+  "hostAcceptanceResult": ".data/phase4-v02-host-acceptance-result.json"
+}

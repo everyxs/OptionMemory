@@ -1,0 +1,106 @@
+{
+  "gate": "pass",
+  "verifiedAt": "2026-11-19T07:29:56.927Z",
+  "packageVersion": "0.2.0",
+  "manifestVersion": "0.2.0",
+  "memoryGovernanceToolCount": 7,
+  "hostEvidence": [
+    {
+      "host": "opencode",
+      "planRunId": "plan_run_phase4_v02_opencode",
+      "optionEventId": "option_event_f5187ac105396696a64e68ab481c6334a18425f69bab1ce198250b738ab5f93d",
+      "settlementId": "settlement_e51a6b793f78efe4768dba8326fd39887b04ba2276cd073e34ee11304a5b2a1d",
+      "output": {
+        "batch_id": "phase4-v02-opencode-csv",
+        "blocked": [],
+        "candidate_facts": 5,
+        "closure": {
+          "blocked": [],
+          "ids": [
+            "fact_c82b06ad-cd6d-4809-bed2-1e3dd0a738ce",
+            "fact_f8126d4b-0480-4494-ad86-0b4a04e5677a",
+            "fact_e96550e7-fa9a-4b3c-97a6-9852a4106805"
+          ],
+          "inserted": 3,
+          "justificationsInserted": 3,
+          "justificationsSkipped": 0,
+          "skipped": 0
+        },
+        "fact_counts": {
+          "composition": 1,
+          "hardness": 1,
+          "process": 1,
+          "xrd_peak": 2
+        },
+        "ids": [
+          "fact_97d46698-d8b7-4f0b-a09a-0441139cba1e",
+          "fact_1c08c26f-2171-415b-801f-f4150b8b50e1",
+          "fact_84a3617a-c998-4409-918e-ea8602449766",
+          "fact_a45c4547-bc9c-44ac-9242-f18061a795a5",
+          "fact_b6626fef-2f83-4b90-a8f1-aefdca4194e1"
+        ],
+        "input_entities": 1,
+        "input_rows": 1,
+        "inserted": 5,
+        "lineage_complete": true,
+        "parser_version": "materials-csv-v1",
+        "settlement_id": "settlement_e51a6b793f78efe4768dba8326fd39887b04ba2276cd073e34ee11304a5b2a1d",
+        "skipped": 0,
+        "source_hash": "786148ab045ce084ec312e5399c9c3decfe50379cef031eaf5f402485550798a"
+      }
+    },
+    {
+      "host": "dsh",
+      "planRunId": "plan_run_phase4_v02_dsh",
+      "optionEventId": "option_event_cceeeb93b448edd8582293a662897434854d79761298d68c5a963f24d27467dd",
+      "settlementId": "settlement_f65e7ccade265433afd86dacc1703cfe1434f339c417dba61dd4d70d81bb8c01",
+      "output": {
+        "batch_id": "phase4-v02-dsh-csv",
+        "blocked": [],
+        "candidate_facts": 5,
+        "closure": {
+          "blocked": [],
+          "ids": [
+            "fact_c82b06ad-cd6d-4809-bed2-1e3dd0a738ce",
+            "fact_f8126d4b-0480-4494-ad86-0b4a04e5677a",
+            "fact_e96550e7-fa9a-4b3c-97a6-9852a4106805"
+          ],
+          "inserted": 0,
+          "justificationsInserted": 0,
+          "justificationsSkipped": 3,
+          "skipped": 3
+        },
+        "fact_counts": {
+          "composition": 1,
+          "hardness": 1,
+          "process": 1,
+          "xrd_peak": 2
+        },
+        "ids": [
+          "fact_97d46698-d8b7-4f0b-a09a-0441139cba1e",
+          "fact_1c08c26f-2171-415b-801f-f4150b8b50e1",
+          "fact_84a3617a-c998-4409-918e-ea8602449766",
+          "fact_a45c4547-bc9c-44ac-9242-f18061a795a5",
+          "fact_b6626fef-2f83-4b90-a8f1-aefdca4194e1"
+        ],
+        "input_entities": 1,
+        "input_rows": 1,
+        "inserted": 0,
+        "lineage_complete": true,
+        "parser_version": "materials-csv-v1",
+        "settlement_id": "settlement_f65e7ccade265433afd86dacc1703cfe1434f339c417dba61dd4d70d81bb8c01",
+        "skipped": 5,
+        "source_hash": "786148ab045ce084ec312e5399c9c3decfe50379cef031eaf5f402485550798a"
+      }
+    }
+  ],
+  "sharedS01FactCount": 8,
+  "checks": {
+    "real_opencode_csv_execution": true,
+    "real_dsh_csv_execution": true,
+    "shared_closure_and_lineage": true,
+    "transient_settlement_per_host": true,
+    "seven_tool_compatibility": true,
+    "r4_remains_blocked": true
+  }
+}

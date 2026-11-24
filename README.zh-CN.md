@@ -164,7 +164,7 @@ node scripts/phase4_csv_acceptance.ts
 node scripts/phase4_memory_stomp_acceptance.ts
 ```
 
-Phase 4 原基线、P4-0–P4-6、v0.2.0 真实双 host 与升级保留证据见 `docs/phase4-acceptance.md`；日常记忆专项证据见 `docs/phase4-memory-stomp-acceptance.md`。
+Phase 4 原基线、P4-0–P4-6、v0.2.0 真实双 host 与升级保留证据见 `docs/phase4-acceptance.md`；日常记忆专项证据见 `docs/phase4-memory-stomp-acceptance.md`。脱敏验收结果、实际 ID、源哈希和已验证 CI 结果见 `docs/acceptance-evidence/README.md`。
 
 ## 七、日常 Markdown 使用案例
 

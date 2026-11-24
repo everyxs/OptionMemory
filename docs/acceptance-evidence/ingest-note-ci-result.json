@@ -1,0 +1,21 @@
+{
+  "schema_version": "ci-acceptance-result-v1",
+  "run_id": 45319460987,
+  "commit": "01c23db980cdabfd8c164312768b20cd461e883a",
+  "workflow": "CI",
+  "job": "build-and-test",
+  "status": "completed",
+  "conclusion": "success",
+  "created_at": "2026-11-24T03:25:56Z",
+  "updated_at": "2026-11-24T03:33:11Z",
+  "test_files": {
+    "passed": 38,
+    "total": 38
+  },
+  "tests": {
+    "passed": 137,
+    "total": 137
+  },
+  "duration_ms": 47940,
+  "url": "https://github.com/everyxs/OptionMemory/actions/runs/45319460987"
+}
