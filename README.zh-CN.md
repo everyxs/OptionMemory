@@ -63,21 +63,28 @@ cd /path/to/optionmemory
 # 本仓库示例：cd E:\DSHprojects
 ```
 
-仓库已包含 Planner 和日常记忆插件。在**会话 A** 中保存记忆：
+仓库已包含 Planner 和日常记忆插件。在仓库根目录启动完整的 OpenCode 交互界面：
 
 ```bash
-opencode run --standalone --auto "请使用 bridge_capture 记住：本项目使用 pnpm 管理依赖。namespace=global，source_ref=session-a，idempotency_key=project-pnpm-v1。"
+opencode --standalone --auto
 ```
 
-保持同一目录、endpoint 和 namespace，在**会话 B** 中重新执行一次 `opencode run`，然后询问：
+下面的提示词应输入 OpenCode 交互界面，而不是终端 shell。在**会话 A** 中保存记忆：
+
+```text
+请使用 bridge_capture 记住：本项目使用 pnpm 管理依赖。
+namespace=global，source_ref=session-a，idempotency_key=project-pnpm-v1。
+```
+
+退出会话 A，在同一工作目录再次运行 `opencode --standalone --auto`，启动**会话 B**，然后询问：
 
 ```text
 这个项目使用什么包管理器？请给出对应 memory_uri。
 ```
 
-每次 `opencode run` 都会创建新会话，可以使用不同终端或进程，但**不要添加 `--continue`**，否则是在继续旧会话，不能证明跨会话召回。
+保持同一 endpoint 和 namespace。**不要添加 `--continue` 或 `-c`**，否则是在继续旧会话，不能证明跨会话召回。
 
-OpenCode 会自动召回之前保存的内容，并将它作为非指令参考注入。
+OpenCode 会自动召回之前保存的内容，并将它作为非指令参考注入。需要非交互式自动化时，可使用 `opencode run --standalone --auto "<提示词>"`；该命令每次运行单条提示词并创建新会话。
 
 修订记忆：
 
@@ -87,6 +94,50 @@ supersedes 使用刚才返回的 document_id，idempotency_key 使用 project-ya
 ```
 
 再次询问后，应得到 **yarn** 和新 memory_uri；旧版本仍保留为 `superseded`，不会修改原始 Markdown 或 AGENTS.md。
+
+### OptionMemory 的使用方式
+
+1. **OpenCode 交互界面：**运行 `opencode --standalone --auto`，用自然语言通过 `bridge_capture`、`bridge_recall` 和 `bridge_revise` 捕获、召回或修订记忆。
+2. **自动或显式召回：**在新会话中直接提问以自动注入相关上下文；需要控制查询词、namespace、历史记录和结果数量时，显式请求 `bridge_recall`。
+3. **终端单条命令：**使用 `opencode run --standalone --auto "<提示词>"`，适合脚本和非交互式调用。
+4. **通过 DSH：**在 DSH 中使用相同的 Bridge 工具和 MemoryCore，可与 OpenCode 共享记忆及修订历史。
+5. **高级集成：**使用结构化事实与治理工具（`memory_set`、`memory_get`、`memory_query`、`memory_retract`、`propose_option`、`settle`、`revoke`）、自定义 Planner，或 `src/api` 下的宿主无关 API。
+
+OptionMemory 本身不定义 `/remember` 等快捷键或斜杠命令。以下快捷键控制 OpenCode 界面：
+
+- **Enter** 发送提示词；**Shift+Enter** 插入换行。
+- **Ctrl+P** 打开命令面板；输入 `/` 列出 OpenCode 斜杠命令。
+- **Ctrl+X，然后按 N** 或 `/new` 创建新会话，用于验证跨会话召回。
+- **Ctrl+X，然后按 L** 或 `/sessions` 列出并切换会话。
+- **Esc** 中断当前响应。
+- **Shift+Tab** 循环切换 agent；**Ctrl+X，然后按 A** 打开 agent 选择器。
+- **Ctrl+Alt+K** 显示快捷键面板；**Ctrl+X，然后按 Q** 退出 OpenCode。
+
+### Planner 执行
+
+OptionMemory 安装了名为 **`optionmemory-planner`** 的自定义 primary agent。它不同于 OpenCode 内置的 **`Plan`** agent；后者只读，不会调度 OptionMemory Option。
+
+运行 `/agents` 并选择 `optionmemory-planner`，或按 **Ctrl+X，然后按 A** 打开 agent 选择器。按 **Shift+Tab** 可循环切换 agent。
+
+Planner 操作已有的 `plan_run_id`；仅切换 agent 不会把任意聊天请求变成可执行计划。使用前必须已经存在 subtask、subtask event、plan run、已注册 Planner、绑定 Option，以及明确的 mandate/scope/budget。`scripts/phase4_opencode_acceptance.ts` 提供了完整的隔离环境初始化示例。
+
+准备好 run 后，可以输入：
+
+```text
+使用 planner_context 和 planner_options 检查 plan_run_id=<已有 ID>。
+执行适当的已允许 Option，检查 outcome，然后 replan 或 stop。
+```
+
+执行流程为：
+
+```text
+planner_context / planner_options
+→ planner_decision(execute)
+→ OptionExecutor observation/outcome
+→ planner_decision(replan / retry / ask / stop)
+```
+
+`planner_decision` 也支持 `decompose`、`wait` 和 `ignore`。`execute` 决策会通过 `OptionExecutor` 真实调度已注册 Option，而不只是生成文字计划。Planner 可以只读调用 `bridge_recall`，但不能直接编辑文件、运行 shell、调用 subagent、捕获/修订记忆或 settle/revoke 资产。只有绑定到该 subtask 且获得许可的 Option 才能执行。决策字段和完整契约见 `docs/opencode-memory-guide.md`。
 
 ### 配置
 
