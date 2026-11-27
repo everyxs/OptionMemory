@@ -164,6 +164,25 @@ executor? / rationale? / policyVersion?
 
 ## 五、日常记忆：最常用流程
 
+### 使用入口与界面快捷键
+
+OptionMemory 可以通过以下方式使用：
+
+1. **OpenCode 交互界面：**在仓库根目录运行 `opencode --standalone --auto`，用自然语言请求 Bridge 工具。
+2. **自动或显式召回：**新会话提问会触发自动上下文注入；需要精确控制参数时显式调用 `bridge_recall`。
+3. **非交互式命令：**使用 `opencode run --standalone --auto "<提示词>"`，每次执行一条提示词并创建新会话。
+4. **DSH 与高级集成：**DSH 使用同一 MemoryCore 和 Bridge 工具；结构化事实、治理和自定义集成分别使用原七工具与 `src/api` 下的宿主无关 API。
+
+OptionMemory 本身不注册 `/remember` 等斜杠命令或专属快捷键。日常记忆通过 `bridge_capture`、`bridge_recall`、`bridge_revise` 三个 agent 工具调用。以下快捷键属于 OpenCode：
+
+- **Enter** 发送；**Shift+Enter** 换行。
+- **Ctrl+P** 打开命令面板；输入 `/` 查看斜杠命令。
+- **Ctrl+X，然后按 N** 或 `/new` 创建新会话；**Ctrl+X，然后按 L** 或 `/sessions` 切换会话。
+- **Esc** 中断响应；**Shift+Tab** 循环切换 agent。
+- **Ctrl+Alt+K** 显示快捷键面板；**Ctrl+X，然后按 Q** 退出。
+
+完整界面说明见 [OpenCode TUI](https://opencode.ai/docs/cli/tui/) 与 [OpenCode keybindings](https://opencode.ai/docs/cli/keybinds/)。
+
 ### 1. 显式捕获
 
 可以直接对 OpenCode 说：
@@ -308,6 +327,16 @@ pi_ref = markdown-note@v1
 
 ## 七、Planner 使用
 
+### 进入自定义 Planner
+
+`.opencode/agents/optionmemory-planner.md` 定义了名为 `optionmemory-planner` 的自定义 primary agent。它与 OpenCode 内置的只读 `Plan` agent 不同，可以通过受控决策真实调度 Option。
+
+在交互界面运行 `/agents` 并选择 `optionmemory-planner`，或按 **Ctrl+X，然后按 A** 打开 agent 选择器；**Shift+Tab** 可循环切换 agent。可用以下命令确认 agent 和插件已加载：
+
+```bash
+opencode --standalone --print-logs --log-level info debug agents
+```
+
 ### 工具
 
 | 工具 | 用途 |
@@ -323,11 +352,24 @@ pi_ref = markdown-note@v1
 ```text
 planner_context / planner_options
 → planner_decision(execute)
-→ Option observation/outcome
-→ planner_decision(replan/ask/stop)
+→ OptionExecutor observation/outcome
+→ planner_decision(replan / retry / ask / stop)
 ```
 
-决策至少需要：
+`execute` 会通过 `OptionExecutor` 真实调度已注册且获得许可的 Option，并保存 observation/outcome；它不是单纯的文字规划。只有绑定到当前 subtask、状态可用且在 mandate scope 内的 Option 才能执行。
+
+### 执行前置条件与提示词
+
+仅切换到 `optionmemory-planner` 不会把任意自然语言任务自动初始化为可执行计划。必须事先注册 subtask、subtask event、plan run、Planner 和绑定 Option，并提供明确的 mandate、scope 与 budget。完整的隔离环境初始化示例见 `scripts/phase4_opencode_acceptance.ts`。
+
+已有 `plan_run_id` 时，可以在自定义 Planner 会话中输入：
+
+```text
+使用 planner_context 和 planner_options 检查 plan_run_id=<已有 ID>。
+执行适当的已允许 Option，检查 outcome，然后 replan 或 stop。
+```
+
+单次决策至少需要：
 
 ```text
 plan_run_id
@@ -338,7 +380,7 @@ state_hash
 decision { ... }
 ```
 
-Planner 的历史记忆只能作为非指令证据。`contested/stale/out-of-scope` 内容不能当作 settled 证据，也不能因为召回文本要求而扩大 mandate。
+每个新决策使用新的稳定 idempotency key，不得把同一个 key 复用于不同内容。Planner 的历史记忆只能作为非指令证据。`contested/stale/out-of-scope` 内容不能当作 settled 证据，也不能因为召回文本要求而扩大 mandate。
 
 ## 八、常见配置
 

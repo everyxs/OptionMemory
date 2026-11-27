@@ -62,21 +62,28 @@ cd /path/to/optionmemory
 # This repository, for example: cd E:\DSHprojects
 ```
 
-The repository already includes the Planner and daily-memory plugins. In **session A**, save a memory:
+The repository already includes the Planner and daily-memory plugins. Start the full interactive OpenCode interface from the repository root:
 
 ```bash
-opencode run --standalone --auto "Use bridge_capture to remember: this project uses pnpm for dependency management. namespace=global, source_ref=session-a, idempotency_key=project-pnpm-v1."
+opencode --standalone --auto
 ```
 
-Keep the same working directory, endpoint, and namespace. Start **session B** with another `opencode run`, then ask:
+Type the following prompts into the OpenCode interface, not into your shell. In **session A**, save a memory:
+
+```text
+Use bridge_capture to remember: this project uses pnpm for dependency management.
+namespace=global, source_ref=session-a, idempotency_key=project-pnpm-v1.
+```
+
+Exit session A, then start **session B** by running `opencode --standalone --auto` again in the same working directory. Ask:
 
 ```text
 Which package manager does this project use? Return the corresponding memory_uri.
 ```
 
-Every `opencode run` creates a new session. You may use different terminals or processes, but do **not** add `--continue`; continuing the old session does not prove cross-session recall.
+Keep the same endpoint and namespace. Do **not** add `--continue` or `-c`; continuing the old session does not prove cross-session recall.
 
-OpenCode automatically recalls the saved content and injects it as non-instructional reference material.
+OpenCode automatically recalls the saved content and injects it as non-instructional reference material. For non-interactive automation, `opencode run --standalone --auto "<prompt>"` runs one prompt and creates a new session each time.
 
 To revise the memory:
 
@@ -86,6 +93,50 @@ Use the returned document_id as supersedes and project-yarn-v1 as idempotency_ke
 ```
 
 The next query should return **yarn** and a new memory_uri. The old version remains `superseded`; neither the original Markdown nor `AGENTS.md` is modified.
+
+### Ways to use OptionMemory
+
+1. **Interactive OpenCode:** run `opencode --standalone --auto` and use natural language to capture, recall, or revise memories through `bridge_capture`, `bridge_recall`, and `bridge_revise`.
+2. **Automatic or explicit recall:** ask a question in a new session for automatic context injection, or explicitly request `bridge_recall` when you need controlled query, namespace, history, and result-limit options.
+3. **One-shot terminal commands:** use `opencode run --standalone --auto "<prompt>"` for scripts and non-interactive prompts.
+4. **Through DSH:** use the same Bridge tools and MemoryCore from DSH. Memories and revision history can be shared across OpenCode and DSH.
+5. **Advanced integrations:** use the structured fact and governance tools (`memory_set`, `memory_get`, `memory_query`, `memory_retract`, `propose_option`, `settle`, `revoke`), the custom Planner, or the host-neutral APIs under `src/api`.
+
+OptionMemory does not define its own hotkeys or commands such as `/remember`. The following shortcuts control the OpenCode interface:
+
+- **Enter** sends a prompt; **Shift+Enter** inserts a new line.
+- **Ctrl+P** opens the command palette; typing `/` lists OpenCode slash commands.
+- **Ctrl+X, then N** or `/new` starts a new session for cross-session recall.
+- **Ctrl+X, then L** or `/sessions` lists and switches sessions.
+- **Esc** interrupts the current response.
+- **Shift+Tab** cycles agents; **Ctrl+X, then A** opens the agent selector.
+- **Ctrl+Alt+K** toggles the keyboard-shortcut panel; **Ctrl+X, then Q** exits OpenCode.
+
+### Planner execution
+
+OptionMemory installs a custom primary agent named **`optionmemory-planner`**. This is different from OpenCode's built-in **`Plan`** agent, which is read-only and does not dispatch OptionMemory Options.
+
+Run `/agents` and select `optionmemory-planner`, or press **Ctrl+X, then A** to open the agent selector. **Shift+Tab** cycles through agents.
+
+The Planner operates on an existing `plan_run_id`; switching agents does not turn an arbitrary chat request into an executable plan. The subtask, subtask event, plan run, registered Planner, bound Options, and explicit mandate/scope/budget must already exist. `scripts/phase4_opencode_acceptance.ts` contains a concrete isolated setup example.
+
+With a prepared run, ask:
+
+```text
+Inspect plan_run_id=<existing-id> using planner_context and planner_options.
+Execute the appropriate allowed Option, inspect its outcome, and then replan or stop.
+```
+
+The execution flow is:
+
+```text
+planner_context / planner_options
+→ planner_decision(execute)
+→ OptionExecutor observation/outcome
+→ planner_decision(replan / retry / ask / stop)
+```
+
+`planner_decision` also supports `decompose`, `wait`, and `ignore`. An `execute` decision dispatches a real, registered Option through `OptionExecutor`; it is not just textual planning. The Planner can use read-only `bridge_recall`, but cannot directly edit files, run shell commands, invoke subagents, capture/revise memories, or settle/revoke assets. Only permitted Options bound to the subtask can execute. See `docs/opencode-memory-guide.md` for the decision fields and full contract.
 
 ### Configuration
 
